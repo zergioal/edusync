@@ -1,0 +1,693 @@
+// Prisma schema — EduSync
+// Sistema de gestión de unidades educativas bolivianas (Ley 070)
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// ─── Enums ───────────────────────────────────────────────────────────────────
+
+enum Rol {
+  ADMIN_SISTEMA
+  DIRECTOR
+  COORDINADOR
+  SECRETARIA
+  REGENTE
+  CONTADOR
+  DOCENTE
+  ESTUDIANTE
+  PADRE_TUTOR
+}
+
+enum NivelNombre {
+  INICIAL
+  PRIMARIA
+  SECUNDARIA
+}
+
+enum Instrumento {
+  OBSERVACION
+  CUADERNO
+  EVALUACION_ESCRITA
+  EVALUACION_ORAL
+  DEFENSA
+  PIZARRA
+  OTRO
+}
+
+enum EstadoAsistencia {
+  PRESENTE
+  AUSENTE
+  TARDANZA
+}
+
+enum VisiblePara {
+  TODOS
+  DOCENTES
+  ESTUDIANTES
+  PPFF
+  INTERNOS
+  PARALELO
+}
+
+enum TipoNotificacion {
+  PAGO
+  ANUNCIO
+  TAREA
+  TRIMESTRE_CERRADO
+  GENERAL
+}
+
+enum TipoGaleria {
+  FOTO
+  VIDEO
+}
+
+// ─── Modelos ─────────────────────────────────────────────────────────────────
+
+model Institucion {
+  id         String   @id @default(uuid())
+  nombre     String
+  subdominio String   @unique
+  logo_url   String?
+  slogan     String?
+  qr_url     String?
+  whatsapp   String?
+  direccion  String?
+  telefono   String?
+  activa     Boolean  @default(true)
+  tipo_ue    String   @default("HUMANISTICA")
+  created_at DateTime @default(now())
+
+  usuarios         Usuario[]
+  niveles          Nivel[]
+  gestiones        Gestion[]
+  campos           Campo[]
+  dimensiones      Dimension[]
+  anuncios         Anuncio[]
+  galeria          GaleriaItem[]
+  tarifas_pension  TarifaPension[]
+  config_horario   ConfigHorario?
+  turnos           Turno[]
+
+  @@map("instituciones")
+}
+
+model Usuario {
+  id               String   @id @default(uuid())
+  institucion_id   String
+  supabase_auth_id String   @unique
+  email            String   @unique
+  rol              Rol
+  nombre           String
+  apellido         String
+  activo           Boolean  @default(true)
+  created_at       DateTime @default(now())
+
+  institucion         Institucion         @relation(fields: [institucion_id], references: [id], onDelete: Cascade)
+  docente             Docente?
+  estudiante          Estudiante?
+  pagos_registrados   Pago[]
+  regencias_clase     AsistenciaDiaria[]
+  anuncios            Anuncio[]
+  hijos_a_cargo       RelacionPadreHijo[] @relation("PadreHijos")
+  mensajes_enviados   Mensaje[]           @relation("MensajesEnviados")
+  mensajes_recibidos  Mensaje[]           @relation("MensajesRecibidos")
+  notificaciones      Notificacion[]
+
+  @@map("usuarios")
+}
+
+model Docente {
+  id                      String @id @default(uuid())
+  usuario_id              String @unique
+  horas_pedagogicas_total Int    @default(0)
+
+  usuario               Usuario              @relation(fields: [usuario_id], references: [id], onDelete: Cascade)
+  paralelos             Paralelo[]
+  asignaciones          Asignacion[]
+  observaciones_inicial ObservacionInicial[]
+  horarios              Horario[]
+
+  @@map("docentes")
+}
+
+model Estudiante {
+  id                String    @id @default(uuid())
+  usuario_id        String    @unique
+  codigo            String
+  nivel_id          String
+  becado            Boolean   @default(false)
+  motivo_beca       String?   @db.VarChar(255)
+  fecha_nacimiento  DateTime?
+
+  usuario             Usuario              @relation(fields: [usuario_id], references: [id], onDelete: Cascade)
+  nivel               Nivel                @relation(fields: [nivel_id], references: [id])
+  relaciones_padre    RelacionPadreHijo[]
+  matriculas          Matricula[]
+  notas               NotaIndicador[]
+  pensiones           Pension[]
+  asistencias_clase   AsistenciaClase[]
+  asistencias_diarias AsistenciaDiaria[]
+  observaciones       ObservacionInicial[]
+  resultados_finales  ResultadoFinal[]
+  promociones         Promocion[]
+
+  @@map("estudiantes")
+}
+
+model RelacionPadreHijo {
+  padre_id      String
+  estudiante_id String
+
+  padre      Usuario    @relation(fields: [padre_id], references: [id], onDelete: Cascade, name: "PadreHijos")
+  estudiante Estudiante @relation(fields: [estudiante_id], references: [id], onDelete: Cascade)
+
+  @@id([padre_id, estudiante_id])
+  @@map("relacion_padre_hijo")
+}
+
+model Nivel {
+  id             String      @id @default(uuid())
+  institucion_id String
+  nombre         NivelNombre
+
+  institucion      Institucion        @relation(fields: [institucion_id], references: [id], onDelete: Cascade)
+  grados           Grado[]
+  campos           Campo[]
+  materias         Materia[]
+  estudiantes      Estudiante[]
+  tarifas_pension  TarifaPension[]
+  pensiones        Pension[]
+  horarios_nivel   HorarioNivelTurno[]
+
+  @@unique([institucion_id, nombre])
+  @@map("niveles")
+}
+
+model Grado {
+  id       String @id @default(uuid())
+  nivel_id String
+  nombre   String
+  orden    Int
+
+  nivel         Nivel                 @relation(fields: [nivel_id], references: [id], onDelete: Cascade)
+  paralelos     Paralelo[]
+  carga_horaria CargaHorariaMateria[]
+
+  @@map("grados")
+}
+
+model Paralelo {
+  id         String  @id @default(uuid())
+  grado_id   String
+  letra      String
+  asesor_id  String?
+  activo     Boolean @default(true)
+
+  grado               Grado              @relation(fields: [grado_id], references: [id], onDelete: Cascade)
+  asesor              Docente?           @relation(fields: [asesor_id], references: [id])
+  matriculas          Matricula[]
+  asignaciones        Asignacion[]
+  asistencias_diarias AsistenciaDiaria[]
+  horarios            Horario[]
+  turno               ParaleloTurno?
+  anuncios            Anuncio[]
+
+  @@map("paralelos")
+}
+
+model Matricula {
+  id            String @id @default(uuid())
+  estudiante_id String
+  paralelo_id   String
+  gestion_id    String
+
+  estudiante Estudiante @relation(fields: [estudiante_id], references: [id], onDelete: Cascade)
+  paralelo   Paralelo   @relation(fields: [paralelo_id], references: [id])
+  gestion    Gestion    @relation(fields: [gestion_id], references: [id])
+
+  @@unique([estudiante_id, gestion_id])
+  @@map("matriculas")
+}
+
+model Campo {
+  id             String @id @default(uuid())
+  institucion_id String
+  nivel_id       String
+  nombre         String
+
+  institucion Institucion @relation(fields: [institucion_id], references: [id], onDelete: Cascade)
+  nivel       Nivel       @relation(fields: [nivel_id], references: [id])
+  materias    Materia[]
+
+  @@map("campos")
+}
+
+model Materia {
+  id                      String  @id @default(uuid())
+  campo_id                String
+  nivel_id                String
+  nombre                  String
+  activa                  Boolean @default(true)
+  aplica_solo_desde_grado Int?
+  aplica_hasta_grado      Int?
+  solo_si_bth             Boolean @default(false)
+  es_holistica            Boolean @default(false)
+
+  campo              Campo                 @relation(fields: [campo_id], references: [id], onDelete: Cascade)
+  nivel              Nivel                 @relation(fields: [nivel_id], references: [id])
+  asignaciones       Asignacion[]
+  horarios           Horario[]
+  carga_horaria      CargaHorariaMateria[]
+  resultados_finales ResultadoFinal[]
+
+  @@map("materias")
+}
+
+model Gestion {
+  id             String  @id @default(uuid())
+  institucion_id String
+  anno           Int
+  activa         Boolean @default(false)
+
+  institucion        Institucion      @relation(fields: [institucion_id], references: [id], onDelete: Cascade)
+  trimestres         Trimestre[]
+  matriculas         Matricula[]
+  pensiones          Pension[]
+  asignaciones       Asignacion[]
+  tarifas_pension    TarifaPension[]
+  resultados_finales ResultadoFinal[]
+  promociones        Promocion[]
+
+  @@unique([institucion_id, anno])
+  @@map("gestiones")
+}
+
+model Trimestre {
+  id           String   @id @default(uuid())
+  gestion_id   String
+  numero       Int
+  fecha_inicio DateTime @db.Date
+  fecha_fin    DateTime @db.Date
+  cerrado      Boolean  @default(false)
+
+  gestion       Gestion      @relation(fields: [gestion_id], references: [id], onDelete: Cascade)
+  observaciones ObservacionInicial[]
+  indicadores   Indicador[]
+
+  @@unique([gestion_id, numero])
+  @@map("trimestres")
+}
+
+model Asignacion {
+  id          String @id @default(uuid())
+  docente_id  String
+  materia_id  String
+  paralelo_id String
+  gestion_id  String
+
+  docente     Docente           @relation(fields: [docente_id], references: [id])
+  materia     Materia           @relation(fields: [materia_id], references: [id])
+  paralelo    Paralelo          @relation(fields: [paralelo_id], references: [id])
+  gestion     Gestion           @relation(fields: [gestion_id], references: [id])
+  indicadores Indicador[]
+  asistencias AsistenciaClase[]
+  tareas      Tarea[]
+
+  @@unique([docente_id, materia_id, paralelo_id, gestion_id])
+  @@map("asignaciones")
+}
+
+model Dimension {
+  id             String @id @default(uuid())
+  institucion_id String
+  nombre         String
+  puntaje_max    Int
+  orden          Int
+
+  institucion Institucion @relation(fields: [institucion_id], references: [id], onDelete: Cascade)
+  indicadores Indicador[]
+
+  @@map("dimensiones")
+}
+
+model Indicador {
+  id                String      @id @default(uuid())
+  asignacion_id     String
+  dimension_id      String
+  trimestre_id      String?
+  nombre            String
+  instrumento       Instrumento
+  fecha_aplicacion  DateTime    @db.Date
+  es_parcial        Boolean     @default(false)
+  orden             Int         @default(0)
+
+  asignacion Asignacion    @relation(fields: [asignacion_id], references: [id], onDelete: Cascade)
+  dimension  Dimension     @relation(fields: [dimension_id], references: [id])
+  trimestre  Trimestre?    @relation(fields: [trimestre_id], references: [id])
+  notas      NotaIndicador[]
+
+  @@map("indicadores")
+}
+
+model NotaIndicador {
+  id            String  @id @default(uuid())
+  indicador_id  String
+  estudiante_id String
+  puntaje       Int?    @db.SmallInt
+
+  indicador  Indicador  @relation(fields: [indicador_id], references: [id], onDelete: Cascade)
+  estudiante Estudiante @relation(fields: [estudiante_id], references: [id], onDelete: Cascade)
+
+  @@unique([indicador_id, estudiante_id])
+  @@map("notas_indicador")
+}
+
+model ObservacionInicial {
+  id            String @id @default(uuid())
+  docente_id    String
+  estudiante_id String
+  trimestre_id  String
+  contenido     String @db.Text
+
+  docente    Docente    @relation(fields: [docente_id], references: [id])
+  estudiante Estudiante @relation(fields: [estudiante_id], references: [id], onDelete: Cascade)
+  trimestre  Trimestre  @relation(fields: [trimestre_id], references: [id])
+
+  @@unique([estudiante_id, trimestre_id])
+  @@map("observaciones_inicial")
+}
+
+model Pension {
+  id            String    @id @default(uuid())
+  estudiante_id String
+  gestion_id    String
+  mes           Int
+  monto         Decimal   @db.Decimal(10, 2)
+  nivel_id      String?
+  pagado        Boolean   @default(false)
+  fecha_pago    DateTime? @db.Date
+  comprobante   String?
+  anulado_por   String?
+  anulado_en    DateTime?
+
+  estudiante Estudiante @relation(fields: [estudiante_id], references: [id], onDelete: Cascade)
+  gestion    Gestion    @relation(fields: [gestion_id], references: [id])
+  nivel      Nivel?     @relation(fields: [nivel_id], references: [id])
+  pagos      Pago[]
+
+  @@unique([estudiante_id, gestion_id, mes])
+  @@map("pensiones")
+}
+
+model Pago {
+  id              String   @id @default(uuid())
+  pension_id      String
+  registrado_por  String
+  fecha           DateTime @db.Date
+  comprobante     String
+
+  pension     Pension @relation(fields: [pension_id], references: [id], onDelete: Cascade)
+  registrador Usuario @relation(fields: [registrado_por], references: [id])
+
+  @@map("pagos")
+}
+
+model AsistenciaClase {
+  id            String           @id @default(uuid())
+  asignacion_id String
+  estudiante_id String
+  fecha         DateTime         @db.Date
+  estado        EstadoAsistencia
+
+  asignacion Asignacion @relation(fields: [asignacion_id], references: [id], onDelete: Cascade)
+  estudiante Estudiante @relation(fields: [estudiante_id], references: [id], onDelete: Cascade)
+
+  @@unique([asignacion_id, estudiante_id, fecha])
+  @@map("asistencia_clase")
+}
+
+model AsistenciaDiaria {
+  id            String           @id @default(uuid())
+  regente_id    String
+  paralelo_id   String
+  estudiante_id String
+  fecha         DateTime         @db.Date
+  estado        EstadoAsistencia
+
+  regente    Usuario    @relation(fields: [regente_id], references: [id])
+  paralelo   Paralelo   @relation(fields: [paralelo_id], references: [id])
+  estudiante Estudiante @relation(fields: [estudiante_id], references: [id], onDelete: Cascade)
+
+  @@unique([paralelo_id, estudiante_id, fecha])
+  @@map("asistencia_diaria")
+}
+
+model Horario {
+  id          String @id @default(uuid())
+  paralelo_id String
+  materia_id  String
+  docente_id  String
+  dia_semana  Int
+  hora_inicio DateTime @db.Time
+  hora_fin    DateTime @db.Time
+
+  paralelo Paralelo @relation(fields: [paralelo_id], references: [id], onDelete: Cascade)
+  materia  Materia  @relation(fields: [materia_id], references: [id])
+  docente  Docente  @relation(fields: [docente_id], references: [id])
+
+  @@map("horarios")
+}
+
+model Anuncio {
+  id             String      @id @default(uuid())
+  institucion_id String
+  autor_id       String
+  paralelo_id    String?
+  titulo         String
+  contenido      String      @db.Text
+  visible_para   VisiblePara @default(TODOS)
+  destacado      Boolean     @default(false)
+  publicado_en   DateTime    @default(now())
+  activo         Boolean     @default(true)
+
+  institucion Institucion @relation(fields: [institucion_id], references: [id], onDelete: Cascade)
+  autor       Usuario     @relation(fields: [autor_id], references: [id])
+  paralelo    Paralelo?   @relation(fields: [paralelo_id], references: [id])
+
+  @@map("anuncios")
+}
+
+model GaleriaItem {
+  id             String      @id @default(uuid())
+  institucion_id String
+  tipo           TipoGaleria
+  url            String
+  descripcion    String?
+  publicado_en   DateTime    @default(now())
+
+  institucion Institucion @relation(fields: [institucion_id], references: [id], onDelete: Cascade)
+
+  @@map("galeria_items")
+}
+
+model TarifaPension {
+  id             String   @id @default(uuid())
+  institucion_id String
+  gestion_id     String
+  nivel_id       String
+  monto          Decimal  @db.Decimal(8, 2)
+  created_at     DateTime @default(now())
+
+  institucion Institucion @relation(fields: [institucion_id], references: [id], onDelete: Cascade)
+  gestion     Gestion     @relation(fields: [gestion_id], references: [id], onDelete: Cascade)
+  nivel       Nivel       @relation(fields: [nivel_id], references: [id])
+
+  @@unique([gestion_id, nivel_id])
+  @@map("tarifas_pension")
+}
+
+// ─── Nuevos modelos: configuración de horarios y carga horaria ────────────────
+
+model ConfigHorario {
+  id                   String   @id @default(uuid())
+  institucion_id       String   @unique
+  duracion_periodo_min Int      @default(40)
+  created_at           DateTime @default(now())
+  updated_at           DateTime @updatedAt
+
+  institucion Institucion @relation(fields: [institucion_id], references: [id], onDelete: Cascade)
+
+  @@map("config_horario")
+}
+
+model Turno {
+  id             String  @id @default(uuid())
+  institucion_id String
+  nombre         String
+  tipo           String
+  activo         Boolean @default(true)
+  created_at     DateTime @default(now())
+
+  institucion    Institucion         @relation(fields: [institucion_id], references: [id], onDelete: Cascade)
+  horarios_nivel HorarioNivelTurno[]
+  paralelos      ParaleloTurno[]
+
+  @@unique([institucion_id, tipo])
+  @@map("turnos")
+}
+
+model HorarioNivelTurno {
+  id               String @id @default(uuid())
+  turno_id         String
+  nivel_id         String
+  hora_inicio      String @default("07:30")
+  minutos_lectura  Int    @default(10)
+  max_periodos_dia Int    @default(8)
+
+  turno   Turno            @relation(fields: [turno_id], references: [id], onDelete: Cascade)
+  nivel   Nivel            @relation(fields: [nivel_id], references: [id])
+  recreos RecreoPeriodo[]
+
+  @@unique([turno_id, nivel_id])
+  @@map("horario_nivel_turno")
+}
+
+model RecreoPeriodo {
+  id                     String @id @default(uuid())
+  horario_nivel_turno_id String
+  despues_de_periodo     Int
+  duracion_min           Int    @default(20)
+
+  horario_nivel_turno HorarioNivelTurno @relation(fields: [horario_nivel_turno_id], references: [id], onDelete: Cascade)
+
+  @@map("recreo_periodo")
+}
+
+model ParaleloTurno {
+  paralelo_id String @unique
+  turno_id    String
+
+  paralelo Paralelo @relation(fields: [paralelo_id], references: [id], onDelete: Cascade)
+  turno    Turno    @relation(fields: [turno_id], references: [id])
+
+  @@map("paralelo_turno")
+}
+
+model CargaHorariaMateria {
+  id         String @id @default(uuid())
+  materia_id String
+  grado_id   String
+  horas_mes  Int
+
+  materia Materia @relation(fields: [materia_id], references: [id], onDelete: Cascade)
+  grado   Grado   @relation(fields: [grado_id], references: [id], onDelete: Cascade)
+
+  @@unique([materia_id, grado_id])
+  @@map("carga_horaria_materia")
+}
+
+// ─── Comunicación ─────────────────────────────────────────────────────────────
+
+model Tarea {
+  id            String   @id @default(uuid())
+  asignacion_id String
+  titulo        String
+  descripcion   String?  @db.Text
+  fecha_entrega DateTime @db.Date
+  publicado_en  DateTime @default(now())
+  activo        Boolean  @default(true)
+
+  asignacion     Asignacion     @relation(fields: [asignacion_id], references: [id], onDelete: Cascade)
+  notificaciones Notificacion[]
+
+  @@map("tareas")
+}
+
+model Mensaje {
+  id               String   @id @default(uuid())
+  remitente_id     String
+  destinatario_id  String
+  asunto           String
+  cuerpo           String   @db.Text
+  leido            Boolean  @default(false)
+  enviado_en       DateTime @default(now())
+
+  remitente    Usuario @relation(fields: [remitente_id], references: [id], name: "MensajesEnviados")
+  destinatario Usuario @relation(fields: [destinatario_id], references: [id], name: "MensajesRecibidos")
+
+  @@map("mensajes")
+}
+
+model Notificacion {
+  id              String           @id @default(uuid())
+  usuario_id      String
+  tipo            TipoNotificacion
+  titulo          String
+  cuerpo          String
+  leida           Boolean          @default(false)
+  creada_en       DateTime         @default(now())
+  referencia_id   String?
+  referencia_tipo String?
+  tarea_id        String?
+
+  usuario Usuario @relation(fields: [usuario_id], references: [id], onDelete: Cascade)
+  tarea   Tarea?  @relation(fields: [tarea_id], references: [id], onDelete: SetNull)
+
+  @@map("notificaciones")
+}
+
+// ─── Cierre de gestión ────────────────────────────────────────────────────────
+
+model ResultadoFinal {
+  id            String  @id @default(uuid())
+  estudiante_id String
+  materia_id    String
+  gestion_id    String
+  promedio      Decimal @db.Decimal(5, 2)
+  aprobado      Boolean
+
+  estudiante Estudiante @relation(fields: [estudiante_id], references: [id], onDelete: Cascade)
+  materia    Materia    @relation(fields: [materia_id], references: [id])
+  gestion    Gestion    @relation(fields: [gestion_id], references: [id])
+
+  @@unique([estudiante_id, materia_id, gestion_id])
+  @@map("resultados_finales")
+}
+
+model Promocion {
+  id            String  @id @default(uuid())
+  estudiante_id String
+  gestion_id    String
+  promovido     Boolean
+  observacion   String? @db.Text
+
+  estudiante Estudiante @relation(fields: [estudiante_id], references: [id], onDelete: Cascade)
+  gestion    Gestion    @relation(fields: [gestion_id], references: [id])
+
+  @@unique([estudiante_id, gestion_id])
+  @@map("promociones")
+}
+
+// ─── Auditoría ────────────────────────────────────────────────────────────────
+
+model AuditoriaLog {
+  id             String   @id @default(uuid())
+  usuario_id     String?
+  institucion_id String?
+  accion         String
+  recurso        String
+  recurso_id     String?
+  detalle        Json?
+  ip             String?
+  creado_en      DateTime @default(now())
+
+  @@map("auditoria_log")
+}
