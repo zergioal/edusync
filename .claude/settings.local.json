@@ -66,7 +66,12 @@
       "Bash(python3 -c ' *)",
       "Bash(powershell -Command \"Get-Content 'C:\\\\Users\\\\zergioal\\\\.claude\\\\projects\\\\d--PROYECTOS-WEB-SISTEMA-UE-edusync\\\\eb9435f7-31cc-46f5-b42f-c7309b16566c.jsonl' -Tail 50 | Select-String '\\\\\"role\\\\\"' | Select-Object -Last 20\")",
       "Bash(powershell -Command ' *)",
-      "Bash(pnpm --filter @edusync/api build)"
+      "Bash(pnpm --filter @edusync/api build)",
+      "Bash(Move-Item \"d:/PROYECTOS WEB/SISTEMA-UE/edusync/apps/api/railway.toml\" \"d:/PROYECTOS WEB/SISTEMA-UE/edusync/railway.toml\")",
+      "Bash(mv \"d:/PROYECTOS WEB/SISTEMA-UE/edusync/apps/api/railway.toml\" \"d:/PROYECTOS WEB/SISTEMA-UE/edusync/railway.toml\")"
+    ],
+    "additionalDirectories": [
+      "d:\\PROYECTOS WEB\\SISTEMA-UE\\edusync\\apps\\api"
     ]
   }
 }
