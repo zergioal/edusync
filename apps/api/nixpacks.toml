@@ -1,11 +1,8 @@
 [phases.setup]
-nixPkgs = ["chromium"]
+nixPkgs = ["chromium", "nodePackages.pnpm"]
 
 [phases.install]
-cmds = [
-  "npm install -g pnpm@9 --quiet",
-  "pnpm install --frozen-lockfile"
-]
+cmds = ["pnpm install --frozen-lockfile"]
 
 [phases.build]
 cmds = [
@@ -14,4 +11,4 @@ cmds = [
 ]
 
 [start]
-cmd = "sh apps/api/start.sh"
+cmd = "PUPPETEER_EXECUTABLE_PATH=$(which chromium) node apps/api/dist/index.js"
