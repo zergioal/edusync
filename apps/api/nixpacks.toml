@@ -1,0 +1,17 @@
+[phases.setup]
+nixPkgs = ["chromium"]
+
+[phases.install]
+cmds = [
+  "npm install -g pnpm@9 --quiet",
+  "pnpm install --frozen-lockfile"
+]
+
+[phases.build]
+cmds = [
+  "pnpm --filter @edusync/database db:generate",
+  "pnpm --filter @edusync/api build"
+]
+
+[start]
+cmd = "sh apps/api/start.sh"
