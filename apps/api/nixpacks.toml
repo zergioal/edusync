@@ -6,6 +6,7 @@ cmds = ["pnpm install --frozen-lockfile"]
 
 [phases.build]
 cmds = [
+  "chmod -R +x node_modules/.bin/",
   "pnpm --filter @edusync/database db:generate",
   "pnpm --filter @edusync/api build"
 ]
