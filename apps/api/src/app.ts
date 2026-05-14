@@ -14,16 +14,17 @@ const app = express()
 // ─── CORS dinámico: permite cualquier subdominio de BASE_DOMAIN ───────────────
 
 const baseDomain  = process.env['BASE_DOMAIN'] ?? 'edusync.bo'
-const devOrigin   = process.env['CORS_ORIGIN']  ?? 'http://localhost:5173'
+const devOrigins  = (process.env['CORS_ORIGIN'] ?? 'http://localhost:5173')
+  .split(',').map(o => o.trim()).filter(Boolean)
 
-const subdomainRe = new RegExp(`^https://[a-z0-9-]+\\.${baseDomain.replace('.', '\\.')}$`)
+const subdomainRe = new RegExp(`^https://[a-z0-9-]+\\.${baseDomain.replace(/\./g, '\\.')}$`)
 
 app.use(cors({
   origin: (origin, callback) => {
     if (!origin) return callback(null, true) // server-to-server / Postman
 
-    // Siempre permitir el origen de desarrollo configurado
-    if (origin === devOrigin) return callback(null, true)
+    // Orígenes de desarrollo/staging configurados (soporta lista separada por comas)
+    if (devOrigins.includes(origin)) return callback(null, true)
 
     // Dominio base exacto
     if (origin === `https://${baseDomain}`) return callback(null, true)

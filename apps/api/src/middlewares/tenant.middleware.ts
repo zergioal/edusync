@@ -14,7 +14,7 @@ const SYSTEM_SUBDOMAINS = new Set(['www', 'api', 'localhost', 'app', 'admin'])
 
 export async function tenantMiddleware(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
-    // 1. Obtener subdominio: header explícito > Host
+    // 1. Obtener subdominio: header explícito > Origin > Host
     const xTenant  = req.headers['x-tenant-subdomain'] as string | undefined
     const host      = (req.headers['host'] ?? '').split(':')[0] ?? ''
     let subdomain   = ''
@@ -23,6 +23,23 @@ export async function tenantMiddleware(req: Request, res: Response, next: NextFu
       subdomain = xTenant.trim().toLowerCase()
     } else if (host.includes('.')) {
       subdomain = host.split('.')[0]?.toLowerCase() ?? ''
+    }
+
+    // Fallback: extraer desde el header Origin si el subdomain extraído es del sistema
+    if (!subdomain || SYSTEM_SUBDOMAINS.has(subdomain)) {
+      const originHeader = req.headers['origin'] as string | undefined
+      if (originHeader) {
+        try {
+          const originHost   = new URL(originHeader).hostname
+          const originParts  = originHost.split('.')
+          if (originParts.length >= 3) {
+            const originSub = originParts[0]?.toLowerCase() ?? ''
+            if (originSub && !SYSTEM_SUBDOMAINS.has(originSub)) {
+              subdomain = originSub
+            }
+          }
+        } catch { /* URL inválida, ignorar */ }
+      }
     }
 
     // 2. En desarrollo sin subdominio → usar la primera institución como fallback
