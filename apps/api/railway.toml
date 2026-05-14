@@ -1,5 +1,6 @@
 [build]
-builder = "nixpacks"
+builder      = "nixpacks"
+watchPatterns = ["apps/api/**", "packages/**"]
 
 [deploy]
 healthcheckPath    = "/health"

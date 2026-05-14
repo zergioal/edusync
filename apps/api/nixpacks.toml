@@ -1,5 +1,5 @@
 [phases.setup]
-nixPkgs = ["chromium", "nodePackages.pnpm"]
+nixPkgs = ["chromium"]
 
 [phases.install]
 cmds = ["pnpm install --frozen-lockfile"]
