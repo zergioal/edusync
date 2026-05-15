@@ -1,11 +1,8 @@
 FROM node:24-slim
 
-# Chromium + libs para Puppeteer
+# Chromium + dependencias (apt resuelve todo automáticamente)
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    chromium \
-    libnss3 libatk1.0-0 libatk-bridge2.0-0 libcups2 libgbm1 \
-    libasound2t64 libpangocairo-1.0-0 libxss1 libgtk-3-0 \
-    libxshmfence1 libglu1 openssl ca-certificates \
+    chromium openssl ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
 # Instalar pnpm
