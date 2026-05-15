@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
+import { getTenantHeaders } from '../../config/tenant'
 
 interface Anuncio {
   id:           string
@@ -16,7 +17,7 @@ export default function AnunciosPage() {
   const { hash }               = useLocation()
 
   useEffect(() => {
-    fetch(`${API_BASE}/public/anuncios`)
+    fetch(`${API_BASE}/public/anuncios`, { headers: getTenantHeaders() })
       .then(r => r.json() as Promise<{ data: Anuncio[] }>)
       .then(b => { setAnuncios(b.data); setLoading(false) })
       .catch(() => setLoading(false))

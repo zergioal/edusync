@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { getTenantHeaders } from '../../config/tenant'
 
 interface GaleriaItem {
   id:          string
@@ -27,7 +28,7 @@ export default function GaleriaPage() {
   const [lightbox,  setLightbox]  = useState<GaleriaItem | null>(null)
 
   useEffect(() => {
-    fetch(`${API_BASE}/public/galeria`)
+    fetch(`${API_BASE}/public/galeria`, { headers: getTenantHeaders() })
       .then(r => r.json() as Promise<{ data: GaleriaItem[] }>)
       .then(b => { setItems(b.data); setLoading(false) })
       .catch(() => setLoading(false))

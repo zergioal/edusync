@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { getTenantHeaders } from '../../config/tenant'
 
 interface InstConfig {
   nombre:   string
@@ -17,7 +18,7 @@ interface Anuncio     { id: string; titulo: string; contenido: string; publicado
 const API_BASE = (import.meta as unknown as { env: Record<string, string> }).env?.VITE_API_URL ?? '/api/v1'
 
 async function fetchPublic<T>(path: string): Promise<T> {
-  const res = await fetch(`${API_BASE}/public/${path}`)
+  const res = await fetch(`${API_BASE}/public/${path}`, { headers: getTenantHeaders() })
   const body = await res.json() as { data: T }
   return body.data
 }
