@@ -5,6 +5,7 @@ import {
 import type { Session } from '@supabase/supabase-js'
 import { Rol } from '@edusync/types'
 import { supabase } from '../lib/supabase'
+import { getTenantHeaders } from '../config/tenant'
 
 // ─── Tipos ────────────────────────────────────────────────────────────────────
 
@@ -60,7 +61,7 @@ class AuthError extends Error {}
 
 async function fetchAppUser(accessToken: string): Promise<AppUser> {
   const res = await fetch(`${API_BASE}/usuarios/me`, {
-    headers: { Authorization: `Bearer ${accessToken}` },
+    headers: { ...getTenantHeaders(), Authorization: `Bearer ${accessToken}` },
   })
   if (res.status === 401 || res.status === 403) throw new AuthError('Sesión no autorizada')
   if (!res.ok) throw new Error(`Server error ${res.status}`)
@@ -70,7 +71,7 @@ async function fetchAppUser(accessToken: string): Promise<AppUser> {
 
 async function fetchEstadoFinanciero(accessToken: string): Promise<EstadoFinanciero> {
   const res = await fetch(`${API_BASE}/pensiones/mi-estado-financiero`, {
-    headers: { Authorization: `Bearer ${accessToken}` },
+    headers: { ...getTenantHeaders(), Authorization: `Bearer ${accessToken}` },
   })
   if (!res.ok) throw new Error(`Server error ${res.status}`)
   const { data } = await res.json() as { data: EstadoFinanciero }
