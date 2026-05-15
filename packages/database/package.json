@@ -5,12 +5,12 @@
   "main": "./src/index.ts",
   "types": "./src/index.ts",
   "scripts": {
-    "db:generate": "node node_modules/prisma/build/index.js generate",
-    "db:push": "node node_modules/prisma/build/index.js db push",
-    "db:migrate": "node node_modules/prisma/build/index.js migrate dev",
+    "db:generate": "PRISMA=$(find ../../node_modules/.pnpm -maxdepth 8 -name 'index.js' -path '*/node_modules/prisma/build/index.js' 2>/dev/null | head -1) && node \"$PRISMA\" generate || prisma generate",
+    "db:push": "prisma db push",
+    "db:migrate": "prisma migrate dev",
     "db:seed": "tsx seed.ts",
-    "db:studio": "node node_modules/prisma/build/index.js studio",
-    "db:reset": "node node_modules/prisma/build/index.js migrate reset"
+    "db:studio": "prisma studio",
+    "db:reset": "prisma migrate reset"
   },
   "dependencies": {
     "@prisma/client": "^5.14.0"
