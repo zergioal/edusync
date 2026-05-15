@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "tsx watch src/index.ts",
-    "build": "TSUP=$(find ../../node_modules/.pnpm -maxdepth 8 -name 'cli-main.js' -path '*/tsup/dist/cli-main.js' 2>/dev/null | head -1) && node \"$TSUP\" || tsup",
+    "build": "tsup",
     "start": "node dist/index.js",
     "lint": "eslint src --ext .ts",
     "type-check": "tsc --noEmit",
