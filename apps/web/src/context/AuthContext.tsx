@@ -154,8 +154,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   const logout = async () => {
-    await supabase.auth.signOut()
     setState({ user: null, session: null, isLoading: false, estadoFinanciero: null })
+    await supabase.auth.signOut()
   }
 
   const refreshEstadoFinanciero = useCallback(async () => {
