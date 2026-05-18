@@ -6,7 +6,7 @@ import { Rol } from '@edusync/types'
 export const asistenciaRouter = Router()
 const ctrl = new AsistenciaController()
 
-const canManage = requireRol(Rol.COORDINADOR, Rol.DIRECTOR, Rol.ADMIN_SISTEMA)
+const canManage = requireRol(Rol.COORDINADOR, Rol.DIRECTOR, Rol.ADMIN_SISTEMA, Rol.SECRETARIA, Rol.REGENTE, Rol.DOCENTE)
 const isDocente = requireRol(Rol.DOCENTE)
 const isRegente = requireRol(Rol.REGENTE, Rol.COORDINADOR, Rol.DIRECTOR, Rol.ADMIN_SISTEMA)
 

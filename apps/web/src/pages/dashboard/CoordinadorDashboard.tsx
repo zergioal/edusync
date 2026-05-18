@@ -16,6 +16,7 @@ import EstudiantesPage      from '../secretaria/EstudiantesPage'
 import PerfilEstudiantePage from '../secretaria/PerfilEstudiantePage'
 import AnunciosInternosPage from '../shared/AnunciosInternosPage'
 import MensajesPage         from '../shared/MensajesPage'
+import PadresPage           from '../secretaria/PadresPage'
 
 // ─── Panel principal ──────────────────────────────────────────────────────────
 
@@ -71,6 +72,7 @@ export default function CoordinadorDashboard() {
         <Route path="reportes/*"       element={<ReportesPage />} />
         <Route path="gestiones"        element={<GestionesPage />} />
         <Route path="docentes"         element={<DocentesPage />} />
+        <Route path="padres"           element={<PadresPage />} />
         <Route path="estudiantes"      element={<EstudiantesPage basePath="/dashboard/coordinador" />} />
         <Route path="estudiante/:id"   element={<PerfilEstudiantePage />} />
         <Route path="anuncios"         element={<AnunciosInternosPage />} />

@@ -21,6 +21,7 @@ import InstitucionesPage     from '../admin/InstitucionesPage'
 import AuditoriaPage         from '../admin/AuditoriaPage'
 import AnunciosInternosPage  from '../shared/AnunciosInternosPage'
 import MensajesPage          from '../shared/MensajesPage'
+import PadresPage            from '../secretaria/PadresPage'
 
 // ─── Panel principal ──────────────────────────────────────────────────────────
 
@@ -112,8 +113,9 @@ export default function AdminDashboard() {
         <Route path="finanzas/tarifas"               element={<TarifasPage />} />
         <Route path="finanzas/estudiante/:id"        element={<EstadoCuentaPage />} />
 
-        {/* Docentes */}
+        {/* Docentes y Padres */}
         <Route path="docentes"       element={<DocentesPage />} />
+        <Route path="padres"         element={<PadresPage />} />
 
         {/* Académico (compartido con coordinador) */}
         <Route path="paralelos"      element={<ParalelosPage />} />

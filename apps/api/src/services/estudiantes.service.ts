@@ -201,12 +201,49 @@ export class EstudiantesService {
     return { estudiante, credentials: { email: data.email, password } }
   }
 
-  async update(id: string, data: { nombre?: string; apellido?: string }) {
+  async update(
+    id: string,
+    data: {
+      nombre?:           string
+      apellido?:         string
+      codigo?:           string
+      becado?:           boolean
+      motivo_beca?:      string | null
+      fecha_nacimiento?: string | null
+    },
+  ) {
     const est = await this.findOne(id)
-    if (Object.keys(data).length === 0) return est
-    return prisma.usuario.update({
-      where: { id: est.usuario_id },
-      data,
+
+    const usuarioData: Record<string, unknown> = {}
+    if (data.nombre   !== undefined) usuarioData.nombre   = data.nombre
+    if (data.apellido !== undefined) usuarioData.apellido = data.apellido
+
+    const estData: Record<string, unknown> = {}
+    if (data.codigo      !== undefined) estData.codigo      = data.codigo
+    if (data.becado      !== undefined) estData.becado      = data.becado
+    if (data.motivo_beca !== undefined) estData.motivo_beca = data.motivo_beca ?? null
+    if (data.fecha_nacimiento !== undefined) {
+      estData.fecha_nacimiento = data.fecha_nacimiento ? new Date(data.fecha_nacimiento) : null
+    }
+
+    await prisma.$transaction(async tx => {
+      if (Object.keys(usuarioData).length > 0)
+        await tx.usuario.update({ where: { id: est.usuario_id }, data: usuarioData })
+      if (Object.keys(estData).length > 0)
+        await tx.estudiante.update({ where: { id }, data: estData })
     })
+
+    return this.findOne(id)
+  }
+
+  async remove(id: string) {
+    const est = await prisma.estudiante.findUnique({
+      where:  { id },
+      select: { usuario_id: true, usuario: { select: { supabase_auth_id: true } } },
+    })
+    if (!est) throw new AppError(404, 'Estudiante no encontrado', 'NOT_FOUND')
+
+    await prisma.usuario.delete({ where: { id: est.usuario_id } })
+    getSupabaseAdmin().auth.admin.deleteUser(est.usuario.supabase_auth_id).catch(() => {})
   }
 }

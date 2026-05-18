@@ -1,28 +1,40 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { api, ApiError } from '../../lib/api'
 import { useToast } from '../../components/ui/Toast'
-import { Button, Spinner } from '@edusync/ui'
+import { Button, Badge, Spinner } from '@edusync/ui'
 
-interface Docente {
-  id:       string
-  usuario:  { id: string; nombre: string; apellido: string; email: string }
-  asignaciones: { id: string }[]
+// ─── Types ────────────────────────────────────────────────────────────────────
+
+interface Hijo {
+  id:      string
+  codigo:  string
+  usuario: { nombre: string; apellido: string }
 }
+
+interface Padre {
+  id:        string
+  nombre:    string
+  apellido:  string
+  email:     string
+  activo:    boolean
+  hijos_a_cargo: { estudiante: Hijo }[]
+}
+
+// ─── Modal ────────────────────────────────────────────────────────────────────
 
 interface ModalProps {
-  docente:  Docente | null
-  onClose:  () => void
-  onSaved:  () => void
-  institucionId?: string
+  padre:   Padre | null
+  onClose: () => void
+  onSaved: () => void
 }
 
-function DocenteModal({ docente, onClose, onSaved }: ModalProps) {
-  const toast   = useToast()
-  const isEdit  = !!docente
+function PadreModal({ padre, onClose, onSaved }: ModalProps) {
+  const toast  = useToast()
+  const isEdit = !!padre
   const [form, setForm] = useState({
-    nombre:   docente?.usuario.nombre   ?? '',
-    apellido: docente?.usuario.apellido ?? '',
-    email:    docente?.usuario.email    ?? '',
+    nombre:   padre?.nombre   ?? '',
+    apellido: padre?.apellido ?? '',
+    email:    padre?.email    ?? '',
   })
   const [saving, setSaving] = useState(false)
   const [error,  setError]  = useState<string | null>(null)
@@ -35,11 +47,11 @@ function DocenteModal({ docente, onClose, onSaved }: ModalProps) {
     setSaving(true); setError(null)
     try {
       if (isEdit) {
-        await api.put(`/docentes/${docente!.id}`, form)
-        toast.success('Docente actualizado')
+        await api.put(`/padres/${padre!.id}`, { nombre: form.nombre, apellido: form.apellido })
+        toast.success('Padre/tutor actualizado')
       } else {
-        const res = await api.post<{ docente: Docente; credentials: { email: string; password: string } }>(
-          '/docentes', form,
+        const res = await api.post<{ padre: Padre; credentials: { email: string; password: string } }>(
+          '/padres', form,
         )
         toast.success(`Cuenta creada — contraseña temporal: ${res.credentials.password}`)
       }
@@ -56,7 +68,7 @@ function DocenteModal({ docente, onClose, onSaved }: ModalProps) {
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={e => e.stopPropagation()}>
       <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl space-y-4">
         <h2 className="text-lg font-bold text-gray-900">
-          {isEdit ? 'Editar docente' : 'Registrar docente'}
+          {isEdit ? 'Editar padre / tutor' : 'Registrar padre / tutor'}
         </h2>
 
         {error && <div className="rounded-lg bg-red-50 p-3 text-sm text-red-700">{error}</div>}
@@ -88,12 +100,14 @@ function DocenteModal({ docente, onClose, onSaved }: ModalProps) {
           </label>
           {!isEdit && (
             <p className="text-xs text-gray-400">
-              Se creará la cuenta con contraseña temporal <code className="font-mono">Docente2026#</code>
+              Se creará la cuenta con contraseña temporal <code className="font-mono">Padre2026#</code>
             </p>
           )}
           <div className="flex justify-end gap-2 pt-2">
             <Button type="button" variant="ghost" onClick={onClose} disabled={saving}>Cancelar</Button>
-            <Button type="submit" disabled={saving}>{saving ? '…' : isEdit ? 'Guardar cambios' : 'Crear docente'}</Button>
+            <Button type="submit" disabled={saving}>
+              {saving ? '…' : isEdit ? 'Guardar cambios' : 'Crear padre/tutor'}
+            </Button>
           </div>
         </form>
       </div>
@@ -101,14 +115,16 @@ function DocenteModal({ docente, onClose, onSaved }: ModalProps) {
   )
 }
 
-export default function DocentesPage() {
+// ─── Page ─────────────────────────────────────────────────────────────────────
+
+export default function PadresPage() {
   const toast    = useToast()
   const toastRef = useRef(toast)
   toastRef.current = toast
 
-  const [docentes, setDocentes] = useState<Docente[]>([])
-  const [loading,  setLoading]  = useState(true)
-  const [modal,    setModal]    = useState<'new' | Docente | null>(null)
+  const [padres,      setPadres]      = useState<Padre[]>([])
+  const [loading,     setLoading]     = useState(true)
+  const [modal,       setModal]       = useState<'new' | Padre | null>(null)
   const [buscarInput, setBuscarInput] = useState('')
   const [buscar,      setBuscar]      = useState('')
 
@@ -116,9 +132,9 @@ export default function DocentesPage() {
     setLoading(true)
     try {
       const qs = buscar ? `?buscar=${encodeURIComponent(buscar)}` : ''
-      setDocentes(await api.get<Docente[]>(`/docentes${qs}`))
+      setPadres(await api.get<Padre[]>(`/padres${qs}`))
     } catch {
-      toastRef.current.error('No se pudieron cargar los docentes')
+      toastRef.current.error('No se pudieron cargar los padres de familia')
     } finally {
       setLoading(false)
     }
@@ -126,14 +142,14 @@ export default function DocentesPage() {
 
   useEffect(() => { load() }, [load])
 
-  async function handleDelete(doc: Docente) {
-    const nombre = `${doc.usuario.apellido}, ${doc.usuario.nombre}`
+  async function handleDelete(p: Padre) {
+    const nombre = `${p.apellido}, ${p.nombre}`
     if (!confirm(
-      `⚠️ ELIMINAR DOCENTE\n\n"${nombre}"\n\nSe eliminará la cuenta y todos sus datos.\nSi el docente tiene asignaciones activas, la operación será rechazada.\n\n¿Confirmar eliminación?`
+      `⚠️ ELIMINAR PADRE / TUTOR\n\n"${nombre}"\n\nSe eliminará la cuenta permanentemente, incluyendo el vínculo con sus hijos registrados.\n\n¿Confirmar eliminación?`
     )) return
     try {
-      await api.delete(`/docentes/${doc.id}`)
-      toast.success(`Docente "${nombre}" eliminado`)
+      await api.delete(`/padres/${p.id}`)
+      toast.success(`Padre/tutor "${nombre}" eliminado`)
       load()
     } catch (err) {
       toast.error(err instanceof ApiError ? err.message : 'Error al eliminar')
@@ -142,12 +158,13 @@ export default function DocentesPage() {
 
   return (
     <div className="space-y-6">
+      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Docentes</h1>
-          <p className="text-sm text-gray-500 mt-0.5">Registro y gestión del cuerpo docente</p>
+          <h1 className="text-2xl font-bold text-gray-900">Padres / Tutores</h1>
+          <p className="text-sm text-gray-500 mt-0.5">Gestión de cuentas de padres de familia</p>
         </div>
-        <Button onClick={() => setModal('new')}>+ Registrar docente</Button>
+        <Button onClick={() => setModal('new')}>+ Registrar padre/tutor</Button>
       </div>
 
       {/* Buscador */}
@@ -174,7 +191,7 @@ export default function DocentesPage() {
           )}
         </form>
         <p className="text-sm text-gray-500 mt-2">
-          {!loading && `${docentes.length} docente${docentes.length !== 1 ? 's' : ''}`}
+          {!loading && `${padres.length} padre${padres.length !== 1 ? 's' : ''} / tutor${padres.length !== 1 ? 'es' : ''}`}
         </p>
       </div>
 
@@ -185,7 +202,7 @@ export default function DocentesPage() {
             <tr className="border-b border-gray-100 bg-gray-50 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
               <th className="px-5 py-3">Apellidos y Nombres</th>
               <th className="px-5 py-3">Correo</th>
-              <th className="px-5 py-3 text-center">Asignaciones</th>
+              <th className="px-5 py-3">Hijos vinculados</th>
               <th className="px-5 py-3 text-right">Acciones</th>
             </tr>
           </thead>
@@ -193,29 +210,41 @@ export default function DocentesPage() {
             {loading && (
               <tr><td colSpan={4} className="py-12 text-center"><Spinner /></td></tr>
             )}
-            {!loading && docentes.length === 0 && (
+            {!loading && padres.length === 0 && (
               <tr>
                 <td colSpan={4} className="py-12 text-center text-gray-400">
-                  No hay docentes registrados.
+                  No hay padres/tutores registrados.
                 </td>
               </tr>
             )}
-            {docentes.map(doc => (
-              <tr key={doc.id} className="hover:bg-gray-50 transition-colors">
+            {padres.map(p => (
+              <tr key={p.id} className="hover:bg-gray-50 transition-colors">
                 <td className="px-5 py-3 font-medium text-gray-900">
-                  {doc.usuario.apellido}, {doc.usuario.nombre}
+                  {p.apellido}, {p.nombre}
                 </td>
-                <td className="px-5 py-3 text-gray-500">{doc.usuario.email}</td>
-                <td className="px-5 py-3 text-center">
-                  <span className="inline-flex items-center rounded-full bg-blue-50 px-2.5 py-0.5 text-xs font-medium text-blue-700">
-                    {doc.asignaciones.length}
-                  </span>
+                <td className="px-5 py-3 text-gray-500">{p.email}</td>
+                <td className="px-5 py-3">
+                  {p.hijos_a_cargo.length === 0 ? (
+                    <span className="italic text-gray-400 text-xs">Sin hijos vinculados</span>
+                  ) : (
+                    <div className="flex flex-wrap gap-1">
+                      {p.hijos_a_cargo.map(rel => (
+                        <Badge key={rel.estudiante.id} variant="info">
+                          {rel.estudiante.usuario.apellido}, {rel.estudiante.usuario.nombre}
+                        </Badge>
+                      ))}
+                    </div>
+                  )}
                 </td>
                 <td className="px-5 py-3 text-right">
                   <div className="flex items-center justify-end gap-2">
-                    <Button variant="ghost" size="sm" onClick={() => setModal(doc)}>Editar</Button>
-                    <Button variant="ghost" size="sm" onClick={() => handleDelete(doc)}
-                      className="text-red-500 hover:text-red-700">
+                    <Button variant="ghost" size="sm" onClick={() => setModal(p)}>Editar</Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="text-red-500 hover:text-red-700"
+                      onClick={() => handleDelete(p)}
+                    >
                       Eliminar
                     </Button>
                   </div>
@@ -227,8 +256,8 @@ export default function DocentesPage() {
       </div>
 
       {modal !== null && (
-        <DocenteModal
-          docente={modal === 'new' ? null : modal}
+        <PadreModal
+          padre={modal === 'new' ? null : modal}
           onClose={() => setModal(null)}
           onSaved={load}
         />

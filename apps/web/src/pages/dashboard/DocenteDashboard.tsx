@@ -9,7 +9,9 @@ import MisMateriasPage          from '../docente/MisMateriasPage'
 import PlanillaPage             from '../docente/PlanillaPage'
 import ObservacionesInicialPage from '../docente/ObservacionesInicialPage'
 import AsistenciaClasePage      from '../docente/AsistenciaClasePage'
+import DocenteEstudiantesPage   from '../docente/DocenteEstudiantesPage'
 import TareasPage               from '../docente/TareasPage'
+import PerfilEstudiantePage     from '../secretaria/PerfilEstudiantePage'
 import AnunciosInternosPage     from '../shared/AnunciosInternosPage'
 import MensajesPage             from '../shared/MensajesPage'
 
@@ -76,6 +78,8 @@ export default function DocenteDashboard() {
         <Route path="inicial/:asignacion_id"    element={<ObservacionesInicialPage />} />
         <Route path="asistencia/:asignacion_id" element={<AsistenciaClasePage />} />
         <Route path="tareas"                    element={<TareasPage />} />
+        <Route path="estudiantes"               element={<DocenteEstudiantesPage />} />
+        <Route path="estudiante/:id"            element={<PerfilEstudiantePage visibleTabs={['calificaciones']} />} />
         <Route path="calificaciones" element={<SectionPlaceholder title="Calificaciones" />} />
         <Route path="asistencia"     element={<SectionPlaceholder title="Asistencia — selecciona una asignación" />} />
         <Route path="horario"        element={<SectionPlaceholder title="Mi Horario" />} />

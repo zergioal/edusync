@@ -1,17 +1,13 @@
 import type { Request, Response, NextFunction } from 'express'
-import { EstudiantesService } from '../services/estudiantes.service'
+import { PadresService } from '../services/padres.service'
 
-export class EstudiantesController {
-  private service = new EstudiantesService()
+export class PadresController {
+  private service = new PadresService()
 
   findAll = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const { gestion_id, paralelo_id, buscar } = req.query as Record<string, string | undefined>
-      res.json({ data: await this.service.findAll(req.auth!.institucion_id, {
-        ...(gestion_id  ? { gestion_id }  : {}),
-        ...(paralelo_id ? { paralelo_id } : {}),
-        ...(buscar      ? { buscar }      : {}),
-      }) })
+      const { buscar } = req.query as Record<string, string | undefined>
+      res.json({ data: await this.service.findAll(req.auth!.institucion_id, { ...(buscar ? { buscar } : {}) }) })
     } catch (e) { next(e) }
   }
 
@@ -23,7 +19,7 @@ export class EstudiantesController {
 
   create = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      res.status(201).json({ data: await this.service.matricular(req.auth!.institucion_id, req.body) })
+      res.status(201).json({ data: await this.service.create(req.auth!.institucion_id, req.body) })
     } catch (e) { next(e) }
   }
 

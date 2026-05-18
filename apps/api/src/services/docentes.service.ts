@@ -99,8 +99,26 @@ export class DocentesService {
     return this.findOne(id)
   }
 
-  async deactivate(id: string) {
-    const doc = await this.findOne(id)
-    await prisma.usuario.update({ where: { id: doc.usuario_id }, data: { activo: false } })
+  async remove(id: string) {
+    const doc = await prisma.docente.findUnique({
+      where:  { id },
+      select: { usuario_id: true, usuario: { select: { supabase_auth_id: true } } },
+    })
+    if (!doc) throw new AppError(404, 'Docente no encontrado', 'NOT_FOUND')
+
+    try {
+      await prisma.usuario.delete({ where: { id: doc.usuario_id } })
+    } catch (e: any) {
+      if (e?.code === 'P2003' || e?.code === 'P2014') {
+        throw new AppError(
+          409,
+          'No se puede eliminar: el docente tiene asignaciones, horarios u observaciones asociadas. Elimínalos primero.',
+          'HAS_DEPENDENCIES',
+        )
+      }
+      throw e
+    }
+
+    getSupabaseAdmin().auth.admin.deleteUser(doc.usuario.supabase_auth_id).catch(() => {})
   }
 }

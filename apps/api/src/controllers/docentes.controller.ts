@@ -29,9 +29,9 @@ export class DocentesController {
     } catch (e) { next(e) }
   }
 
-  deactivate = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  remove = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      await this.service.deactivate(req.params['id']!)
+      await this.service.remove(req.params['id']!)
       res.status(204).send()
     } catch (e) { next(e) }
   }

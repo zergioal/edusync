@@ -7,6 +7,8 @@ import { useGestionActiva } from '../../hooks/useGestionActiva'
 import AsistenciaDiariaPage        from '../regente/AsistenciaDiariaPage'
 import ReporteAsistenciaPage       from '../regente/ReporteAsistenciaPage'
 import ComunicadosInasistenciaPage from '../regente/ComunicadosInasistenciaPage'
+import RegenteEstudiantesPage      from '../regente/RegenteEstudiantesPage'
+import PerfilEstudiantePage        from '../secretaria/PerfilEstudiantePage'
 import AnunciosInternosPage        from '../shared/AnunciosInternosPage'
 import MensajesPage                from '../shared/MensajesPage'
 
@@ -56,6 +58,8 @@ export default function RegenteDashboard() {
         <Route path="asistencia"       element={<AsistenciaDiariaPage />} />
         <Route path="reporte"          element={<ReporteAsistenciaPage />} />
         <Route path="inasistencias"    element={<ComunicadosInasistenciaPage />} />
+        <Route path="estudiantes"      element={<RegenteEstudiantesPage />} />
+        <Route path="estudiante/:id"   element={<PerfilEstudiantePage visibleTabs={['asistencia', 'pensiones']} />} />
         <Route path="anuncios"         element={<AnunciosInternosPage />} />
         <Route path="mensajes"         element={<MensajesPage />} />
         <Route path="*"                element={<RegenteHome />} />

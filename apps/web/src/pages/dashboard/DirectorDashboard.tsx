@@ -16,6 +16,7 @@ import DocentesPage             from '../secretaria/DocentesPage'
 import EstudiantesPage          from '../secretaria/EstudiantesPage'
 import PerfilEstudiantePage     from '../secretaria/PerfilEstudiantePage'
 import AuditoriaPage            from '../admin/AuditoriaPage'
+import PadresPage              from '../secretaria/PadresPage'
 
 interface GestionInfo {
   id:        string
@@ -163,6 +164,7 @@ export default function DirectorDashboard() {
       <Routes>
         <Route index                    element={<DirectorHome />} />
         <Route path="docentes"          element={<DocentesPage />} />
+        <Route path="padres"            element={<PadresPage />} />
         <Route path="estudiantes"       element={<EstudiantesPage basePath="/dashboard/director" />} />
         <Route path="estudiante/:id"    element={<PerfilEstudiantePage />} />
         <Route path="gestiones"         element={<GestionesPage />} />

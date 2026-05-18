@@ -31,6 +31,7 @@ import { tareasRouter }         from './tareas.routes'
 import { mensajesRouter }       from './mensajes.routes'
 import { notificacionesRouter } from './notificaciones.routes'
 import { auditoriaRouter }      from './auditoria.routes'
+import { padresRouter }         from './padres.routes'
 
 export const apiRouter: ExpressRouter = Router()
 
@@ -69,3 +70,4 @@ apiRouter.use('/tareas',          tareasRouter)
 apiRouter.use('/mensajes',        mensajesRouter)
 apiRouter.use('/notificaciones',  notificacionesRouter)
 apiRouter.use('/auditoria',       auditoriaRouter)
+apiRouter.use('/padres',          padresRouter)

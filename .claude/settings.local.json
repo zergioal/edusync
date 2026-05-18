@@ -69,7 +69,11 @@
       "Bash(pnpm --filter @edusync/api build)",
       "Bash(Move-Item \"d:/PROYECTOS WEB/SISTEMA-UE/edusync/apps/api/railway.toml\" \"d:/PROYECTOS WEB/SISTEMA-UE/edusync/railway.toml\")",
       "Bash(mv \"d:/PROYECTOS WEB/SISTEMA-UE/edusync/apps/api/railway.toml\" \"d:/PROYECTOS WEB/SISTEMA-UE/edusync/railway.toml\")",
-      "Bash(pnpm --filter @edusync/web build)"
+      "Bash(pnpm --filter @edusync/web build)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(git push *)",
+      "Bash(pnpm --filter @edusync/web exec tsc --noEmit)"
     ],
     "additionalDirectories": [
       "d:\\PROYECTOS WEB\\SISTEMA-UE\\edusync\\apps\\api"

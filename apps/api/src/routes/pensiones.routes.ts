@@ -6,7 +6,7 @@ import { Rol } from '@edusync/types'
 export const pensionesRouter: ExpressRouter = Router()
 const ctrl = new PensionesController()
 
-const STAFF_FIN = requireRol(Rol.CONTADOR, Rol.DIRECTOR, Rol.ADMIN_SISTEMA)
+const STAFF_FIN = requireRol(Rol.CONTADOR, Rol.DIRECTOR, Rol.ADMIN_SISTEMA, Rol.COORDINADOR, Rol.SECRETARIA, Rol.REGENTE, Rol.DOCENTE)
 const CONTADOR  = requireRol(Rol.CONTADOR)
 const ANULADOR  = requireRol(Rol.DIRECTOR, Rol.ADMIN_SISTEMA)
 
