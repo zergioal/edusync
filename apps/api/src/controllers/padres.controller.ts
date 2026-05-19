@@ -6,8 +6,11 @@ export class PadresController {
 
   findAll = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const { buscar } = req.query as Record<string, string | undefined>
-      res.json({ data: await this.service.findAll(req.auth!.institucion_id, { ...(buscar ? { buscar } : {}) }) })
+      const { buscar, paralelo_id } = req.query as Record<string, string | undefined>
+      res.json({ data: await this.service.findAll(req.auth!.institucion_id, {
+        ...(buscar      ? { buscar }      : {}),
+        ...(paralelo_id ? { paralelo_id } : {}),
+      }) })
     } catch (e) { next(e) }
   }
 

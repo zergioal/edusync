@@ -24,6 +24,18 @@ export class MatriculasService {
     })
   }
 
+  async toggleLlevaTecnica(estudiante_id: string, gestion_id: string, lleva_tecnica: boolean) {
+    const matricula = await prisma.matricula.findFirst({
+      where: { estudiante_id, gestion_id },
+    })
+    if (!matricula) throw new AppError(404, 'Matrícula no encontrada', 'NOT_FOUND')
+    return prisma.matricula.update({
+      where: { id: matricula.id },
+      data:  { lleva_tecnica },
+      select: { id: true, estudiante_id: true, gestion_id: true, lleva_tecnica: true },
+    })
+  }
+
   async create(data: { estudiante_id: string; paralelo_id: string; gestion_id: string }) {
     const existing = await prisma.matricula.findFirst({
       where: { estudiante_id: data.estudiante_id, gestion_id: data.gestion_id },

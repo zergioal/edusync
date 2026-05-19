@@ -8,7 +8,7 @@ const EST_INCLUDE = {
   matriculas: {
     include: {
       paralelo: { include: { grado: { include: { nivel: true } } } },
-      gestion:  { select: { anno: true } },
+      gestion:  { select: { id: true, anno: true, activa: true } },
     },
     orderBy: { gestion: { anno: 'desc' as const } },
   },

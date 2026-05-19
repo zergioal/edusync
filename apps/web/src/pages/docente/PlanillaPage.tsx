@@ -523,6 +523,8 @@ export default function PlanillaPage() {
     }
   }, [data, initDone])
 
+  const isMobile = useIsMobile()
+
   if (loading || !initDone) {
     return <div className="flex justify-center py-16"><Spinner /></div>
   }
@@ -544,8 +546,6 @@ export default function PlanillaPage() {
 
   // Total de columnas de indicadores (para calcular colSpan)
   const totalIndicCols = dimensiones.reduce((s, d) => s + d.indicadores.length, 0)
-
-  const isMobile = useIsMobile()
 
   // ── Vista móvil ────────────────────────────────────────────────────────────
   if (isMobile) {

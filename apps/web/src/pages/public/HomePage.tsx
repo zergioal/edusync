@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { getTenantHeaders } from '../../config/tenant'
+import logoLocal from '../../assets/logo-pio-xii.png'
 
 interface InstConfig {
   nombre:   string
@@ -49,10 +50,11 @@ export default function HomePage() {
       <nav className="sticky top-0 z-40 bg-[#1F3864] shadow-lg">
         <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            {config?.logo_url
-              ? <img src={config.logo_url} alt="Logo" className="h-9 w-9 rounded-full object-cover" />
-              : <div className="h-9 w-9 rounded-full bg-[#C9A84C] flex items-center justify-center text-white font-bold text-sm">UE</div>
-            }
+            <img
+              src={config?.logo_url ?? logoLocal}
+              alt="Logo"
+              className="h-10 w-10 rounded-full object-contain bg-white/10 p-0.5"
+            />
             <span className="text-white font-bold text-lg hidden sm:block">{nombre}</span>
           </div>
 

@@ -16,6 +16,7 @@ asistenciaRouter.get('/hijo/:estudiante_id',       ctrl.getHijo)
 
 // ── Asistencia de clase (docente) ──────────────────────────────────────────
 asistenciaRouter.post('/clase',                    isDocente,  ctrl.registrarClase)
+asistenciaRouter.get('/clase/mensual',             canManage,  ctrl.getClaseMensual)
 asistenciaRouter.get('/clase/reporte',             canManage,  ctrl.reporteClase)
 asistenciaRouter.get('/clase',                     ctrl.getClase)
 
@@ -29,4 +30,4 @@ asistenciaRouter.get('/consolidada/:estudiante_id', canManage, ctrl.getConsolida
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 asistenciaRouter.get('/paralelos-regente',         isRegente,  ctrl.getParalelosRegente)
-asistenciaRouter.get('/estudiantes-paralelo',      isRegente,  ctrl.getEstudiantesParalelo)
+asistenciaRouter.get('/estudiantes-paralelo',      canManage,  ctrl.getEstudiantesParalelo)

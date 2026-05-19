@@ -57,7 +57,12 @@ export class BoletinesService {
       prisma.asignacion.findMany({
         where:   { paralelo_id: matricula.paralelo_id, gestion_id },
         include: {
-          materia: { include: { campo: true } },
+          materia: {
+            include: {
+              campo:          true,
+              parent_materia: { select: { id: true, nombre: true, campo: { select: { nombre: true } } } },
+            },
+          },
           docente: { include: { usuario: { select: { nombre: true, apellido: true } } } },
           indicadores: {
             where:  { trimestre_id },
@@ -151,12 +156,14 @@ export class BoletinesService {
     const notasMap = new Map<string, number | null>(notasRaw.map(n => [n.indicador_id, n.puntaje ?? null]))
     const obsMap   = new Map(obsRecs.map(o => [o.docente_id, o.contenido]))
 
-    const materias = asignaciones.map(asig => {
-      const { dimNotas, total, hasAny } = calcNotasEstudiante(
-        asig.indicadores,
-        notasMap,
-        dimensiones,
-      )
+    const llevaTecnica = matricula.lleva_tecnica ?? true
+
+    // Separate regular materias from BTH sub-areas (parent materias with tiene_subareas have no asignacion)
+    const regularAsigs  = asignaciones.filter(a => !a.materia.es_subarea_de_id)
+    const subareaAsigs  = llevaTecnica ? asignaciones.filter(a => !!a.materia.es_subarea_de_id) : []
+
+    const materias = regularAsigs.map(asig => {
+      const { dimNotas, total, hasAny } = calcNotasEstudiante(asig.indicadores, notasMap, dimensiones)
       const dimKeys = mapDimToKeys(dimensiones, dimNotas)
       return {
         nombre:      asig.materia.nombre,
@@ -167,6 +174,57 @@ export class BoletinesService {
         observacion: obsMap.get(asig.docente_id) ?? null,
       }
     })
+
+    // Aggregate sub-area grades into one row per parent materia
+    const subAreasByParent = new Map<string, typeof subareaAsigs>()
+    for (const asig of subareaAsigs) {
+      const pid = asig.materia.es_subarea_de_id!
+      if (!subAreasByParent.has(pid)) subAreasByParent.set(pid, [])
+      subAreasByParent.get(pid)!.push(asig)
+    }
+
+    for (const [, subAsigs] of subAreasByParent) {
+      const parent    = subAsigs[0]!.materia.parent_materia!
+      const campoNombre = subAsigs[0]!.materia.campo.nombre
+
+      // Accumulate per-dimension sums across all sub-areas
+      const dimSums:   Record<string, number> = {}
+      const dimCounts: Record<string, number> = {}
+      const totalesConNotas: number[] = []
+
+      for (const asig of subAsigs) {
+        const { dimNotas, total, hasAny } = calcNotasEstudiante(asig.indicadores, notasMap, dimensiones)
+        if (!hasAny) continue
+        totalesConNotas.push(total)
+        for (const [dimId, val] of Object.entries(dimNotas)) {
+          if (val !== null) {
+            dimSums[dimId]   = (dimSums[dimId]   ?? 0) + val
+            dimCounts[dimId] = (dimCounts[dimId] ?? 0) + 1
+          }
+        }
+      }
+
+      const avgDimNotas: Record<string, number | null> = {}
+      for (const dim of dimensiones) {
+        avgDimNotas[dim.id] = dimCounts[dim.id]
+          ? Math.round((dimSums[dim.id] ?? 0) / dimCounts[dim.id])
+          : null
+      }
+
+      const tteTotal = totalesConNotas.length > 0
+        ? Math.round(totalesConNotas.reduce((s, t) => s + t, 0) / totalesConNotas.length)
+        : 0
+
+      const dimKeys = mapDimToKeys(dimensiones, avgDimNotas)
+      materias.push({
+        nombre:      parent.nombre,
+        campo:       campoNombre,
+        ...dimKeys,
+        total:       tteTotal,
+        escala:      calcularEscala(tteTotal),
+        observacion: null,
+      })
+    }
 
     const promedio_general = materias.length > 0
       ? Math.round(materias.reduce((s, m) => s + m.total, 0) / materias.length)

@@ -29,11 +29,21 @@ interface Turno {
 
 interface Nivel { id: string; nombre: string }
 
+interface SubareaBTH {
+  id:               string
+  nombre:           string
+  horas_semanales:  number | null
+  es_subarea_de_id: string
+  parent_materia:   { id: string; nombre: string } | null
+}
+
 interface ConfigData {
   tipo_ue:              string
+  carrera_tecnica:      string | null
   duracion_periodo_min: number
   turnos:               Turno[]
   niveles:              Nivel[]
+  subareas_bth:         SubareaBTH[]
 }
 
 interface Grado    { id: string; nombre: string; orden: number }
@@ -440,6 +450,7 @@ export default function ConfiguracionPage() {
     try {
       const updated = await api.put<ConfigData>('/configuracion', {
         tipo_ue:              draft.tipo_ue,
+        carrera_tecnica:      draft.carrera_tecnica,
         duracion_periodo_min: draft.duracion_periodo_min,
         turnos: draft.turnos.map(t => ({
           id:     t.id,
@@ -514,6 +525,64 @@ export default function ConfiguracionPage() {
           ))}
         </div>
       </section>
+
+      {/* ── Sección BTH: Bachillerato Técnico Humanístico ─────────────── */}
+      {draft.tipo_ue === 'BTH' && (
+        <section className="rounded-xl border border-indigo-200 bg-indigo-50/40 p-6 shadow-sm space-y-5">
+          <div>
+            <h2 className="text-base font-semibold text-indigo-900">Bachillerato Técnico Humanístico (BTH)</h2>
+            <p className="text-sm text-indigo-700/70 mt-0.5">Carrera técnica y sub-áreas de Técnica Tecnológica Especializada</p>
+          </div>
+
+          {/* Carrera técnica */}
+          <div className="space-y-1.5">
+            <label className="text-sm font-medium text-gray-700">Carrera técnica de la institución</label>
+            <input
+              type="text"
+              value={draft.carrera_tecnica ?? ''}
+              onChange={e => setDraft(d => d ? { ...d, carrera_tecnica: e.target.value || null } : d)}
+              placeholder="Ej: Administración de Empresas"
+              className="w-full max-w-md rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            />
+          </div>
+
+          {/* Sub-áreas TTE */}
+          {draft.subareas_bth.length > 0 && (
+            <div className="space-y-2">
+              <p className="text-sm font-medium text-gray-700">Sub-áreas de Técnica Tecnológica Especializada (TTE)</p>
+              <div className="rounded-lg border border-indigo-200 bg-white overflow-hidden">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="bg-indigo-50 text-left text-xs font-semibold uppercase tracking-wide text-indigo-700 border-b border-indigo-100">
+                      <th className="px-4 py-2.5">Sub-área</th>
+                      <th className="px-4 py-2.5 text-center">Horas/semana</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-50">
+                    {draft.subareas_bth.map(sa => (
+                      <tr key={sa.id} className="hover:bg-gray-50">
+                        <td className="px-4 py-2.5 font-medium text-gray-800">{sa.nombre}</td>
+                        <td className="px-4 py-2.5 text-center">
+                          <span className="inline-flex items-center justify-center h-6 w-10 rounded bg-indigo-100 text-indigo-700 text-xs font-semibold">
+                            {sa.horas_semanales ?? '—'}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <p className="text-xs text-gray-400">Total: {draft.subareas_bth.reduce((s, a) => s + (a.horas_semanales ?? 0), 0)} horas/semana</p>
+            </div>
+          )}
+
+          <div className="flex justify-end pt-1">
+            <Button onClick={save} loading={saving}>
+              Guardar configuración BTH
+            </Button>
+          </div>
+        </section>
+      )}
 
       {/* ── Sección 2: Duración del período ────────────────────────────── */}
       <section className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm space-y-3">

@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { useParams } from 'react-router-dom'
 import { api, ApiError } from '../../lib/api'
 import { useToast } from '../../components/ui/Toast'
-import { Spinner, Button } from '@edusync/ui'
+import { Spinner } from '@edusync/ui'
 
 type Estado = 'PRESENTE' | 'AUSENTE' | 'TARDANZA'
 
@@ -10,25 +10,50 @@ interface Estudiante {
   estudiante_id: string
   nombre:        string
   apellido:      string
-  estado:        Estado
 }
 
 interface AsignacionInfo {
-  id:        string
-  materia:   { nombre: string }
-  paralelo:  { id: string; letra: string; grado: { nombre: string } }
-  gestion:   { id: string }
+  id:       string
+  materia:  { nombre: string }
+  paralelo: { id: string; letra: string; grado: { nombre: string } }
+  gestion:  { id: string }
 }
 
-const ESTADO_COLOR: Record<Estado, string> = {
-  PRESENTE: 'bg-green-500 text-white',
-  AUSENTE:  'bg-red-500 text-white',
-  TARDANZA: 'bg-amber-500 text-white',
+interface MensualData {
+  estudiantes: Estudiante[]
+  records:     Record<string, Record<string, string>>
 }
 
-function hoy(): string {
-  return new Date().toISOString().slice(0, 10)
+// ─── Constants ────────────────────────────────────────────────────────────────
+
+const DIA_ABREV = ['D', 'L', 'M', 'X', 'J', 'V', 'S']
+const MESES_NOMBRES = [
+  'Enero','Febrero','Marzo','Abril','Mayo','Junio',
+  'Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre',
+]
+
+const ESTADO_CFG = {
+  PRESENTE: { bg: 'bg-emerald-500', text: 'text-white', ring: 'ring-emerald-600', label: 'P' },
+  AUSENTE:  { bg: 'bg-red-500',     text: 'text-white', ring: 'ring-red-600',     label: 'A' },
+  TARDANZA: { bg: 'bg-amber-400',   text: 'text-white', ring: 'ring-amber-500',   label: 'T' },
+} as const
+
+function nextEstado(cur: Estado | undefined): Estado {
+  if (!cur || cur === 'TARDANZA') return 'PRESENTE'
+  if (cur === 'PRESENTE') return 'AUSENTE'
+  return 'TARDANZA'
 }
+
+function hoyStr() { return new Date().toISOString().slice(0, 10) }
+function mesStr(d: Date) {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+}
+function mesLabel(m: string) {
+  const [y, mo] = m.split('-')
+  return `${MESES_NOMBRES[parseInt(mo!) - 1]} ${y}`
+}
+
+// ─── Página ───────────────────────────────────────────────────────────────────
 
 export default function AsistenciaClasePage() {
   const { asignacion_id } = useParams<{ asignacion_id: string }>()
@@ -36,13 +61,17 @@ export default function AsistenciaClasePage() {
   const toastRef = useRef(toast)
   toastRef.current = toast
 
-  const [asignacion, setAsignacion] = useState<AsignacionInfo | null>(null)
-  const [fecha,      setFecha]      = useState(hoy())
-  const [lista,      setLista]      = useState<Estudiante[]>([])
-  const [loading,    setLoading]    = useState(true)
-  const [saving,     setSaving]     = useState(false)
-  const [loadingList, setLoadingList] = useState(false)
+  const [asignacion,  setAsignacion]  = useState<AsignacionInfo | null>(null)
+  const [mes,         setMes]         = useState<string>(mesStr(new Date()))
+  const [estudiantes, setEstudiantes] = useState<Estudiante[]>([])
+  // records[fecha][estudiante_id] = Estado
+  const [records,     setRecords]     = useState<Record<string, Record<string, Estado>>>({})
+  const [dirtyDays,   setDirtyDays]   = useState<Set<string>>(new Set())
+  const [savingDays,  setSavingDays]  = useState<Set<string>>(new Set())
+  const [loading,     setLoading]     = useState(true)
+  const [loadingData, setLoadingData] = useState(false)
 
+  // Load asignacion header once
   useEffect(() => {
     if (!asignacion_id) return
     api.get<AsignacionInfo>(`/asignaciones/${asignacion_id}`)
@@ -51,59 +80,108 @@ export default function AsistenciaClasePage() {
       .finally(() => setLoading(false))
   }, [asignacion_id])
 
-  const cargarLista = useCallback(async () => {
-    if (!asignacion_id || !asignacion) return
-    setLoadingList(true)
+  // Load monthly data when mes changes
+  const cargarMes = useCallback(async () => {
+    if (!asignacion_id) return
+    setLoadingData(true)
+    setDirtyDays(new Set())
     try {
-      // Intentar cargar registros existentes para esa fecha
-      const existente = await api.get<Estudiante[]>(
-        `/asistencia/clase?asignacion_id=${asignacion_id}&fecha=${fecha}`,
-      ).catch(() => [])
-
-      if (existente.length > 0) {
-        setLista(existente)
-        return
-      }
-
-      // No hay registros → cargar nómina del paralelo
-      const nominaRaw = await api.get<Array<{ estudiante_id: string; nombre: string; apellido: string }>>(
-        `/asistencia/estudiantes-paralelo?paralelo_id=${asignacion.paralelo.id}&gestion_id=${asignacion.gestion.id}`,
+      const d = await api.get<MensualData>(
+        `/asistencia/clase/mensual?asignacion_id=${asignacion_id}&mes=${mes}`,
       )
-      setLista(nominaRaw.map(e => ({ ...e, estado: 'PRESENTE' as Estado })))
+      setEstudiantes(d.estudiantes)
+      // Convert string records to typed
+      const typed: Record<string, Record<string, Estado>> = {}
+      for (const [fecha, dayRec] of Object.entries(d.records)) {
+        typed[fecha] = {}
+        for (const [estId, est] of Object.entries(dayRec)) {
+          typed[fecha]![estId] = est as Estado
+        }
+      }
+      setRecords(typed)
     } catch {
-      toastRef.current.error('Error al cargar la lista de estudiantes')
+      toastRef.current.error('Error al cargar asistencia del mes')
     } finally {
-      setLoadingList(false)
+      setLoadingData(false)
     }
-  }, [asignacion_id, fecha, asignacion])
+  }, [asignacion_id, mes])
 
-  useEffect(() => {
-    if (asignacion) cargarLista()
-  }, [asignacion, cargarLista])
+  useEffect(() => { cargarMes() }, [cargarMes])
 
-  function toggleEstado(id: string, estado: Estado) {
-    setLista(prev => prev.map(e => e.estudiante_id === id ? { ...e, estado } : e))
+  // ── Cell interaction ──────────────────────────────────────────────────────
+
+  function clickCell(fecha: string, estudianteId: string) {
+    const today = hoyStr()
+    if (fecha > today) return  // no future dates
+    setRecords(prev => {
+      const dayRec = { ...(prev[fecha] ?? {}) }
+      dayRec[estudianteId] = nextEstado(dayRec[estudianteId])
+      return { ...prev, [fecha]: dayRec }
+    })
+    setDirtyDays(prev => new Set(prev).add(fecha))
   }
 
-  function marcarTodos(estado: Estado) {
-    setLista(prev => prev.map(e => ({ ...e, estado })))
+  // Mark entire column (day) with a single estado
+  function marcarColumna(fecha: string, estado: Estado) {
+    setRecords(prev => {
+      const dayRec: Record<string, Estado> = {}
+      for (const est of estudiantes) dayRec[est.estudiante_id] = estado
+      return { ...prev, [fecha]: dayRec }
+    })
+    setDirtyDays(prev => new Set(prev).add(fecha))
   }
 
-  async function guardar() {
-    if (!asignacion_id || lista.length === 0) return
-    setSaving(true)
+  // ── Save ──────────────────────────────────────────────────────────────────
+
+  async function guardarDia(fecha: string) {
+    if (!asignacion_id) return
+    const dayRec = records[fecha] ?? {}
+    const registros = Object.entries(dayRec).map(([estudiante_id, estado]) => ({ estudiante_id, estado }))
+    if (registros.length === 0) return
+
+    setSavingDays(prev => new Set(prev).add(fecha))
     try {
-      await api.post('/asistencia/clase', {
-        asignacion_id,
-        fecha,
-        registros: lista.map(e => ({ estudiante_id: e.estudiante_id, estado: e.estado })),
-      })
-      toastRef.current.success('Asistencia guardada')
+      await api.post('/asistencia/clase', { asignacion_id, fecha, registros })
     } catch (err) {
-      toastRef.current.error(err instanceof ApiError ? err.message : 'Error al guardar')
+      toastRef.current.error(err instanceof ApiError ? err.message : `Error guardando ${fecha}`)
+      throw err
     } finally {
-      setSaving(false)
+      setSavingDays(prev => { const n = new Set(prev); n.delete(fecha); return n })
     }
+  }
+
+  async function guardarTodo() {
+    const days = [...dirtyDays]
+    if (days.length === 0) return
+    try {
+      await Promise.all(days.map(guardarDia))
+      setDirtyDays(new Set())
+      toastRef.current.success(`Asistencia guardada (${days.length} día${days.length > 1 ? 's' : ''})`)
+    } catch {
+      // individual errors already toasted
+    }
+  }
+
+  // ── School days of month ──────────────────────────────────────────────────
+
+  const [yearN, monthN] = mes.split('-').map(Number)
+  const daysInMonth = new Date(yearN!, monthN!, 0).getDate()
+  const schoolDays: string[] = []
+  for (let d = 1; d <= daysInMonth; d++) {
+    const dow = new Date(yearN!, monthN! - 1, d).getDay()
+    if (dow !== 0) {  // Mon–Sat
+      const fecha = `${mes}-${String(d).padStart(2, '0')}`
+      schoolDays.push(fecha)
+    }
+  }
+  const today = hoyStr()
+
+  // ── Nav ───────────────────────────────────────────────────────────────────
+
+  function navMes(delta: number) {
+    const [y, m] = mes.split('-').map(Number)
+    const d = new Date(y!, m! - 1 + delta, 1)
+    setMes(mesStr(d))
   }
 
   if (loading) return <div className="flex justify-center py-16"><Spinner /></div>
@@ -112,96 +190,213 @@ export default function AsistenciaClasePage() {
     ? `${asignacion.materia.nombre} — ${asignacion.paralelo.grado.nombre} "${asignacion.paralelo.letra}"`
     : 'Asistencia de Clase'
 
+  // Totals per student
+  function studentTotals(estId: string) {
+    let p = 0, a = 0, t = 0
+    for (const fecha of schoolDays) {
+      if (fecha > today) continue
+      const e = records[fecha]?.[estId]
+      if (e === 'PRESENTE') p++
+      else if (e === 'AUSENTE') a++
+      else if (e === 'TARDANZA') t++
+    }
+    return { p, a, t }
+  }
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
+
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Asistencia de Clase</h1>
+          <h1 className="text-xl font-bold text-gray-900">Asistencia de Clase</h1>
           <p className="text-sm text-gray-500 mt-0.5">{titulo}</p>
         </div>
-        <div className="flex items-center gap-3">
-          <input
-            type="date"
-            value={fecha}
-            onChange={e => setFecha(e.target.value)}
-            max={hoy()}
-            className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-          <Button onClick={guardar} loading={saving} disabled={lista.length === 0}>
-            Guardar asistencia
-          </Button>
-        </div>
-      </div>
 
-      {/* Acciones masivas */}
-      {lista.length > 0 && (
-        <div className="flex items-center gap-2">
-          <span className="text-sm text-gray-500">Marcar todos:</span>
-          {(['PRESENTE', 'AUSENTE', 'TARDANZA'] as Estado[]).map(e => (
+        <div className="flex items-center gap-2 flex-wrap">
+          {/* Month nav */}
+          <div className="flex items-center gap-1 rounded-lg border border-gray-200 bg-white shadow-sm overflow-hidden">
             <button
-              key={e}
-              onClick={() => marcarTodos(e)}
-              className="rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-semibold hover:bg-gray-50 transition-colors"
-            >
-              {e === 'PRESENTE' ? 'Presentes' : e === 'AUSENTE' ? 'Ausentes' : 'Tardanza'}
-            </button>
-          ))}
-        </div>
-      )}
-
-      {/* Lista */}
-      <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
-        {loadingList ? (
-          <div className="flex justify-center py-12"><Spinner /></div>
-        ) : lista.length === 0 ? (
-          <div className="py-12 text-center text-sm text-gray-400">
-            No hay estudiantes matriculados en este paralelo
+              onClick={() => navMes(-1)}
+              className="px-3 py-2 text-gray-500 hover:bg-gray-50 transition-colors text-lg leading-none"
+            >‹</button>
+            <span className="px-3 py-2 text-sm font-semibold text-gray-700 min-w-[130px] text-center">
+              {mesLabel(mes)}
+            </span>
+            <button
+              onClick={() => navMes(1)}
+              disabled={mes >= mesStr(new Date())}
+              className="px-3 py-2 text-gray-500 hover:bg-gray-50 disabled:opacity-30 transition-colors text-lg leading-none"
+            >›</button>
           </div>
-        ) : (
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-gray-100 bg-gray-50 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
-                <th className="px-5 py-3 w-10">#</th>
-                <th className="px-5 py-3">Estudiante</th>
-                <th className="px-5 py-3 text-center">Estado</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-50">
-              {lista.map((est, idx) => (
-                <tr key={est.estudiante_id} className="hover:bg-gray-50 transition-colors">
-                  <td className="px-5 py-3 text-gray-400 text-xs">{idx + 1}</td>
-                  <td className="px-5 py-3 font-medium text-gray-900">
-                    {est.apellido}, {est.nombre}
-                  </td>
-                  <td className="px-5 py-3">
-                    <div className="flex items-center justify-center gap-1">
-                      {(['PRESENTE', 'AUSENTE', 'TARDANZA'] as Estado[]).map(e => (
-                        <button
-                          key={e}
-                          onClick={() => toggleEstado(est.estudiante_id, e)}
-                          title={e}
-                          className={`w-8 h-8 rounded-full text-xs font-bold transition-all ${
-                            est.estado === e
-                              ? ESTADO_COLOR[e]
-                              : 'border border-gray-200 text-gray-400 hover:border-gray-400'
-                          }`}
-                        >
-                          {e[0]}
-                        </button>
-                      ))}
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
+
+          {/* Save button */}
+          {dirtyDays.size > 0 && (
+            <button
+              onClick={guardarTodo}
+              disabled={savingDays.size > 0}
+              className="flex items-center gap-1.5 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-60 transition-colors shadow-sm"
+            >
+              {savingDays.size > 0 ? '⏳ Guardando…' : `💾 Guardar cambios (${dirtyDays.size} día${dirtyDays.size > 1 ? 's' : ''})`}
+            </button>
+          )}
+        </div>
       </div>
 
-      <p className="text-xs text-gray-400 text-center">
-        P = Presente · A = Ausente · T = Tardanza
-      </p>
+      {/* Legend */}
+      <div className="flex items-center gap-4 text-xs text-gray-500 flex-wrap">
+        <span className="font-medium text-gray-600">Leyenda:</span>
+        {(Object.entries(ESTADO_CFG) as [Estado, typeof ESTADO_CFG[Estado]][]).map(([, cfg]) => (
+          <div key={cfg.label} className="flex items-center gap-1">
+            <span className={`inline-flex w-5 h-5 rounded items-center justify-center text-[10px] font-bold ${cfg.bg} ${cfg.text}`}>
+              {cfg.label}
+            </span>
+            <span>{cfg.label === 'P' ? 'Presente' : cfg.label === 'A' ? 'Ausente' : 'Tardanza'}</span>
+          </div>
+        ))}
+        <span className="text-gray-400">· = Sin registro · Haz clic para cambiar estado</span>
+      </div>
+
+      {/* Table */}
+      {loadingData
+        ? <div className="flex justify-center py-16"><Spinner /></div>
+        : estudiantes.length === 0
+          ? <div className="rounded-xl border-2 border-dashed border-gray-200 bg-white p-10 text-center text-sm text-gray-400">
+              No hay estudiantes matriculados en este paralelo.
+            </div>
+          : (
+            <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white shadow-sm">
+              <table
+                className="text-xs border-collapse"
+                style={{ minWidth: `${240 + schoolDays.length * 34 + 110}px` }}
+              >
+                <thead>
+                  {/* Date row */}
+                  <tr className="bg-slate-50 border-b border-gray-200">
+                    <th className="sticky left-0 z-10 bg-slate-50 px-4 py-2 text-left text-xs font-semibold text-gray-500 border-r border-gray-200 w-48 min-w-[12rem]">
+                      Estudiante
+                    </th>
+
+                    {schoolDays.map(fecha => {
+                      const d       = parseInt(fecha.slice(8))
+                      const dow     = new Date(fecha).getDay()
+                      const isSat   = dow === 6
+                      const isFut   = fecha > today
+                      const isDirty = dirtyDays.has(fecha)
+                      const isSav   = savingDays.has(fecha)
+
+                      return (
+                        <th
+                          key={fecha}
+                          className={`w-8 border-r border-gray-100 relative ${isSat ? 'bg-slate-100' : ''} ${isDirty ? 'bg-amber-50' : ''}`}
+                        >
+                          <div
+                            className="py-1 px-0.5 flex flex-col items-center gap-0 mx-auto"
+                            style={{ writingMode: 'vertical-lr', transform: 'rotate(180deg)' }}
+                          >
+                            <span className={`font-bold ${isFut ? 'text-gray-300' : 'text-gray-700'}`}>{d}</span>
+                            <span className={`${isFut ? 'text-gray-200' : 'text-gray-400'}`}>{DIA_ABREV[dow]}</span>
+                          </div>
+                          {isSav && (
+                            <div className="absolute inset-0 bg-amber-100/70 flex items-center justify-center">
+                              <span className="text-[8px] text-amber-700 font-bold" style={{ writingMode: 'vertical-lr' }}>...</span>
+                            </div>
+                          )}
+                        </th>
+                      )
+                    })}
+
+                    {/* Totals headers */}
+                    <th className="border-l border-gray-200 bg-emerald-50 text-emerald-700 px-2 py-2 text-center">P</th>
+                    <th className="border-l border-gray-100 bg-amber-50  text-amber-700  px-2 py-2 text-center">T</th>
+                    <th className="border-l border-gray-100 bg-red-50    text-red-700    px-2 py-2 text-center">F</th>
+                  </tr>
+
+                  {/* "Mark all" row */}
+                  <tr className="border-b border-gray-200 bg-gray-50/50">
+                    <td className="sticky left-0 z-10 bg-gray-50 px-4 py-1 text-[10px] text-gray-400 font-medium border-r border-gray-200">
+                      Marcar columna →
+                    </td>
+                    {schoolDays.map(fecha => {
+                      const isFut = fecha > today
+                      return (
+                        <td key={fecha} className="border-r border-gray-100 text-center">
+                          {!isFut && (
+                            <div className="flex flex-col gap-px items-center py-0.5">
+                              {(['PRESENTE', 'AUSENTE', 'TARDANZA'] as Estado[]).map(e => (
+                                <button
+                                  key={e}
+                                  onClick={() => marcarColumna(fecha, e)}
+                                  title={`Todos ${e}`}
+                                  className={`w-4 h-2 rounded-sm text-[7px] font-bold transition-opacity hover:opacity-80 ${ESTADO_CFG[e].bg}`}
+                                />
+                              ))}
+                            </div>
+                          )}
+                        </td>
+                      )
+                    })}
+                    <td colSpan={3} className="border-l border-gray-200" />
+                  </tr>
+                </thead>
+
+                <tbody>
+                  {estudiantes.map((est, idx) => {
+                    const totals = studentTotals(est.estudiante_id)
+                    return (
+                      <tr
+                        key={est.estudiante_id}
+                        className={`border-b border-gray-100 hover:bg-blue-50/30 transition-colors ${idx % 2 === 0 ? '' : 'bg-slate-50/30'}`}
+                      >
+                        {/* Name (sticky) */}
+                        <td className={`sticky left-0 z-10 px-4 py-2 font-medium text-gray-800 border-r border-gray-200 whitespace-nowrap ${idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/80'}`}>
+                          <span className="text-gray-400 mr-1.5 text-[10px]">{idx + 1}.</span>
+                          {est.apellido}, {est.nombre}
+                        </td>
+
+                        {/* Day cells */}
+                        {schoolDays.map(fecha => {
+                          const isFut   = fecha > today
+                          const isSat   = new Date(fecha).getDay() === 6
+                          const estado  = records[fecha]?.[est.estudiante_id]
+                          const cfg     = estado ? ESTADO_CFG[estado] : null
+
+                          return (
+                            <td
+                              key={fecha}
+                              className={`w-8 h-9 text-center border-r border-gray-100 ${isSat ? 'bg-slate-100/50' : ''}`}
+                            >
+                              {isFut ? (
+                                <span className="text-gray-200 text-xs">·</span>
+                              ) : (
+                                <button
+                                  onClick={() => clickCell(fecha, est.estudiante_id)}
+                                  title={cfg ? cfg.label : '—'}
+                                  className={`w-7 h-7 rounded font-bold transition-all hover:scale-110 active:scale-95 ${
+                                    cfg
+                                      ? `${cfg.bg} ${cfg.text}`
+                                      : 'text-gray-300 hover:bg-gray-100 hover:text-gray-500'
+                                  }`}
+                                >
+                                  {cfg ? cfg.label : '·'}
+                                </button>
+                              )}
+                            </td>
+                          )
+                        })}
+
+                        {/* Totals */}
+                        <td className="text-center px-2 font-bold text-emerald-700 bg-emerald-50/60 border-l border-gray-200">{totals.p}</td>
+                        <td className="text-center px-2 font-bold text-amber-700   bg-amber-50/60  border-l border-gray-100">{totals.t}</td>
+                        <td className="text-center px-2 font-bold text-red-700     bg-red-50/60    border-l border-gray-100">{totals.a}</td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )
+      }
     </div>
   )
 }

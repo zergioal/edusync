@@ -45,6 +45,14 @@ export class AsistenciaController {
     } catch (e) { next(e) }
   }
 
+  getClaseMensual = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const { asignacion_id, mes } = req.query as { asignacion_id: string; mes: string }
+      if (!asignacion_id || !mes) throw new AppError(400, 'asignacion_id y mes requeridos', 'MISSING_PARAM')
+      res.json({ data: await this.service.getClaseMensual(asignacion_id, mes) })
+    } catch (e) { next(e) }
+  }
+
   getClase = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const { asignacion_id, fecha } = req.query as { asignacion_id: string; fecha: string }

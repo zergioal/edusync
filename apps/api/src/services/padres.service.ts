@@ -36,8 +36,8 @@ const PADRE_INCLUDE = {
 } as const
 
 export class PadresService {
-  findAll(institucion_id: string, filters: { buscar?: string } = {}) {
-    const { buscar } = filters
+  findAll(institucion_id: string, filters: { buscar?: string; paralelo_id?: string } = {}) {
+    const { buscar, paralelo_id } = filters
     return prisma.usuario.findMany({
       where: {
         institucion_id,
@@ -49,6 +49,13 @@ export class PadresService {
             { apellido: { contains: buscar, mode: 'insensitive' } },
             { email:    { contains: buscar, mode: 'insensitive' } },
           ],
+        } : {}),
+        ...(paralelo_id ? {
+          hijos_a_cargo: {
+            some: {
+              estudiante: { matriculas: { some: { paralelo_id } } },
+            },
+          },
         } : {}),
       },
       include:  PADRE_INCLUDE,

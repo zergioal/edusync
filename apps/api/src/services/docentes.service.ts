@@ -23,7 +23,20 @@ async function createSupabaseUser(email: string, password: string): Promise<stri
 
 const DOC_INCLUDE = {
   usuario: { select: { id: true, nombre: true, apellido: true, email: true, activo: true } },
-  asignaciones: { select: { id: true } },
+  asignaciones: {
+    select: {
+      id:      true,
+      materia: {
+        select: {
+          nombre:          true,
+          horas_semanales: true,
+          carga_horaria:   { select: { grado_id: true, horas_mes: true } },
+        },
+      },
+      paralelo: { select: { letra: true, grado: { select: { id: true, nombre: true } } } },
+      gestion:  { select: { anno: true } },
+    },
+  },
 } as const
 
 export class DocentesService {
@@ -95,6 +108,18 @@ export class DocentesService {
   async update(id: string, data: { nombre?: string; apellido?: string; email?: string }) {
     const doc = await this.findOne(id)
     if (Object.keys(data).length === 0) return doc
+
+    if (data.email && data.email !== doc.usuario.email) {
+      const u = await prisma.usuario.findUnique({
+        where: { id: doc.usuario_id }, select: { supabase_auth_id: true },
+      })
+      if (u?.supabase_auth_id) {
+        getSupabaseAdmin().auth.admin
+          .updateUserById(u.supabase_auth_id, { email: data.email })
+          .catch(() => {})
+      }
+    }
+
     await prisma.usuario.update({ where: { id: doc.usuario_id }, data })
     return this.findOne(id)
   }
@@ -102,22 +127,33 @@ export class DocentesService {
   async remove(id: string) {
     const doc = await prisma.docente.findUnique({
       where:  { id },
-      select: { usuario_id: true, usuario: { select: { supabase_auth_id: true } } },
+      select: {
+        usuario_id:   true,
+        usuario:      { select: { supabase_auth_id: true } },
+        asignaciones: { select: { id: true } },
+      },
     })
     if (!doc) throw new AppError(404, 'Docente no encontrado', 'NOT_FOUND')
 
-    try {
-      await prisma.usuario.delete({ where: { id: doc.usuario_id } })
-    } catch (e: any) {
-      if (e?.code === 'P2003' || e?.code === 'P2014') {
-        throw new AppError(
-          409,
-          'No se puede eliminar: el docente tiene asignaciones, horarios u observaciones asociadas. Elimínalos primero.',
-          'HAS_DEPENDENCIES',
-        )
+    await prisma.$transaction(async (tx) => {
+      // Cascade: notas → indicadores → asistencias/tareas → asignaciones → observaciones → docente/usuario
+      for (const asig of doc.asignaciones) {
+        const indicadores = await tx.indicador.findMany({
+          where:  { asignacion_id: asig.id },
+          select: { id: true },
+        })
+        if (indicadores.length > 0) {
+          await tx.notaIndicador.deleteMany({ where: { indicador_id: { in: indicadores.map(i => i.id) } } })
+          await tx.indicador.deleteMany({ where: { asignacion_id: asig.id } })
+        }
+        await tx.asistenciaClase.deleteMany({ where: { asignacion_id: asig.id } })
+        await tx.tarea.deleteMany({ where: { asignacion_id: asig.id } })
+        await tx.asignacion.delete({ where: { id: asig.id } })
       }
-      throw e
-    }
+      await tx.observacionInicial.deleteMany({ where: { docente_id: id } })
+      await tx.horario.deleteMany({ where: { docente_id: id } })
+      await tx.usuario.delete({ where: { id: doc.usuario_id } })
+    })
 
     getSupabaseAdmin().auth.admin.deleteUser(doc.usuario.supabase_auth_id).catch(() => {})
   }

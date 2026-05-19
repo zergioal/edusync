@@ -73,7 +73,18 @@
       "Bash(git add *)",
       "Bash(git commit -m ' *)",
       "Bash(git push *)",
-      "Bash(pnpm --filter @edusync/web exec tsc --noEmit)"
+      "Bash(pnpm --filter @edusync/web exec tsc --noEmit)",
+      "Bash(pnpm --filter @edusync/database exec prisma migrate dev --name bth_subareas_tecnica)",
+      "Bash(npx dotenv *)",
+      "Bash(Get-Content .env)",
+      "Bash(Select-String \"DIRECT_URL|DATABASE_URL\")",
+      "Bash(node_modules/.bin/prisma migrate *)",
+      "Bash(dir \"d:\\\\PROYECTOS WEB\\\\SISTEMA-UE\\\\edusync\\\\packages\\\\database\" /b)",
+      "Bash(node_modules/.bin/tsx scripts/seed-bth-pioxii.ts)",
+      "Bash(pnpm --filter @edusync/api exec tsc --noEmit)",
+      "Bash(del \"d:\\\\PROYECTOS WEB\\\\SISTEMA-UE\\\\edusync\\\\packages\\\\database\\\\scripts\\\\_check-materias.ts\")",
+      "Bash(Get-ChildItem -Path \"d:\\\\PROYECTOS WEB\\\\SISTEMA-UE\\\\edusync\\\\apps\\\\web\\\\src\\\\pages\" -Directory)",
+      "Bash(Select-Object Name)"
     ],
     "additionalDirectories": [
       "d:\\PROYECTOS WEB\\SISTEMA-UE\\edusync\\apps\\api"

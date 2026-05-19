@@ -21,9 +21,10 @@ interface TurnoInput {
 }
 
 interface ConfigInput {
-  tipo_ue?:             string
+  tipo_ue?:              string
+  carrera_tecnica?:      string | null
   duracion_periodo_min?: number
-  turnos?:              TurnoInput[]
+  turnos?:               TurnoInput[]
 }
 
 export class ConfiguracionService {
@@ -51,20 +52,41 @@ export class ConfiguracionService {
 
     if (!inst) throw new AppError(404, 'Institución no encontrada', 'NOT_FOUND')
 
+    // BTH sub-areas: materias with es_subarea_de_id != null, grouped by parent
+    const subareas = await prisma.materia.findMany({
+      where: {
+        nivel: { institucion_id },
+        es_subarea_de_id: { not: null },
+      },
+      select: {
+        id:               true,
+        nombre:           true,
+        horas_semanales:  true,
+        es_subarea_de_id: true,
+        parent_materia:   { select: { id: true, nombre: true } },
+      },
+      orderBy: { nombre: 'asc' },
+    })
+
     return {
       tipo_ue:              inst.tipo_ue,
+      carrera_tecnica:      inst.carrera_tecnica ?? null,
       duracion_periodo_min: configHorario?.duracion_periodo_min ?? 40,
       turnos,
       niveles,
+      subareas_bth:         subareas,
     }
   }
 
   async updateConfig(institucion_id: string, data: ConfigInput) {
-    const { tipo_ue, duracion_periodo_min, turnos } = data
+    const { tipo_ue, carrera_tecnica, duracion_periodo_min, turnos } = data
 
     await prisma.$transaction(async (tx) => {
-      if (tipo_ue !== undefined) {
-        await tx.institucion.update({ where: { id: institucion_id }, data: { tipo_ue } })
+      const instUpdates: Record<string, unknown> = {}
+      if (tipo_ue !== undefined)         instUpdates['tipo_ue']         = tipo_ue
+      if (carrera_tecnica !== undefined)  instUpdates['carrera_tecnica'] = carrera_tecnica
+      if (Object.keys(instUpdates).length > 0) {
+        await tx.institucion.update({ where: { id: institucion_id }, data: instUpdates })
       }
 
       if (duracion_periodo_min !== undefined) {

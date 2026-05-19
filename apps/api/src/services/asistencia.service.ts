@@ -272,6 +272,48 @@ export class AsistenciaService {
     return paralelos
   }
 
+  // ── Vista mensual de clase (docente) ────────────────────────────────────
+
+  async getClaseMensual(asignacion_id: string, mes: string) {
+    const [yearStr, monthStr] = mes.split('-')
+    const year  = parseInt(yearStr!)
+    const month = parseInt(monthStr!) - 1
+    const inicio = new Date(year, month, 1)
+    const fin    = new Date(year, month + 1, 0, 23, 59, 59, 999)
+
+    const asig = await prisma.asignacion.findUnique({
+      where:  { id: asignacion_id },
+      select: { paralelo_id: true, gestion_id: true },
+    })
+    if (!asig) throw new AppError(404, 'Asignación no encontrada', 'NOT_FOUND')
+
+    const [matriculas, registros] = await Promise.all([
+      prisma.matricula.findMany({
+        where:   { paralelo_id: asig.paralelo_id, gestion_id: asig.gestion_id },
+        include: { estudiante: { include: { usuario: { select: { nombre: true, apellido: true } } } } },
+        orderBy: { estudiante: { usuario: { apellido: 'asc' } } },
+      }),
+      prisma.asistenciaClase.findMany({
+        where:   { asignacion_id, fecha: { gte: inicio, lte: fin } },
+        select:  { estudiante_id: true, fecha: true, estado: true },
+      }),
+    ])
+
+    return {
+      estudiantes: matriculas.map(m => ({
+        estudiante_id: m.estudiante_id,
+        nombre:        m.estudiante.usuario.nombre,
+        apellido:      m.estudiante.usuario.apellido,
+      })),
+      records: registros.reduce<Record<string, Record<string, string>>>((acc, r) => {
+        const key = r.fecha.toISOString().slice(0, 10)
+        if (!acc[key]) acc[key] = {}
+        acc[key]![r.estudiante_id] = r.estado
+        return acc
+      }, {}),
+    }
+  }
+
   // ── Estudiantes de un paralelo (para carga de asistencia) ────────────────
 
   async getEstudiantesParalelo(paralelo_id: string, gestion_id: string) {

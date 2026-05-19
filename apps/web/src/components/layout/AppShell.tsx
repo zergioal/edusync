@@ -5,6 +5,7 @@ import { useAuth } from '../../context/AuthContext'
 import { getNavGroup } from '../../lib/roleRoutes'
 import { Sidebar } from './Sidebar'
 import { NotificacionesBell } from '../ui/NotificacionesBell'
+import logo from '../../assets/logo-pio-xii.png'
 
 interface AppShellProps {
   children: ReactNode
@@ -12,25 +13,31 @@ interface AppShellProps {
 
 export function AppShell({ children }: AppShellProps) {
   const { user } = useAuth()
-  const navItems   = user ? getNavGroup(user.rol) : []
+  const navItems    = user ? getNavGroup(user.rol) : []
   const [drawerOpen, setDrawerOpen] = useState(false)
   const location = useLocation()
 
-  // Cierra el drawer al navegar
   useEffect(() => { setDrawerOpen(false) }, [location.pathname])
 
-  return (
-    <div className="flex h-screen overflow-hidden bg-gray-50">
+  // Resolve current page label from nav items
+  const currentNav = navItems.find(item => {
+    const isExact = item.to.split('/').length <= 3
+    return isExact ? location.pathname === item.to : location.pathname.startsWith(item.to)
+  })
+  const pageLabel = currentNav?.label ?? ''
 
-      {/* ── Sidebar desktop (≥ md) ──────────────────────────────── */}
+  return (
+    <div className="flex h-screen overflow-hidden bg-slate-50">
+
+      {/* ── Sidebar desktop ─────────────────────────────── */}
       <div className="hidden md:flex md:flex-shrink-0">
         <Sidebar navItems={navItems} />
       </div>
 
-      {/* ── Drawer móvil + overlay ──────────────────────────────── */}
+      {/* ── Drawer móvil + overlay ───────────────────────── */}
       {drawerOpen && (
         <div
-          className="fixed inset-0 z-40 bg-black/50 md:hidden"
+          className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm md:hidden"
           onClick={() => setDrawerOpen(false)}
           aria-hidden="true"
         />
@@ -43,46 +50,56 @@ export function AppShell({ children }: AppShellProps) {
         <Sidebar navItems={navItems} onClose={() => setDrawerOpen(false)} />
       </div>
 
-      {/* ── Contenido principal ─────────────────────────────────── */}
+      {/* ── Contenido principal ──────────────────────────── */}
       <div className="flex flex-1 flex-col overflow-hidden min-w-0">
 
         {/* Header */}
-        <header className="flex h-14 items-center justify-between border-b border-gray-200 bg-white px-4 shadow-sm shrink-0">
-          {/* Hamburguesa (solo móvil) */}
-          <button
-            type="button"
-            onClick={() => setDrawerOpen(true)}
-            className="md:hidden rounded-lg p-2 text-gray-500 hover:bg-gray-100 hover:text-gray-700"
-            aria-label="Abrir menú"
-          >
-            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-            </svg>
-          </button>
+        <header className="flex h-14 items-center justify-between bg-white border-b border-gray-200/80 px-4 md:px-6 shrink-0 shadow-sm">
 
-          {/* Logo móvil */}
-          <div className="md:hidden flex items-center gap-2">
-            <div className="flex h-7 w-7 items-center justify-center rounded-md bg-blue-500 font-bold text-white text-sm">
-              E
+          {/* Izquierda */}
+          <div className="flex items-center gap-3">
+            {/* Hamburguesa móvil */}
+            <button
+              type="button"
+              onClick={() => setDrawerOpen(true)}
+              className="md:hidden rounded-xl p-2 text-gray-500 hover:bg-gray-100 hover:text-gray-700 transition-colors"
+              aria-label="Abrir menú"
+            >
+              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+            </button>
+
+            {/* Logo móvil */}
+            <div className="md:hidden flex items-center gap-2">
+              <img src={logo} alt="Pío XII" className="h-7 w-7 rounded-lg object-contain" />
+              <span className="text-sm font-bold text-gray-800">U.E. Pío XII</span>
             </div>
-            <span className="text-sm font-bold text-gray-800">EduSync</span>
+
+            {/* Título de página (desktop) */}
+            {pageLabel && (
+              <div className="hidden md:flex items-center gap-2">
+                <span className="text-xs text-gray-400">/</span>
+                <span className="text-sm font-semibold text-gray-700">{pageLabel}</span>
+              </div>
+            )}
           </div>
 
-          {/* Espaciador desktop */}
-          <div className="hidden md:block" />
-
-          {/* Acciones header */}
+          {/* Derecha */}
           <div className="flex items-center gap-2">
             <NotificacionesBell />
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-100">
-              <span className="text-sm font-semibold text-blue-700">
-                {user?.nombre?.charAt(0)}{user?.apellido?.charAt(0)}
-              </span>
+            <div className="hidden sm:flex items-center gap-2 pl-2 border-l border-gray-200">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-600 shadow-sm">
+                <span className="text-xs font-bold text-white">
+                  {user?.nombre?.charAt(0)}{user?.apellido?.charAt(0)}
+                </span>
+              </div>
+              <div className="hidden md:block">
+                <p className="text-xs font-semibold text-gray-800 leading-tight max-w-[130px] truncate">
+                  {user?.nombre} {user?.apellido}
+                </p>
+              </div>
             </div>
-            {/* Nombre solo desktop */}
-            <span className="hidden sm:block text-sm text-gray-600 max-w-[120px] truncate">
-              {user?.nombre}
-            </span>
           </div>
         </header>
 

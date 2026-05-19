@@ -1,24 +1,31 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom'
 import { api } from '../../lib/api'
+import { useAuth } from '../../context/AuthContext'
+import { Rol } from '@edusync/types'
 import { Button, Badge, Spinner } from '@edusync/ui'
 import { SelectGestion } from '../../components/select/SelectGestion'
 import { SelectTrimestre } from '../../components/select/SelectTrimestre'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
+interface Matricula {
+  id:            string
+  lleva_tecnica: boolean
+  gestion:       { id: string; anno: number; activa: boolean }
+  paralelo:      { letra: string; grado: { nombre: string; nivel: { nombre: string } } }
+}
+
 interface Estudiante {
   id:      string
   codigo:  string
   nivel:   { nombre: string }
   usuario: { nombre: string; apellido: string; email: string; activo: boolean }
-  matriculas: {
-    id:       string
-    gestion:  { id: string; anno: number; activa: boolean }
-    paralelo: { letra: string; grado: { nombre: string; nivel: { nombre: string } } }
-  }[]
+  matriculas:       Matricula[]
   relaciones_padre: { padre: { nombre: string; apellido: string; email: string } }[]
 }
+
+const CAN_MANAGE_TECNICA = [Rol.ADMIN_SISTEMA, Rol.DIRECTOR, Rol.COORDINADOR, Rol.SECRETARIA] as string[]
 
 type Tab = 'datos' | 'calificaciones' | 'asistencia' | 'pensiones'
 
@@ -41,8 +48,33 @@ function GestionTrimestreSelector({
 
 // ─── Tab: Datos ───────────────────────────────────────────────────────────────
 
-function DatosTab({ est }: { est: Estudiante }) {
+function DatosTab({
+  est, canManageTecnica, onMatriculaUpdate,
+}: {
+  est: Estudiante
+  canManageTecnica: boolean
+  onMatriculaUpdate: (matriculaId: string, lleva_tecnica: boolean) => void
+}) {
   const matriculaActiva = est.matriculas.find(m => m.gestion.activa) ?? est.matriculas[0]
+  const [toggleLoading, setToggleLoading] = useState(false)
+
+  const handleToggleTecnica = useCallback(async () => {
+    if (!matriculaActiva) return
+    const newVal = !matriculaActiva.lleva_tecnica
+    setToggleLoading(true)
+    try {
+      await api.patch(`/matriculas/${est.id}/${matriculaActiva.gestion.id}/tecnica`, { lleva_tecnica: newVal })
+      onMatriculaUpdate(matriculaActiva.id, newVal)
+    } catch { /* ignore */ }
+    finally { setToggleLoading(false) }
+  }, [matriculaActiva, est.id, onMatriculaUpdate])
+
+  // Show lleva_tecnica toggle for students in 5° or 6° Secundaria
+  const esTTE = matriculaActiva
+    ? (matriculaActiva.paralelo.grado.nombre.includes('5°') || matriculaActiva.paralelo.grado.nombre.includes('6°'))
+      && matriculaActiva.paralelo.grado.nivel.nombre === 'SECUNDARIA'
+    : false
+
   return (
     <div className="space-y-4">
       <div className="rounded-xl border border-gray-200 bg-white shadow-sm p-6 space-y-4">
@@ -69,6 +101,31 @@ function DatosTab({ est }: { est: Estudiante }) {
             <div><span className="text-gray-500">Gestión:</span>{' '}
               <span className="font-medium">{matriculaActiva.gestion.anno}</span>
             </div>
+            {esTTE && (
+              <div className="col-span-2 flex items-center justify-between rounded-lg bg-indigo-50 border border-indigo-100 px-4 py-3">
+                <div>
+                  <p className="text-sm font-medium text-indigo-900">Modalidad Técnica (TTE)</p>
+                  <p className="text-xs text-indigo-600 mt-0.5">
+                    {matriculaActiva.lleva_tecnica ? 'Inscrito en Técnica Tecnológica Especializada' : 'No lleva materias técnicas'}
+                  </p>
+                </div>
+                {canManageTecnica && (
+                  <button
+                    type="button"
+                    onClick={handleToggleTecnica}
+                    disabled={toggleLoading}
+                    className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 focus:outline-none ${
+                      matriculaActiva.lleva_tecnica ? 'bg-indigo-600' : 'bg-gray-200'
+                    } ${toggleLoading ? 'opacity-50' : ''}`}
+                    aria-label="Toggle modalidad técnica"
+                  >
+                    <span className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform duration-200 ${
+                      matriculaActiva.lleva_tecnica ? 'translate-x-5' : 'translate-x-0'
+                    }`} />
+                  </button>
+                )}
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -491,6 +548,9 @@ export default function PerfilEstudiantePage({
   const tab      = TABS.some(t => t.key === rawTab) ? rawTab : (TABS[0]?.key ?? 'datos') as Tab
   const setTab   = (t: Tab) => setSearchParams({ tab: t }, { replace: true })
 
+  const { user } = useAuth()
+  const canManageTecnica = user?.rol ? CAN_MANAGE_TECNICA.includes(user.rol) : false
+
   const [est,     setEst]     = useState<Estudiante | null>(null)
   const [loading, setLoading] = useState(true)
   const [error,   setError]   = useState('')
@@ -502,6 +562,18 @@ export default function PerfilEstudiantePage({
       .catch(() => setError('No se pudo cargar el perfil del estudiante'))
       .finally(() => setLoading(false))
   }, [id])
+
+  const handleMatriculaUpdate = useCallback((matriculaId: string, lleva_tecnica: boolean) => {
+    setEst(prev => {
+      if (!prev) return prev
+      return {
+        ...prev,
+        matriculas: prev.matriculas.map(m =>
+          m.id === matriculaId ? { ...m, lleva_tecnica } : m
+        ),
+      }
+    })
+  }, [])
 
   if (loading) return <div className="flex justify-center py-16"><Spinner /></div>
   if (error || !est) return <div className="text-center py-16 text-red-500">{error || 'Estudiante no encontrado'}</div>
@@ -537,7 +609,7 @@ export default function PerfilEstudiantePage({
       </div>
 
       {/* Tab content */}
-      {tab === 'datos'          && <DatosTab         est={est} />}
+      {tab === 'datos'          && <DatosTab         est={est} canManageTecnica={canManageTecnica} onMatriculaUpdate={handleMatriculaUpdate} />}
       {tab === 'calificaciones' && <CalificacionesTab estudianteId={est.id} />}
       {tab === 'asistencia'     && <AsistenciaTab     estudianteId={est.id} />}
       {tab === 'pensiones'      && <PensionesTab       estudianteId={est.id} />}

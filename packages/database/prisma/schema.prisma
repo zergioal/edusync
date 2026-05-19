@@ -45,6 +45,7 @@ enum EstadoAsistencia {
   PRESENTE
   AUSENTE
   TARDANZA
+  LICENCIA
 }
 
 enum VisiblePara {
@@ -72,18 +73,19 @@ enum TipoGaleria {
 // ─── Modelos ─────────────────────────────────────────────────────────────────
 
 model Institucion {
-  id         String   @id @default(uuid())
-  nombre     String
-  subdominio String   @unique
-  logo_url   String?
-  slogan     String?
-  qr_url     String?
-  whatsapp   String?
-  direccion  String?
-  telefono   String?
-  activa     Boolean  @default(true)
-  tipo_ue    String   @default("HUMANISTICA")
-  created_at DateTime @default(now())
+  id              String   @id @default(uuid())
+  nombre          String
+  subdominio      String   @unique
+  logo_url        String?
+  slogan          String?
+  qr_url          String?
+  whatsapp        String?
+  direccion       String?
+  telefono        String?
+  activa          Boolean  @default(true)
+  tipo_ue         String   @default("HUMANISTICA")
+  carrera_tecnica String?
+  created_at      DateTime @default(now())
 
   usuarios         Usuario[]
   niveles          Nivel[]
@@ -224,10 +226,11 @@ model Paralelo {
 }
 
 model Matricula {
-  id            String @id @default(uuid())
+  id            String  @id @default(uuid())
   estudiante_id String
   paralelo_id   String
   gestion_id    String
+  lleva_tecnica Boolean @default(true)
 
   estudiante Estudiante @relation(fields: [estudiante_id], references: [id], onDelete: Cascade)
   paralelo   Paralelo   @relation(fields: [paralelo_id], references: [id])
@@ -260,9 +263,14 @@ model Materia {
   aplica_hasta_grado      Int?
   solo_si_bth             Boolean @default(false)
   es_holistica            Boolean @default(false)
+  tiene_subareas          Boolean @default(false)
+  es_subarea_de_id        String?
+  horas_semanales         Int?
 
   campo              Campo                 @relation(fields: [campo_id], references: [id], onDelete: Cascade)
   nivel              Nivel                 @relation(fields: [nivel_id], references: [id])
+  parent_materia     Materia?              @relation("SubAreas", fields: [es_subarea_de_id], references: [id], onDelete: SetNull)
+  subareas           Materia[]             @relation("SubAreas")
   asignaciones       Asignacion[]
   horarios           Horario[]
   carga_horaria      CargaHorariaMateria[]
