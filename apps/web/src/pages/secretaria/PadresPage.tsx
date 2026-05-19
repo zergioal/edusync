@@ -378,7 +378,7 @@ export default function PadresPage() {
                     <span className="italic text-gray-400 text-xs">Sin hijos vinculados</span>
                   ) : (
                     <div className="flex flex-wrap gap-1">
-                      {p.hijos_a_cargo.map(rel => (
+                      {p.hijos_a_cargo.filter(rel => rel.estudiante?.usuario).map(rel => (
                         <Badge key={rel.estudiante.id} variant="info">
                           {rel.estudiante.usuario.apellido}, {rel.estudiante.usuario.nombre}
                         </Badge>
