@@ -36,7 +36,7 @@ export class AsistenciaController {
       const { asignacion_id, fecha, registros } = req.body as {
         asignacion_id: string
         fecha: string
-        registros: Array<{ estudiante_id: string; estado: 'PRESENTE' | 'AUSENTE' | 'TARDANZA' }>
+        registros: Array<{ estudiante_id: string; estado: 'PRESENTE' | 'AUSENTE' | 'TARDANZA' | 'LICENCIA' }>
       }
       const data = await this.service.registrarClase(
         asignacion_id, fecha, registros, req.auth!.usuario_id,
@@ -84,7 +84,7 @@ export class AsistenciaController {
       const { paralelo_id, fecha, registros } = req.body as {
         paralelo_id: string
         fecha: string
-        registros: Array<{ estudiante_id: string; estado: 'PRESENTE' | 'AUSENTE' | 'TARDANZA' }>
+        registros: Array<{ estudiante_id: string; estado: 'PRESENTE' | 'AUSENTE' | 'TARDANZA' | 'LICENCIA' }>
       }
       const data = await this.service.registrarDiaria(req.auth!.usuario_id, paralelo_id, fecha, registros)
       res.status(201).json({ data })

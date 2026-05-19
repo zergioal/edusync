@@ -10,11 +10,17 @@ interface DiaAsistencia {
   estado: Estado
 }
 
-interface AsistenciaData {
+interface DiariaSummary {
   total_asistencias: number
   total_faltas:      number
   total_tardanzas:   number
+  total_licencias:   number
   dias:              DiaAsistencia[]
+}
+
+interface AsistenciaData {
+  diaria:      DiariaSummary
+  por_materia: unknown[]
 }
 
 interface Trimestre { id: string; numero: number; cerrado: boolean; gestion_id: string }
@@ -174,7 +180,7 @@ export default function MiAsistenciaPage({ estudianteId }: Props) {
     api.get<AsistenciaData>(path)
       .then(d => {
         setData(d)
-        const meses = [...new Set(d.dias.map(x => x.fecha.slice(0, 7)))].sort()
+        const meses = [...new Set(d.diaria.dias.map(x => x.fecha.slice(0, 7)))].sort()
         if (meses.length > 0) setSelectedMonth(meses[meses.length - 1]!)
       })
       .catch((e: unknown) => setError(e instanceof Error ? e.message : 'Error al cargar'))
@@ -192,14 +198,15 @@ export default function MiAsistenciaPage({ estudianteId }: Props) {
   }
 
   const meses = data
-    ? [...new Set(data.dias.map(d => d.fecha.slice(0, 7)))].sort()
+    ? [...new Set(data.diaria.dias.map(d => d.fecha.slice(0, 7)))].sort()
     : []
 
-  const diasMap = new Map(data?.dias.map(d => [d.fecha, d.estado]) ?? [])
+  const diasMap = new Map(data?.diaria.dias.map(d => [d.fecha, d.estado]) ?? [])
 
-  const totalPresente  = data?.total_asistencias ?? 0
-  const totalTardanza  = data?.total_tardanzas   ?? 0
-  const totalFalta     = data?.total_faltas      ?? 0
+  const totalPresente  = data?.diaria.total_asistencias ?? 0
+  const totalTardanza  = data?.diaria.total_tardanzas   ?? 0
+  const totalFalta     = data?.diaria.total_faltas      ?? 0
+  const totalLicencia  = data?.diaria.total_licencias   ?? 0
 
   return (
     <div className="space-y-5">
@@ -245,7 +252,7 @@ export default function MiAsistenciaPage({ estudianteId }: Props) {
               { label: 'Presentes', val: totalPresente, bg: 'bg-emerald-50 border-emerald-200', num: 'text-emerald-700', txt: 'text-emerald-600' },
               { label: 'Atrasos',   val: totalTardanza, bg: 'bg-amber-50   border-amber-200',   num: 'text-amber-700',   txt: 'text-amber-600'   },
               { label: 'Faltas',    val: totalFalta,    bg: 'bg-red-50     border-red-200',     num: 'text-red-700',     txt: 'text-red-600'     },
-              { label: 'Licencias', val: 0,             bg: 'bg-blue-50    border-blue-200',    num: 'text-blue-700',    txt: 'text-blue-600'    },
+              { label: 'Licencias', val: totalLicencia,  bg: 'bg-blue-50    border-blue-200',    num: 'text-blue-700',    txt: 'text-blue-600'    },
             ].map(item => (
               <div key={item.label} className={`rounded-xl border p-4 text-center ${item.bg}`}>
                 <div className={`text-2xl font-bold ${item.num}`}>{item.val}</div>

@@ -3,7 +3,7 @@ import { AppError } from '../middlewares/errorHandler'
 
 interface RegistroAsistencia {
   estudiante_id: string
-  estado: 'PRESENTE' | 'AUSENTE' | 'TARDANZA'
+  estado: 'PRESENTE' | 'AUSENTE' | 'TARDANZA' | 'LICENCIA'
 }
 
 export class AsistenciaService {
@@ -227,6 +227,7 @@ export class AsistenciaService {
         total_asistencias: diaria.filter(r => r.estado === 'PRESENTE').length,
         total_faltas:      diaria.filter(r => r.estado === 'AUSENTE').length,
         total_tardanzas:   diaria.filter(r => r.estado === 'TARDANZA').length,
+        total_licencias:   diaria.filter(r => r.estado === 'LICENCIA').length,
         dias: diaria.map(r => ({ fecha: r.fecha.toISOString().slice(0, 10), estado: r.estado })),
       },
       por_materia: Object.values(

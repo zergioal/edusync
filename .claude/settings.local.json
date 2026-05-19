@@ -84,7 +84,8 @@
       "Bash(pnpm --filter @edusync/api exec tsc --noEmit)",
       "Bash(del \"d:\\\\PROYECTOS WEB\\\\SISTEMA-UE\\\\edusync\\\\packages\\\\database\\\\scripts\\\\_check-materias.ts\")",
       "Bash(Get-ChildItem -Path \"d:\\\\PROYECTOS WEB\\\\SISTEMA-UE\\\\edusync\\\\apps\\\\web\\\\src\\\\pages\" -Directory)",
-      "Bash(Select-Object Name)"
+      "Bash(Select-Object Name)",
+      "Bash(grep -v \"packages\\\\\\\\\")"
     ],
     "additionalDirectories": [
       "d:\\PROYECTOS WEB\\SISTEMA-UE\\edusync\\apps\\api"

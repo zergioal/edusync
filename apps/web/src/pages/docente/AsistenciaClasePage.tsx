@@ -4,7 +4,7 @@ import { api, ApiError } from '../../lib/api'
 import { useToast } from '../../components/ui/Toast'
 import { Spinner } from '@edusync/ui'
 
-type Estado = 'PRESENTE' | 'AUSENTE' | 'TARDANZA'
+type Estado = 'PRESENTE' | 'AUSENTE' | 'TARDANZA' | 'LICENCIA'
 
 interface Estudiante {
   estudiante_id: string
@@ -33,15 +33,18 @@ const MESES_NOMBRES = [
 ]
 
 const ESTADO_CFG = {
-  PRESENTE: { bg: 'bg-emerald-500', text: 'text-white', ring: 'ring-emerald-600', label: 'P' },
-  AUSENTE:  { bg: 'bg-red-500',     text: 'text-white', ring: 'ring-red-600',     label: 'A' },
-  TARDANZA: { bg: 'bg-amber-400',   text: 'text-white', ring: 'ring-amber-500',   label: 'T' },
+  PRESENTE: { bg: 'bg-emerald-500', text: 'text-white', ring: 'ring-emerald-600', label: 'P', title: 'Presente'  },
+  AUSENTE:  { bg: 'bg-red-500',     text: 'text-white', ring: 'ring-red-600',     label: 'F', title: 'Falta'     },
+  TARDANZA: { bg: 'bg-amber-400',   text: 'text-white', ring: 'ring-amber-500',   label: 'T', title: 'Tardanza'  },
+  LICENCIA: { bg: 'bg-blue-400',    text: 'text-white', ring: 'ring-blue-500',    label: 'L', title: 'Licencia'  },
 } as const
 
+// Cycle: empty → P → T → F → L → P
 function nextEstado(cur: Estado | undefined): Estado {
-  if (!cur || cur === 'TARDANZA') return 'PRESENTE'
-  if (cur === 'PRESENTE') return 'AUSENTE'
-  return 'TARDANZA'
+  if (!cur || cur === 'LICENCIA') return 'PRESENTE'
+  if (cur === 'PRESENTE') return 'TARDANZA'
+  if (cur === 'TARDANZA') return 'AUSENTE'
+  return 'LICENCIA'
 }
 
 function hoyStr() { return new Date().toISOString().slice(0, 10) }
@@ -90,7 +93,6 @@ export default function AsistenciaClasePage() {
         `/asistencia/clase/mensual?asignacion_id=${asignacion_id}&mes=${mes}`,
       )
       setEstudiantes(d.estudiantes)
-      // Convert string records to typed
       const typed: Record<string, Record<string, Estado>> = {}
       for (const [fecha, dayRec] of Object.entries(d.records)) {
         typed[fecha] = {}
@@ -112,7 +114,7 @@ export default function AsistenciaClasePage() {
 
   function clickCell(fecha: string, estudianteId: string) {
     const today = hoyStr()
-    if (fecha > today) return  // no future dates
+    if (fecha > today) return
     setRecords(prev => {
       const dayRec = { ...(prev[fecha] ?? {}) }
       dayRec[estudianteId] = nextEstado(dayRec[estudianteId])
@@ -121,7 +123,6 @@ export default function AsistenciaClasePage() {
     setDirtyDays(prev => new Set(prev).add(fecha))
   }
 
-  // Mark entire column (day) with a single estado
   function marcarColumna(fecha: string, estado: Estado) {
     setRecords(prev => {
       const dayRec: Record<string, Estado> = {}
@@ -169,14 +170,12 @@ export default function AsistenciaClasePage() {
   const schoolDays: string[] = []
   for (let d = 1; d <= daysInMonth; d++) {
     const dow = new Date(yearN!, monthN! - 1, d).getDay()
-    if (dow !== 0) {  // Mon–Sat
+    if (dow !== 0) {
       const fecha = `${mes}-${String(d).padStart(2, '0')}`
       schoolDays.push(fecha)
     }
   }
   const today = hoyStr()
-
-  // ── Nav ───────────────────────────────────────────────────────────────────
 
   function navMes(delta: number) {
     const [y, m] = mes.split('-').map(Number)
@@ -190,18 +189,20 @@ export default function AsistenciaClasePage() {
     ? `${asignacion.materia.nombre} — ${asignacion.paralelo.grado.nombre} "${asignacion.paralelo.letra}"`
     : 'Asistencia de Clase'
 
-  // Totals per student
   function studentTotals(estId: string) {
-    let p = 0, a = 0, t = 0
+    let p = 0, f = 0, t = 0, l = 0
     for (const fecha of schoolDays) {
       if (fecha > today) continue
       const e = records[fecha]?.[estId]
-      if (e === 'PRESENTE') p++
-      else if (e === 'AUSENTE') a++
-      else if (e === 'TARDANZA') t++
+      if (e === 'PRESENTE')  p++
+      else if (e === 'AUSENTE')   f++
+      else if (e === 'TARDANZA')  t++
+      else if (e === 'LICENCIA')  l++
     }
-    return { p, a, t }
+    return { p, f, t, l }
   }
+
+  const ESTADOS_COLUMNA: Estado[] = ['PRESENTE', 'TARDANZA', 'AUSENTE', 'LICENCIA']
 
   return (
     <div className="space-y-4">
@@ -251,10 +252,10 @@ export default function AsistenciaClasePage() {
             <span className={`inline-flex w-5 h-5 rounded items-center justify-center text-[10px] font-bold ${cfg.bg} ${cfg.text}`}>
               {cfg.label}
             </span>
-            <span>{cfg.label === 'P' ? 'Presente' : cfg.label === 'A' ? 'Ausente' : 'Tardanza'}</span>
+            <span>{cfg.title}</span>
           </div>
         ))}
-        <span className="text-gray-400">· = Sin registro · Haz clic para cambiar estado</span>
+        <span className="text-gray-400">· = Sin registro · Clic para cambiar</span>
       </div>
 
       {/* Table */}
@@ -268,7 +269,7 @@ export default function AsistenciaClasePage() {
             <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white shadow-sm">
               <table
                 className="text-xs border-collapse"
-                style={{ minWidth: `${240 + schoolDays.length * 34 + 110}px` }}
+                style={{ minWidth: `${240 + schoolDays.length * 34 + 140}px` }}
               >
                 <thead>
                   {/* Date row */}
@@ -310,6 +311,7 @@ export default function AsistenciaClasePage() {
                     <th className="border-l border-gray-200 bg-emerald-50 text-emerald-700 px-2 py-2 text-center">P</th>
                     <th className="border-l border-gray-100 bg-amber-50  text-amber-700  px-2 py-2 text-center">T</th>
                     <th className="border-l border-gray-100 bg-red-50    text-red-700    px-2 py-2 text-center">F</th>
+                    <th className="border-l border-gray-100 bg-blue-50   text-blue-700   px-2 py-2 text-center">L</th>
                   </tr>
 
                   {/* "Mark all" row */}
@@ -323,12 +325,12 @@ export default function AsistenciaClasePage() {
                         <td key={fecha} className="border-r border-gray-100 text-center">
                           {!isFut && (
                             <div className="flex flex-col gap-px items-center py-0.5">
-                              {(['PRESENTE', 'AUSENTE', 'TARDANZA'] as Estado[]).map(e => (
+                              {ESTADOS_COLUMNA.map(e => (
                                 <button
                                   key={e}
                                   onClick={() => marcarColumna(fecha, e)}
-                                  title={`Todos ${e}`}
-                                  className={`w-4 h-2 rounded-sm text-[7px] font-bold transition-opacity hover:opacity-80 ${ESTADO_CFG[e].bg}`}
+                                  title={`Todos: ${ESTADO_CFG[e].title}`}
+                                  className={`w-4 h-2 rounded-sm transition-opacity hover:opacity-80 ${ESTADO_CFG[e].bg}`}
                                 />
                               ))}
                             </div>
@@ -336,7 +338,7 @@ export default function AsistenciaClasePage() {
                         </td>
                       )
                     })}
-                    <td colSpan={3} className="border-l border-gray-200" />
+                    <td colSpan={4} className="border-l border-gray-200" />
                   </tr>
                 </thead>
 
@@ -356,10 +358,10 @@ export default function AsistenciaClasePage() {
 
                         {/* Day cells */}
                         {schoolDays.map(fecha => {
-                          const isFut   = fecha > today
-                          const isSat   = new Date(fecha).getDay() === 6
-                          const estado  = records[fecha]?.[est.estudiante_id]
-                          const cfg     = estado ? ESTADO_CFG[estado] : null
+                          const isFut  = fecha > today
+                          const isSat  = new Date(fecha).getDay() === 6
+                          const estado = records[fecha]?.[est.estudiante_id]
+                          const cfg    = estado ? ESTADO_CFG[estado] : null
 
                           return (
                             <td
@@ -371,7 +373,7 @@ export default function AsistenciaClasePage() {
                               ) : (
                                 <button
                                   onClick={() => clickCell(fecha, est.estudiante_id)}
-                                  title={cfg ? cfg.label : '—'}
+                                  title={cfg ? cfg.title : '—'}
                                   className={`w-7 h-7 rounded font-bold transition-all hover:scale-110 active:scale-95 ${
                                     cfg
                                       ? `${cfg.bg} ${cfg.text}`
@@ -388,7 +390,8 @@ export default function AsistenciaClasePage() {
                         {/* Totals */}
                         <td className="text-center px-2 font-bold text-emerald-700 bg-emerald-50/60 border-l border-gray-200">{totals.p}</td>
                         <td className="text-center px-2 font-bold text-amber-700   bg-amber-50/60  border-l border-gray-100">{totals.t}</td>
-                        <td className="text-center px-2 font-bold text-red-700     bg-red-50/60    border-l border-gray-100">{totals.a}</td>
+                        <td className="text-center px-2 font-bold text-red-700     bg-red-50/60    border-l border-gray-100">{totals.f}</td>
+                        <td className="text-center px-2 font-bold text-blue-700    bg-blue-50/60   border-l border-gray-100">{totals.l}</td>
                       </tr>
                     )
                   })}
