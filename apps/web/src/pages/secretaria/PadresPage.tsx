@@ -224,8 +224,9 @@ export default function PadresPage() {
   if (view === 'cursos') {
     const byNivel: Record<string, ParaleloCard[]> = {}
     for (const p of paralelos) {
-      const n = p.grado.nivel.nombre;
-      (byNivel[n] ??= []).push(p)
+      const n = p.grado?.nivel?.nombre
+      if (!n) continue
+      ;(byNivel[n] ??= []).push(p)
     }
     const nivelOrder = ['INICIAL', 'PRIMARIA', 'SECUNDARIA']
     const niveles = nivelOrder.filter(n => byNivel[n])
@@ -247,8 +248,8 @@ export default function PadresPage() {
             {niveles.map(nivelNombre => {
               const style = NIVEL_STYLES[nivelNombre] ?? NIVEL_FALLBACK
               const cards = byNivel[nivelNombre]!.sort((a, b) => {
-                const numA = parseInt(a.grado.nombre.match(/\d+/)?.[0] ?? '0')
-                const numB = parseInt(b.grado.nombre.match(/\d+/)?.[0] ?? '0')
+                const numA = parseInt(a.grado?.nombre?.match(/\d+/)?.[0] ?? '0')
+                const numB = parseInt(b.grado?.nombre?.match(/\d+/)?.[0] ?? '0')
                 return numA !== numB ? numA - numB : a.letra.localeCompare(b.letra)
               })
               return (
@@ -268,7 +269,7 @@ export default function PadresPage() {
                         className={`flex flex-col items-center justify-center rounded-xl border-2 h-20 text-center transition-all duration-150 hover:-translate-y-0.5 hover:shadow-md ${style.bg} ${style.border} ${style.hover}`}
                       >
                         <p className={`text-base font-extrabold leading-tight px-1 ${style.num}`}>
-                          {abbreviateGrado(p.grado.nombre, p.letra)}
+                          {abbreviateGrado(p.grado?.nombre ?? '', p.letra)}
                         </p>
                         <p className="mt-1 text-[10px] font-medium text-gray-400 uppercase tracking-wide">
                           {style.label || nivelNombre}
