@@ -13,6 +13,7 @@ const MisMateriasPage          = lazy(() => import('../docente/MisMateriasPage')
 const PlanillaPage             = lazy(() => import('../docente/PlanillaPage'))
 const ObservacionesInicialPage = lazy(() => import('../docente/ObservacionesInicialPage'))
 const AsistenciaClasePage      = lazy(() => import('../docente/AsistenciaClasePage'))
+const DocenteAsistenciaPage    = lazy(() => import('../docente/DocenteAsistenciaPage'))
 const DocenteEstudiantesPage   = lazy(() => import('../docente/DocenteEstudiantesPage'))
 const TareasPage               = lazy(() => import('../docente/TareasPage'))
 const PerfilEstudiantePage     = lazy(() => import('../secretaria/PerfilEstudiantePage'))
@@ -201,7 +202,7 @@ export default function DocenteDashboard() {
         <Route path="estudiantes"               element={<DocenteEstudiantesPage />} />
         <Route path="estudiante/:id"            element={<PerfilEstudiantePage visibleTabs={['calificaciones']} />} />
         <Route path="calificaciones"            element={<MisMateriasPage />} />
-        <Route path="asistencia"                element={<SectionPlaceholder title="Asistencia — selecciona una asignación desde Mis Materias" />} />
+        <Route path="asistencia"                element={<DocenteAsistenciaPage />} />
         <Route path="horario"                   element={<SectionPlaceholder title="Mi Horario" />} />
         <Route path="anuncios"                  element={<AnunciosInternosPage />} />
         <Route path="mensajes"                  element={<MensajesPage />} />

@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { useParams } from 'react-router-dom'
+import { useParams, useNavigate } from 'react-router-dom'
 import { api, ApiError } from '../../lib/api'
 import { useToast } from '../../components/ui/Toast'
 import { Spinner } from '@edusync/ui'
@@ -33,17 +33,17 @@ const MESES_NOMBRES = [
 ]
 
 const ESTADO_CFG = {
-  PRESENTE: { bg: 'bg-emerald-500', text: 'text-white', ring: 'ring-emerald-600', label: 'P', title: 'Presente'  },
-  AUSENTE:  { bg: 'bg-red-500',     text: 'text-white', ring: 'ring-red-600',     label: 'F', title: 'Falta'     },
-  TARDANZA: { bg: 'bg-amber-400',   text: 'text-white', ring: 'ring-amber-500',   label: 'T', title: 'Tardanza'  },
-  LICENCIA: { bg: 'bg-blue-400',    text: 'text-white', ring: 'ring-blue-500',    label: 'L', title: 'Licencia'  },
+  PRESENTE: { bg: 'bg-emerald-500', text: 'text-white', ring: 'ring-emerald-600', label: 'P', title: 'Presente' },
+  AUSENTE:  { bg: 'bg-red-500',     text: 'text-white', ring: 'ring-red-600',     label: 'F', title: 'Falta'    },
+  TARDANZA: { bg: 'bg-amber-400',   text: 'text-white', ring: 'ring-amber-500',   label: 'A', title: 'Atraso'   },
+  LICENCIA: { bg: 'bg-blue-400',    text: 'text-white', ring: 'ring-blue-500',    label: 'L', title: 'Licencia' },
 } as const
 
-// Cycle: empty → P → T → F → L → P
+// Cycle: empty → P → F → A → L → P
 function nextEstado(cur: Estado | undefined): Estado {
   if (!cur || cur === 'LICENCIA') return 'PRESENTE'
-  if (cur === 'PRESENTE') return 'TARDANZA'
-  if (cur === 'TARDANZA') return 'AUSENTE'
+  if (cur === 'PRESENTE') return 'AUSENTE'
+  if (cur === 'AUSENTE')  return 'TARDANZA'
   return 'LICENCIA'
 }
 
@@ -60,6 +60,7 @@ function mesLabel(m: string) {
 
 export default function AsistenciaClasePage() {
   const { asignacion_id } = useParams<{ asignacion_id: string }>()
+  const navigate = useNavigate()
   const toast    = useToast()
   const toastRef = useRef(toast)
   toastRef.current = toast
@@ -210,6 +211,12 @@ export default function AsistenciaClasePage() {
       {/* Header */}
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
+          <button
+            onClick={() => navigate('/dashboard/docente/asistencia')}
+            className="mb-1 flex items-center gap-1 text-xs text-indigo-500 hover:text-indigo-700 font-medium transition-colors"
+          >
+            ← Cambiar materia
+          </button>
           <h1 className="text-xl font-bold text-gray-900">Asistencia de Clase</h1>
           <p className="text-sm text-gray-500 mt-0.5">{titulo}</p>
         </div>
@@ -309,8 +316,8 @@ export default function AsistenciaClasePage() {
 
                     {/* Totals headers */}
                     <th className="border-l border-gray-200 bg-emerald-50 text-emerald-700 px-2 py-2 text-center">P</th>
-                    <th className="border-l border-gray-100 bg-amber-50  text-amber-700  px-2 py-2 text-center">T</th>
                     <th className="border-l border-gray-100 bg-red-50    text-red-700    px-2 py-2 text-center">F</th>
+                    <th className="border-l border-gray-100 bg-amber-50  text-amber-700  px-2 py-2 text-center">A</th>
                     <th className="border-l border-gray-100 bg-blue-50   text-blue-700   px-2 py-2 text-center">L</th>
                   </tr>
 
@@ -387,10 +394,10 @@ export default function AsistenciaClasePage() {
                           )
                         })}
 
-                        {/* Totals */}
+                        {/* Totals P / F / A / L */}
                         <td className="text-center px-2 font-bold text-emerald-700 bg-emerald-50/60 border-l border-gray-200">{totals.p}</td>
-                        <td className="text-center px-2 font-bold text-amber-700   bg-amber-50/60  border-l border-gray-100">{totals.t}</td>
                         <td className="text-center px-2 font-bold text-red-700     bg-red-50/60    border-l border-gray-100">{totals.f}</td>
+                        <td className="text-center px-2 font-bold text-amber-700   bg-amber-50/60  border-l border-gray-100">{totals.t}</td>
                         <td className="text-center px-2 font-bold text-blue-700    bg-blue-50/60   border-l border-gray-100">{totals.l}</td>
                       </tr>
                     )
