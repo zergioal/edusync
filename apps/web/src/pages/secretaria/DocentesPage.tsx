@@ -338,7 +338,7 @@ function AsignacionesTab({ doc, onChanged }: { doc: DocenteDetalle; onChanged: (
                       <p className="text-xs text-gray-400">{a.materia.campo.nombre}</p>
                     </td>
                     <td className="px-4 py-2.5 text-gray-600">
-                      {a.paralelo.grado.nivel.nombre} · {a.paralelo.grado.nombre} "{a.paralelo.letra}"
+                      {a.paralelo?.grado?.nivel?.nombre} · {a.paralelo?.grado?.nombre} "{a.paralelo?.letra}"
                     </td>
                     <td className="px-4 py-2.5 text-gray-600">{a.gestion.anno}</td>
                     <td className="px-3 py-2.5 text-right">
@@ -479,13 +479,13 @@ export default function DocentesPage() {
               </tr>
             )}
             {docentes.map((doc, idx) => {
-              const materias = [...new Set(doc.asignaciones.map(a => a.materia.nombre))]
+              const materias = [...new Set(doc.asignaciones.map(a => a.materia?.nombre).filter(Boolean))]
               const horasMes = doc.asignaciones.reduce((s, a) => {
-                const ch = a.materia.carga_horaria.find(c => c.grado_id === a.paralelo.grado.id)
-                return s + (ch?.horas_mes ?? (a.materia.horas_semanales ?? 0) * 4)
+                const ch = a.materia?.carga_horaria?.find(c => c.grado_id === a.paralelo?.grado?.id)
+                return s + (ch?.horas_mes ?? (a.materia?.horas_semanales ?? 0) * 4)
               }, 0)
               const cursos     = [...new Set(doc.asignaciones.map(a =>
-                abbreviateCurso(a.paralelo.grado.nombre, a.paralelo.letra)
+                abbreviateCurso(a.paralelo?.grado?.nombre ?? '', a.paralelo?.letra ?? '')
               ))]
               return (
                 <tr key={doc.id} className="hover:bg-slate-50/60 transition-colors align-top">
