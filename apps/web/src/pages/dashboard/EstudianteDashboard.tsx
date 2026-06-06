@@ -1,17 +1,17 @@
+import { lazy, useEffect, useState } from 'react'
 import { Routes, Route } from 'react-router-dom'
-import { useEffect, useState } from 'react'
 import { DashboardLayout } from '../../components/layout/DashboardLayout'
 import { StatCard } from '../../components/ui/StatCard'
 import { useAuth } from '../../context/AuthContext'
 import { Badge } from '@edusync/ui'
 import { api } from '../../lib/api'
 import { AvatarDisplay, AvatarPickerModal, useAvatar } from '../../components/ui/AvatarSelector'
-import MisCalificacionesPage from '../estudiante/MisCalificacionesPage'
-import MiBoletinPage         from '../estudiante/MiBoletinPage'
-import MiAsistenciaPage      from '../estudiante/MiAsistenciaPage'
-import MisTareasPage         from '../estudiante/MisTareasPage'
-import AnunciosInternosPage  from '../shared/AnunciosInternosPage'
-import MensajesPage          from '../shared/MensajesPage'
+const MisCalificacionesPage = lazy(() => import('../estudiante/MisCalificacionesPage'))
+const MiBoletinPage         = lazy(() => import('../estudiante/MiBoletinPage'))
+const MiAsistenciaPage      = lazy(() => import('../estudiante/MiAsistenciaPage'))
+const MisTareasPage         = lazy(() => import('../estudiante/MisTareasPage'))
+const AnunciosInternosPage  = lazy(() => import('../shared/AnunciosInternosPage'))
+const MensajesPage          = lazy(() => import('../shared/MensajesPage'))
 
 type Escala = 'ED' | 'DA' | 'DO' | 'DP'
 interface HomeStats {

@@ -1,16 +1,17 @@
+import { lazy } from 'react'
 import { Routes, Route } from 'react-router-dom'
 import { DashboardLayout } from '../../components/layout/DashboardLayout'
 import { StatCard } from '../../components/ui/StatCard'
 import { useAuth } from '../../context/AuthContext'
 import { Badge } from '@edusync/ui'
 import { useGestionActiva } from '../../hooks/useGestionActiva'
-import AsistenciaDiariaPage        from '../regente/AsistenciaDiariaPage'
-import ReporteAsistenciaPage       from '../regente/ReporteAsistenciaPage'
-import ComunicadosInasistenciaPage from '../regente/ComunicadosInasistenciaPage'
-import RegenteEstudiantesPage      from '../regente/RegenteEstudiantesPage'
-import PerfilEstudiantePage        from '../secretaria/PerfilEstudiantePage'
-import AnunciosInternosPage        from '../shared/AnunciosInternosPage'
-import MensajesPage                from '../shared/MensajesPage'
+const AsistenciaDiariaPage        = lazy(() => import('../regente/AsistenciaDiariaPage'))
+const ReporteAsistenciaPage       = lazy(() => import('../regente/ReporteAsistenciaPage'))
+const ComunicadosInasistenciaPage = lazy(() => import('../regente/ComunicadosInasistenciaPage'))
+const RegenteEstudiantesPage      = lazy(() => import('../regente/RegenteEstudiantesPage'))
+const PerfilEstudiantePage        = lazy(() => import('../secretaria/PerfilEstudiantePage'))
+const AnunciosInternosPage        = lazy(() => import('../shared/AnunciosInternosPage'))
+const MensajesPage                = lazy(() => import('../shared/MensajesPage'))
 
 function RegenteHome() {
   const { user } = useAuth()

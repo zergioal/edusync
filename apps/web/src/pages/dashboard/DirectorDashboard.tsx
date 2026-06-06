@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, lazy } from 'react'
 import { Routes, Route } from 'react-router-dom'
 import { DashboardLayout } from '../../components/layout/DashboardLayout'
 import { StatCard } from '../../components/ui/StatCard'
@@ -9,16 +9,16 @@ import { api, ApiError } from '../../lib/api'
 import { Badge, Spinner, Button } from '@edusync/ui'
 import { AvatarDisplay, AvatarPickerModal, useAvatar } from '../../components/ui/AvatarSelector'
 import { ROL_LABELS } from '../../lib/roleRoutes'
-import CargaHorariaDocentesPage from '../director/CargaHorariaDocentesPage'
-import AnunciosInternosPage     from '../shared/AnunciosInternosPage'
-import MensajesPage             from '../shared/MensajesPage'
-import ReportesPage             from '../coordinador/ReportesPage'
-import GestionesPage            from '../secretaria/GestionesPage'
-import DocentesPage             from '../secretaria/DocentesPage'
-import EstudiantesPage          from '../secretaria/EstudiantesPage'
-import PerfilEstudiantePage     from '../secretaria/PerfilEstudiantePage'
-import AuditoriaPage            from '../admin/AuditoriaPage'
-import PadresPage               from '../secretaria/PadresPage'
+const CargaHorariaDocentesPage = lazy(() => import('../director/CargaHorariaDocentesPage'))
+const AnunciosInternosPage     = lazy(() => import('../shared/AnunciosInternosPage'))
+const MensajesPage             = lazy(() => import('../shared/MensajesPage'))
+const ReportesPage             = lazy(() => import('../coordinador/ReportesPage'))
+const GestionesPage            = lazy(() => import('../secretaria/GestionesPage'))
+const DocentesPage             = lazy(() => import('../secretaria/DocentesPage'))
+const EstudiantesPage          = lazy(() => import('../secretaria/EstudiantesPage'))
+const PerfilEstudiantePage     = lazy(() => import('../secretaria/PerfilEstudiantePage'))
+const AuditoriaPage            = lazy(() => import('../admin/AuditoriaPage'))
+const PadresPage               = lazy(() => import('../secretaria/PadresPage'))
 
 interface GestionInfo {
   id:        string

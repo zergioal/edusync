@@ -1,15 +1,16 @@
+import { lazy } from 'react'
 import { Routes, Route } from 'react-router-dom'
 import { DashboardLayout } from '../../components/layout/DashboardLayout'
 import { StatCard } from '../../components/ui/StatCard'
 import { useAuth } from '../../context/AuthContext'
 import { Badge } from '@edusync/ui'
 import { useGestionActiva } from '../../hooks/useGestionActiva'
-import CalificacionesHijoPage from '../padre/CalificacionesHijoPage'
-import BoletinHijoPage        from '../padre/BoletinHijoPage'
-import PagosHijoPage          from '../padre/PagosHijoPage'
-import AsistenciaHijoPage     from '../padre/AsistenciaHijoPage'
-import AnunciosInternosPage   from '../shared/AnunciosInternosPage'
-import MensajesPage           from '../shared/MensajesPage'
+const CalificacionesHijoPage = lazy(() => import('../padre/CalificacionesHijoPage'))
+const BoletinHijoPage        = lazy(() => import('../padre/BoletinHijoPage'))
+const PagosHijoPage          = lazy(() => import('../padre/PagosHijoPage'))
+const AsistenciaHijoPage     = lazy(() => import('../padre/AsistenciaHijoPage'))
+const AnunciosInternosPage   = lazy(() => import('../shared/AnunciosInternosPage'))
+const MensajesPage           = lazy(() => import('../shared/MensajesPage'))
 
 function PadreHome() {
   const { user } = useAuth()

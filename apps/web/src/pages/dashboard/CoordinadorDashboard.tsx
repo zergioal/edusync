@@ -1,3 +1,4 @@
+import { lazy } from 'react'
 import { Routes, Route } from 'react-router-dom'
 import { DashboardLayout } from '../../components/layout/DashboardLayout'
 import { StatCard } from '../../components/ui/StatCard'
@@ -6,17 +7,17 @@ import { ROL_LABELS } from '../../lib/roleRoutes'
 import { Badge } from '@edusync/ui'
 
 import { useGestionActiva } from '../../hooks/useGestionActiva'
-import ParalelosPage        from '../coordinador/ParalelosPage'
-import AsignacionesPage     from '../coordinador/AsignacionesPage'
-import HorariosPage         from '../coordinador/HorariosPage'
-import ReportesPage         from '../coordinador/ReportesPage'
-import GestionesPage        from '../secretaria/GestionesPage'
-import DocentesPage         from '../secretaria/DocentesPage'
-import EstudiantesPage      from '../secretaria/EstudiantesPage'
-import PerfilEstudiantePage from '../secretaria/PerfilEstudiantePage'
-import AnunciosInternosPage from '../shared/AnunciosInternosPage'
-import MensajesPage         from '../shared/MensajesPage'
-import PadresPage           from '../secretaria/PadresPage'
+const ParalelosPage        = lazy(() => import('../coordinador/ParalelosPage'))
+const AsignacionesPage     = lazy(() => import('../coordinador/AsignacionesPage'))
+const HorariosPage         = lazy(() => import('../coordinador/HorariosPage'))
+const ReportesPage         = lazy(() => import('../coordinador/ReportesPage'))
+const GestionesPage        = lazy(() => import('../secretaria/GestionesPage'))
+const DocentesPage         = lazy(() => import('../secretaria/DocentesPage'))
+const EstudiantesPage      = lazy(() => import('../secretaria/EstudiantesPage'))
+const PerfilEstudiantePage = lazy(() => import('../secretaria/PerfilEstudiantePage'))
+const AnunciosInternosPage = lazy(() => import('../shared/AnunciosInternosPage'))
+const MensajesPage         = lazy(() => import('../shared/MensajesPage'))
+const PadresPage           = lazy(() => import('../secretaria/PadresPage'))
 
 // ─── Panel principal ──────────────────────────────────────────────────────────
 

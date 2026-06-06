@@ -1,3 +1,4 @@
+import { lazy } from 'react'
 import { Routes, Route } from 'react-router-dom'
 import { DashboardLayout } from '../../components/layout/DashboardLayout'
 import { StatCard } from '../../components/ui/StatCard'
@@ -6,22 +7,22 @@ import { ROL_LABELS } from '../../lib/roleRoutes'
 import { Badge } from '@edusync/ui'
 
 import { useGestionActiva } from '../../hooks/useGestionActiva'
-import EstudiantesPage      from '../secretaria/EstudiantesPage'
-import PerfilEstudiantePage from '../secretaria/PerfilEstudiantePage'
-import GestionesPage        from '../secretaria/GestionesPage'
-import DocentesPage         from '../secretaria/DocentesPage'
-import ParalelosPage        from '../coordinador/ParalelosPage'
-import AsignacionesPage     from '../coordinador/AsignacionesPage'
-import PensionesPage        from '../contador/PensionesPage'
-import MorosidadPage        from '../contador/MorosidadPage'
-import EstadoCuentaPage     from '../contador/EstadoCuentaPage'
-import TarifasPage          from '../contador/TarifasPage'
-import ConfiguracionPage     from '../admin/ConfiguracionPage'
-import InstitucionesPage     from '../admin/InstitucionesPage'
-import AuditoriaPage         from '../admin/AuditoriaPage'
-import AnunciosInternosPage  from '../shared/AnunciosInternosPage'
-import MensajesPage          from '../shared/MensajesPage'
-import PadresPage            from '../secretaria/PadresPage'
+const EstudiantesPage      = lazy(() => import('../secretaria/EstudiantesPage'))
+const PerfilEstudiantePage = lazy(() => import('../secretaria/PerfilEstudiantePage'))
+const GestionesPage        = lazy(() => import('../secretaria/GestionesPage'))
+const DocentesPage         = lazy(() => import('../secretaria/DocentesPage'))
+const ParalelosPage        = lazy(() => import('../coordinador/ParalelosPage'))
+const AsignacionesPage     = lazy(() => import('../coordinador/AsignacionesPage'))
+const PensionesPage        = lazy(() => import('../contador/PensionesPage'))
+const MorosidadPage        = lazy(() => import('../contador/MorosidadPage'))
+const EstadoCuentaPage     = lazy(() => import('../contador/EstadoCuentaPage'))
+const TarifasPage          = lazy(() => import('../contador/TarifasPage'))
+const ConfiguracionPage    = lazy(() => import('../admin/ConfiguracionPage'))
+const InstitucionesPage    = lazy(() => import('../admin/InstitucionesPage'))
+const AuditoriaPage        = lazy(() => import('../admin/AuditoriaPage'))
+const AnunciosInternosPage = lazy(() => import('../shared/AnunciosInternosPage'))
+const MensajesPage         = lazy(() => import('../shared/MensajesPage'))
+const PadresPage           = lazy(() => import('../secretaria/PadresPage'))
 
 // ─── Panel principal ──────────────────────────────────────────────────────────
 

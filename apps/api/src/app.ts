@@ -1,4 +1,5 @@
 import express from 'express'
+import compression from 'compression'
 import cors from 'cors'
 import helmet from 'helmet'
 import morgan from 'morgan'
@@ -19,6 +20,7 @@ const devOrigins  = (process.env['CORS_ORIGIN'] ?? 'http://localhost:5173')
 
 const subdomainRe = new RegExp(`^https://[a-z0-9-]+\\.${baseDomain.replace(/\./g, '\\.')}$`)
 
+app.use(compression())
 app.use(cors({
   origin: (origin, callback) => {
     if (!origin) return callback(null, true) // server-to-server / Postman

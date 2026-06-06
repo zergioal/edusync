@@ -1,5 +1,5 @@
 import { Routes, Route, useNavigate } from 'react-router-dom'
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, lazy } from 'react'
 import { DashboardLayout } from '../../components/layout/DashboardLayout'
 import { StatCard } from '../../components/ui/StatCard'
 import { useAuth } from '../../context/AuthContext'
@@ -9,15 +9,15 @@ import { Badge } from '@edusync/ui'
 import { api } from '../../lib/api'
 import { AvatarDisplay, AvatarPickerModal, useAvatar } from '../../components/ui/AvatarSelector'
 
-import MisMateriasPage          from '../docente/MisMateriasPage'
-import PlanillaPage             from '../docente/PlanillaPage'
-import ObservacionesInicialPage from '../docente/ObservacionesInicialPage'
-import AsistenciaClasePage      from '../docente/AsistenciaClasePage'
-import DocenteEstudiantesPage   from '../docente/DocenteEstudiantesPage'
-import TareasPage               from '../docente/TareasPage'
-import PerfilEstudiantePage     from '../secretaria/PerfilEstudiantePage'
-import AnunciosInternosPage     from '../shared/AnunciosInternosPage'
-import MensajesPage             from '../shared/MensajesPage'
+const MisMateriasPage          = lazy(() => import('../docente/MisMateriasPage'))
+const PlanillaPage             = lazy(() => import('../docente/PlanillaPage'))
+const ObservacionesInicialPage = lazy(() => import('../docente/ObservacionesInicialPage'))
+const AsistenciaClasePage      = lazy(() => import('../docente/AsistenciaClasePage'))
+const DocenteEstudiantesPage   = lazy(() => import('../docente/DocenteEstudiantesPage'))
+const TareasPage               = lazy(() => import('../docente/TareasPage'))
+const PerfilEstudiantePage     = lazy(() => import('../secretaria/PerfilEstudiantePage'))
+const AnunciosInternosPage     = lazy(() => import('../shared/AnunciosInternosPage'))
+const MensajesPage             = lazy(() => import('../shared/MensajesPage'))
 
 interface AsignacionCard {
   id:            string

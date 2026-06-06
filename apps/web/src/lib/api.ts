@@ -10,15 +10,52 @@ export class ApiError extends Error {
   }
 }
 
+// ─── Token cache (55 s TTL — tokens are valid 1 h) ───────────────────────────
+
+let _tokenCache: { token: string; expiresAt: number } | null = null
+
+supabase.auth.onAuthStateChange(() => { _tokenCache = null })
+
 async function getToken(): Promise<string | null> {
+  const now = Date.now()
+  if (_tokenCache && now < _tokenCache.expiresAt) return _tokenCache.token
+
   const { data: { session } } = await supabase.auth.getSession()
-  return session?.access_token ?? null
+  if (session?.access_token) {
+    _tokenCache = { token: session.access_token, expiresAt: now + 55_000 }
+    return session.access_token
+  }
+  _tokenCache = null
+  return null
 }
+
+// ─── In-flight GET deduplication ─────────────────────────────────────────────
+// Prevents duplicate parallel requests for the same URL (e.g. DocenteHome +
+// MisMateriasPage both calling /asignaciones/mias before either resolves).
+
+const _inflight = new Map<string, Promise<unknown>>()
 
 export async function apiFetch<T = unknown>(
   path: string,
   options: RequestInit = {}
 ): Promise<T> {
+  const method = (options.method ?? 'GET').toUpperCase()
+
+  // Deduplicate only idempotent GET requests
+  if (method === 'GET') {
+    const key = path
+    const existing = _inflight.get(key)
+    if (existing) return existing as Promise<T>
+
+    const promise = _doFetch<T>(path, options).finally(() => _inflight.delete(key))
+    _inflight.set(key, promise)
+    return promise
+  }
+
+  return _doFetch<T>(path, options)
+}
+
+async function _doFetch<T>(path: string, options: RequestInit): Promise<T> {
   const token = await getToken()
 
   const res = await fetch(`${API_BASE}${path}`, {
@@ -65,9 +102,9 @@ export async function apiDownload(path: string, filename: string): Promise<void>
 
 // Helpers tipados
 export const api = {
-  get:    <T>(path: string)                       => apiFetch<T>(path),
-  post:   <T>(path: string, body: unknown)        => apiFetch<T>(path, { method: 'POST',   body: JSON.stringify(body) }),
-  put:    <T>(path: string, body: unknown)        => apiFetch<T>(path, { method: 'PUT',    body: JSON.stringify(body) }),
-  patch:  <T>(path: string, body: unknown)        => apiFetch<T>(path, { method: 'PATCH',  body: JSON.stringify(body) }),
-  delete: <T>(path: string)                       => apiFetch<T>(path, { method: 'DELETE' }),
+  get:    <T>(path: string)                => apiFetch<T>(path),
+  post:   <T>(path: string, body: unknown) => apiFetch<T>(path, { method: 'POST',   body: JSON.stringify(body) }),
+  put:    <T>(path: string, body: unknown) => apiFetch<T>(path, { method: 'PUT',    body: JSON.stringify(body) }),
+  patch:  <T>(path: string, body: unknown) => apiFetch<T>(path, { method: 'PATCH',  body: JSON.stringify(body) }),
+  delete: <T>(path: string)               => apiFetch<T>(path, { method: 'DELETE' }),
 }
