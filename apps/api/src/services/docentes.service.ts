@@ -24,8 +24,7 @@ async function createSupabaseUser(email: string, password: string): Promise<stri
 const DOC_INCLUDE = {
   usuario: { select: { id: true, nombre: true, apellido: true, email: true, activo: true } },
   asignaciones: {
-    select: {
-      id:      true,
+    include: {
       materia: {
         select: {
           nombre:          true,
@@ -33,8 +32,13 @@ const DOC_INCLUDE = {
           carga_horaria:   { select: { grado_id: true, horas_mes: true } },
         },
       },
-      paralelo: { select: { letra: true, grado: { select: { id: true, nombre: true } } } },
-      gestion:  { select: { anno: true } },
+      paralelo: {
+        select: {
+          letra: true,
+          grado: { select: { id: true, nombre: true } },
+        },
+      },
+      gestion: { select: { anno: true } },
     },
   },
 } as const
