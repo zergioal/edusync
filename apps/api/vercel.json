@@ -5,8 +5,7 @@
       "src": "dist/index.js",
       "use": "@vercel/node",
       "config": {
-        "maxLambdaSize": "50mb",
-        "includeFiles": ["dist/**", "../../packages/database/node_modules/.prisma/**"]
+        "maxLambdaSize": "50mb"
       }
     }
   ],
