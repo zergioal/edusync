@@ -34,6 +34,9 @@ app.use(cors({
     // Cualquier subdominio de BASE_DOMAIN
     if (subdomainRe.test(origin)) return callback(null, true)
 
+    // Vercel preview/deploy URLs (para el frontend en Vercel)
+    if (/^https:\/\/[a-z0-9-]+\.vercel\.app$/.test(origin)) return callback(null, true)
+
     callback(new Error(`CORS: origin ${origin} not allowed`), false)
   },
   credentials: true,
