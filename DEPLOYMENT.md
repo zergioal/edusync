@@ -4,17 +4,19 @@ Infraestructura objetivo:
 
 | Servicio | Plataforma | URL |
 |----------|-----------|-----|
-| API (Express) | Railway | `https://api.edusync.bo` |
+| API (Express) | Google Cloud Run | `https://[servicio]-[hash].a.run.app` (dominio propio `api.edusync.bo` — paso posterior, ver §3.6) |
 | Web (React/Vite) | Vercel | `https://[subdominio].edusync.bo` |
 | Base de datos | Supabase | `aws-1-sa-east-1.pooler.supabase.com` |
 | Auth | Supabase Auth | — |
+
+> **Nota histórica:** el API pasó antes por Railway y Render. Ambos se abandonaron: Railway ya no ofrece free tier real, y Render free duerme el servicio tras 15 min de inactividad (cold starts de 30-60s). Cloud Run tiene free tier permanente y corre el mismo `Dockerfile` sin cambios.
 
 ---
 
 ## 1. Prerrequisitos
 
 - Cuenta en [Supabase](https://supabase.com) con proyecto creado
-- Cuenta en [Railway](https://railway.app)
+- Cuenta en [Google Cloud](https://console.cloud.google.com) con facturación habilitada (requerida incluso dentro del free tier de Cloud Run)
 - Cuenta en [Vercel](https://vercel.com)
 - Dominio `edusync.bo` con acceso al panel DNS
 - `pnpm` >= 8, `Node.js` >= 20 instalados localmente
@@ -62,65 +64,63 @@ Para crear usuarios de producción con roles correctos, usar el script de creaci
 
 ---
 
-## 3. Railway — API
+## 3. Google Cloud Run — API
+
+El `Dockerfile` en la raíz del repo ya instala Chromium y compila el API — Cloud Run lo usa tal cual, sin `gcloud` CLI ni Docker local: todo se hace desde Cloud Console conectado a GitHub.
 
 ### 3.1 Crear servicio
 
-1. En Railway, crear nuevo proyecto → **Deploy from GitHub repo**
-2. Seleccionar el repositorio EduSync
-3. Railway detecta automáticamente Node.js
+1. En [Cloud Console](https://console.cloud.google.com/run) → **Create Service → Continuously deploy from a repository**.
+2. Conectar la cuenta de GitHub → seleccionar el repo `edusync`, rama `main`.
+3. **Build type**: Dockerfile — Cloud Build detecta el `Dockerfile` de la raíz automáticamente (no hace falta configurar `apps/api` como root, el Dockerfile ya construye el monorepo completo).
 
-### 3.2 Configurar build
+### 3.2 Configuración del servicio
 
-En **Settings → Build**:
-```
-Build Command:   pnpm install --frozen-lockfile && pnpm --filter api build
-Start Command:   node apps/api/dist/index.js
-```
+- **Región**: `southamerica-east1` (São Paulo) o `us-central1`.
+- **CPU/Memoria**: mínimo 1 vCPU / 1 GiB — Chromium necesita más que el default de 512 MiB.
+- **Autenticación**: "Allow unauthenticated invocations" (es un API público).
+- **Min instances**: `0` (mantiene el uso dentro del free tier; implica cold start de contenedor de pocos segundos tras inactividad).
+- **Max instances**: 3-5 para acotar conexiones concurrentes a Prisma/Supabase.
+- **Request timeout**: ~120s (la generación de boletines en PDF con Puppeteer puede tardar más que el default de 5 min... default ya alcanza, pero verificar que no esté reducido).
 
-O usar el `railway.toml` (si existe) en la raíz.
+### 3.3 Variables de entorno y secrets
 
-### 3.3 Variables de entorno en Railway
-
-Configurar en **Variables** del servicio:
+En **Variables & Secrets** del servicio (usar Secret Manager para las marcadas con *):
 
 ```env
 NODE_ENV=production
-PORT=4000
-DATABASE_URL=postgresql://postgres.[ref]:[password]@aws-1-sa-east-1.pooler.supabase.com:6543/postgres?pgbouncer=true
-DIRECT_URL=postgresql://postgres.[ref]:[password]@aws-1-sa-east-1.pooler.supabase.com:5432/postgres
+DATABASE_URL=postgresql://postgres.[ref]:[password]@aws-1-sa-east-1.pooler.supabase.com:6543/postgres?pgbouncer=true   # *
 SUPABASE_URL=https://[project-ref].supabase.co
 SUPABASE_ANON_KEY=eyJ...
-SUPABASE_SERVICE_ROLE_KEY=eyJ...
-SUPABASE_JWT_SECRET=...
+SUPABASE_SERVICE_ROLE_KEY=eyJ...   # *
+SUPABASE_JWT_SECRET=...   # *
 BASE_DOMAIN=edusync.bo
-CORS_ORIGIN=https://app.edusync.bo
+CORS_ORIGIN=https://app.edusync.bo,https://[proyecto-web].vercel.app   # *
 PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=false
-PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser
+PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
 ```
 
-> **Nota Puppeteer:** Railway usa Debian/Ubuntu. Instalar Chromium en el Dockerfile o usar la imagen nixpacks con `chromium`. Ver sección 3.5.
+> No hace falta configurar `PORT`: Cloud Run lo inyecta automáticamente (8080) y `apps/api/src/index.ts` ya lee `process.env.PORT`.
+> `DIRECT_URL` **no** se configura aquí — solo se usa localmente para `prisma migrate` (ver sección 2.2), nunca en runtime del servicio.
 
-### 3.4 Dominio personalizado
+### 3.4 Deploy y verificación
 
-En **Settings → Networking → Custom Domain**:
-- Añadir `api.edusync.bo`
-- Crear registro DNS `CNAME api → [railway-app].up.railway.app`
+Cada push a `main` dispara build + deploy automático. Verificar en la URL `*.run.app` que entrega Cloud Run:
+- `GET /health` → `200 {"status":"ok"}`
+- Login real contra Supabase Auth
+- Un endpoint CRUD cualquiera (ej. listar estudiantes)
+- **Generación de un boletín en PDF** — es el paso que más puede fallar, valida que Chromium corre bien dentro del contenedor de Cloud Run
 
-### 3.5 Soporte Puppeteer (PDF)
+### 3.5 Probar con el frontend antes del cutover
 
-Crear `apps/api/Dockerfile` si Railway no instala Chromium automáticamente:
+Apuntar temporalmente `VITE_API_URL` (env var del proyecto web en Vercel) a la URL `*.run.app` y probar la app completa en el navegador. Solo después de validar esto, actualizar `VITE_API_URL` a la URL definitiva y redeploy del frontend.
 
-```dockerfile
-FROM node:20-slim
-RUN apt-get update && apt-get install -y chromium --no-install-recommends && rm -rf /var/lib/apt/lists/*
-ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
-ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
-WORKDIR /app
-COPY . .
-RUN npm install -g pnpm && pnpm install --frozen-lockfile && pnpm --filter api build
-CMD ["node", "apps/api/dist/index.js"]
-```
+### 3.6 Dominio personalizado (paso posterior, no inmediato)
+
+Cuando la URL `*.run.app` lleve un tiempo funcionando establemente:
+- En Cloud Run → **Manage Custom Domains** → mapear `api.edusync.bo`.
+- Actualizar el registro DNS `CNAME api` (hoy apunta a Railway) al target que indique Cloud Run.
+- Esperar propagación y verificar SSL antes de dar de baja la URL anterior.
 
 ---
 
@@ -200,7 +200,7 @@ El script:
 |------|--------|-------|
 | `A` o `CNAME` | `@` | → Vercel (landing pública) |
 | `CNAME` | `*` | `cname.vercel-dns.com` |
-| `CNAME` | `api` | `[app].up.railway.app` |
+| `CNAME` | `api` | *(pendiente — se crea al mapear el dominio en Cloud Run, ver §3.6; hasta entonces la API se consume por su URL `*.run.app`)* |
 
 ---
 
@@ -208,11 +208,11 @@ El script:
 
 - [ ] Migraciones aplicadas (`pnpm db:migrate`)
 - [ ] Seed ejecutado (al menos institución base + admin)
-- [ ] Variables de entorno configuradas en Railway y Vercel
-- [ ] Chromium instalado en el contenedor Railway (PDF funcional)
-- [ ] DNS propagado (`dig api.edusync.bo`, `dig pioxii.edusync.bo`)
-- [ ] SSL activo en todos los subdominios (Railway y Vercel lo gestionan automáticamente)
-- [ ] CORS verificado: `curl -H "Origin: https://pioxii.edusync.bo" https://api.edusync.bo/health`
+- [ ] Variables de entorno configuradas en Cloud Run y Vercel
+- [ ] Chromium funcionando en el contenedor de Cloud Run (PDF funcional)
+- [ ] DNS propagado (`dig pioxii.edusync.bo`; `dig api.edusync.bo` solo tras §3.6)
+- [ ] SSL activo (Cloud Run y Vercel lo gestionan automáticamente)
+- [ ] CORS verificado: `curl -H "Origin: https://pioxii.edusync.bo" https://[servicio]-[hash].a.run.app/health`
 - [ ] Login con usuario admin de producción
 - [ ] Generación de boletin PDF probada en producción
 - [ ] Backup automático de Supabase activado (Settings → Backups)
@@ -221,18 +221,17 @@ El script:
 
 ## 8. Monitoreo y mantenimiento
 
-### Logs Railway
+### Logs Cloud Run
 
 ```bash
-railway logs --service api --tail
+gcloud run services logs read [nombre-servicio] --region [región] --limit 100
 ```
+
+O desde Cloud Console → Cloud Run → servicio → pestaña **Logs**.
 
 ### Reiniciar API tras migración
 
-Railway reinicia automáticamente al hacer deploy. Para forzar:
-```bash
-railway service restart
-```
+Cloud Run redeploya automáticamente al hacer push a `main` (continuous deployment desde GitHub). No hace falta reiniciar manualmente — cada deploy reemplaza la revisión activa.
 
 ### Actualizar schema en producción
 
@@ -241,7 +240,7 @@ railway service restart
 pnpm db:migrate
 
 # 2. Hacer deploy de la nueva versión de la API
-git push origin main   # si Railway está conectado al repo
+git push origin main   # dispara build + deploy automático en Cloud Run
 ```
 
 > **Importante:** Usar siempre `DIRECT_URL` (puerto 5432, sin pgBouncer) para `prisma migrate`. El `DATABASE_URL` de pgBouncer (puerto 6543) no soporta DDL transaccional.
@@ -249,5 +248,5 @@ git push origin main   # si Railway está conectado al repo
 ### Rotación de credenciales Supabase
 
 1. Generar nuevo JWT secret en Supabase Settings → API
-2. Actualizar `SUPABASE_JWT_SECRET` en Railway
-3. Forzar re-deploy (todos los tokens emitidos anteriormente se invalidarán)
+2. Actualizar el secret `SUPABASE_JWT_SECRET` en Cloud Run (Secret Manager)
+3. Forzar nueva revisión en Cloud Run (todos los tokens emitidos anteriormente se invalidarán)

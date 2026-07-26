@@ -1,8 +1,0 @@
-[build]
-builder      = "nixpacks"
-watchPatterns = ["apps/api/**", "packages/**"]
-
-[deploy]
-healthcheckPath    = "/health"
-healthcheckTimeout = 30
-restartPolicyType  = "on_failure"
