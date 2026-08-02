@@ -9,6 +9,8 @@ const CalificacionesHijoPage = lazy(() => import('../padre/CalificacionesHijoPag
 const BoletinHijoPage        = lazy(() => import('../padre/BoletinHijoPage'))
 const PagosHijoPage          = lazy(() => import('../padre/PagosHijoPage'))
 const AsistenciaHijoPage     = lazy(() => import('../padre/AsistenciaHijoPage'))
+const MisHijosPage           = lazy(() => import('../padre/MisHijosPage'))
+const HijoDetallePage        = lazy(() => import('../padre/HijoDetallePage'))
 const AnunciosInternosPage   = lazy(() => import('../shared/AnunciosInternosPage'))
 const MensajesPage           = lazy(() => import('../shared/MensajesPage'))
 
@@ -64,23 +66,13 @@ function PadreHome() {
   )
 }
 
-function SectionPlaceholder({ title }: { title: string }) {
-  return (
-    <div className="space-y-4">
-      <h1 className="text-2xl font-bold text-gray-900">{title}</h1>
-      <div className="rounded-xl border-2 border-dashed border-gray-200 bg-white p-12 text-center">
-        <p className="text-gray-400">Módulo en construcción</p>
-      </div>
-    </div>
-  )
-}
-
 export default function PadreDashboard() {
   return (
     <DashboardLayout>
       <Routes>
         <Route index element={<PadreHome />} />
-        <Route path="hijos"     element={<SectionPlaceholder title="Mis Hijos" />} />
+        <Route path="hijos"     element={<MisHijosPage />} />
+        <Route path="hijo/:id"  element={<HijoDetallePage />} />
         <Route path="notas"     element={<CalificacionesHijoPage />} />
         <Route path="boletin"   element={<BoletinHijoPage />} />
         <Route path="pensiones"  element={<PagosHijoPage />} />

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { api, apiDownload } from '../../lib/api'
 import { useAuth } from '../../context/AuthContext'
+import { useGestionActiva } from '../../hooks/useGestionActiva'
 import { PensionBlockModal } from '../../components/ui/PensionBlockModal'
 
 type Escala = 'ED' | 'DA' | 'DO' | 'DP'
@@ -31,8 +32,6 @@ interface BoletinInicial extends BoletinBase {
 
 type BoletinData = BoletinRegular | BoletinInicial
 
-interface Trimestre { id: string; numero: number; cerrado: boolean; gestion_id: string }
-
 function escalaColor(e: Escala) {
   if (e === 'ED') return '#dc2626'
   if (e === 'DA') return '#ea580c'
@@ -44,8 +43,7 @@ interface Props { estudianteId?: string }
 
 export default function MiBoletinPage({ estudianteId }: Props) {
   const { estadoFinanciero } = useAuth()
-  const [gestionId,   setGestionId]   = useState('')
-  const [trimestres,  setTrimestres]  = useState<Trimestre[]>([])
+  const { trimestres, trimestreActual } = useGestionActiva()
   const [trimestreId, setTrimestreId] = useState('')
   const [data,        setData]        = useState<BoletinData | null>(null)
   const [loading,     setLoading]     = useState(false)
@@ -56,14 +54,8 @@ export default function MiBoletinPage({ estudianteId }: Props) {
   const estId = estudianteId ?? estadoFinanciero?.hijos?.[0]?.id
 
   useEffect(() => {
-    api.get<{ id: string; trimestres: Trimestre[] }>('/gestiones/activa')
-      .then(g => {
-        setGestionId(g.id)
-        setTrimestres(g.trimestres)
-        const t = g.trimestres.find(t => !t.cerrado) ?? g.trimestres[g.trimestres.length - 1]
-        if (t) setTrimestreId(t.id)
-      }).catch(() => {})
-  }, [])
+    if (trimestreActual && !trimestreId) setTrimestreId(trimestreActual.id)
+  }, [trimestreActual, trimestreId])
 
   useEffect(() => {
     if (!estId || !trimestreId) return

@@ -3,6 +3,7 @@ import { Routes, Route } from 'react-router-dom'
 import { DashboardLayout } from '../../components/layout/DashboardLayout'
 import { StatCard } from '../../components/ui/StatCard'
 import { useAuth } from '../../context/AuthContext'
+import { useGestionActiva } from '../../hooks/useGestionActiva'
 import { Badge } from '@edusync/ui'
 import { api } from '../../lib/api'
 import { AvatarDisplay, AvatarPickerModal, useAvatar } from '../../components/ui/AvatarSelector'
@@ -35,28 +36,23 @@ function EstudianteHome() {
   const [stats, setStats] = useState<HomeStats | null>(null)
   const [escala, setEscala] = useState<Escala | null>(null)
   const estId = estadoFinanciero?.hijos?.[0]?.id
+  const { trimestreActual } = useGestionActiva()
   const { avatarId, showPicker, openPicker, closePicker, onSaved } = useAvatar(user?.id ?? '')
 
   useEffect(() => {
-    if (!estId) return
+    if (!estId || !trimestreActual) return
     let cancelled = false
 
-    api.get<{ id: string; trimestres: Array<{ id: string; numero: number; cerrado: boolean }> }>('/gestiones/activa')
-      .then(async g => {
+    api.get<{
+      tipo: 'REGULAR' | 'INICIAL'
+      estudiante: { nivel: string }
+      materias?: Array<{ total: number }>
+      promedio_general?: number
+      escala_general?: Escala
+      total_faltas: number
+    }>(`/boletines/${estId}?trimestre_id=${trimestreActual.id}`)
+      .then(boletin => {
         if (cancelled) return
-        const t = g.trimestres.find(t => !t.cerrado) ?? g.trimestres[g.trimestres.length - 1]
-        if (!t) return
-
-        const boletin = await api.get<{
-          tipo: 'REGULAR' | 'INICIAL'
-          estudiante: { nivel: string }
-          materias?: Array<{ total: number }>
-          promedio_general?: number
-          escala_general?: Escala
-          total_faltas: number
-        }>(`/boletines/${estId}?trimestre_id=${t.id}`)
-        if (cancelled) return
-
         if (boletin.tipo === 'REGULAR') {
           setStats({
             nivel:         boletin.estudiante.nivel,
@@ -72,7 +68,7 @@ function EstudianteHome() {
       .catch(() => {})
 
     return () => { cancelled = true }
-  }, [estId])
+  }, [estId, trimestreActual])
 
   const nivelColors: Record<string, string> = {
     INICIAL: 'bg-amber-100 text-amber-700',

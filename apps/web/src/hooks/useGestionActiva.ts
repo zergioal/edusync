@@ -20,7 +20,9 @@ export function useGestionActiva() {
     null
 
   return {
+    id:               data?.id ?? null,
     anno:             data?.anno ?? null,
+    trimestres:       data?.trimestres ?? [],
     trimestreActual,
     gestionLabel:     data ? `Gestión ${data.anno}` : '',
     trimestreLabel:   trimestreActual ? `${trimestreActual.numero}° Trimestre` : '',
