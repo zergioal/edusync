@@ -1,9 +1,10 @@
-import { lazy } from 'react'
+import { lazy, useEffect, useState } from 'react'
 import { Routes, Route } from 'react-router-dom'
 import { DashboardLayout } from '../../components/layout/DashboardLayout'
 import { StatCard } from '../../components/ui/StatCard'
 import { useAuth } from '../../context/AuthContext'
 import { ROL_LABELS } from '../../lib/roleRoutes'
+import { api } from '../../lib/api'
 import { Badge } from '@edusync/ui'
 
 import { useGestionActiva } from '../../hooks/useGestionActiva'
@@ -21,9 +22,34 @@ const PadresPage           = lazy(() => import('../secretaria/PadresPage'))
 
 // ─── Panel principal ──────────────────────────────────────────────────────────
 
+interface CoordinadorStats {
+  paralelos:    number
+  docentes:     number
+  asignaciones: number
+  sinAsesor:    number
+}
+
 function CoordinadorHome() {
   const { user } = useAuth()
-  const { gestionLabel, trimestreLabel } = useGestionActiva()
+  const { gestionLabel, trimestreLabel, id: gestionId } = useGestionActiva()
+
+  const [stats,        setStats]        = useState<CoordinadorStats | null>(null)
+  const [loadingStats, setLoadingStats] = useState(true)
+
+  useEffect(() => {
+    Promise.all([
+      api.get<{ activo: boolean; asesor: unknown }[]>('/paralelos').catch(() => []),
+      api.get<{ asignaciones: unknown[] }[]>('/docentes').catch(() => []),
+      api.get<unknown[]>(`/asignaciones${gestionId ? `?gestion_id=${gestionId}` : ''}`).catch(() => []),
+    ]).then(([paralelos, docentes, asignaciones]) => {
+      setStats({
+        paralelos:    paralelos.filter(p => p.activo).length,
+        docentes:     docentes.filter(d => d.asignaciones.length > 0).length,
+        asignaciones: asignaciones.length,
+        sinAsesor:    paralelos.filter(p => p.activo && !p.asesor).length,
+      })
+    }).finally(() => setLoadingStats(false))
+  }, [gestionId])
 
   return (
     <div className="space-y-8">
@@ -50,10 +76,10 @@ function CoordinadorHome() {
           Resumen académico
         </h2>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          <StatCard label="Paralelos"    value="—" sublabel="activos"             icon="users"    color="blue"   />
-          <StatCard label="Docentes"     value="—" sublabel="con asignaciones"    icon="teacher"  color="green"  />
-          <StatCard label="Asignaciones" value="—" sublabel="este trimestre"      icon="book"     color="purple" />
-          <StatCard label="Sin asesor"   value="—" sublabel="paralelos sin tutor" icon="student"  color="yellow" />
+          <StatCard label="Paralelos"    value={loadingStats ? '…' : (stats?.paralelos    ?? '—')} sublabel="activos"             icon="users"    color="blue"   />
+          <StatCard label="Docentes"     value={loadingStats ? '…' : (stats?.docentes     ?? '—')} sublabel="con asignaciones"    icon="teacher"  color="green"  />
+          <StatCard label="Asignaciones" value={loadingStats ? '…' : (stats?.asignaciones ?? '—')} sublabel="esta gestión"        icon="book"     color="purple" />
+          <StatCard label="Sin asesor"   value={loadingStats ? '…' : (stats?.sinAsesor    ?? '—')} sublabel="paralelos sin tutor" icon="student"  color="yellow" />
         </div>
       </div>
     </div>
