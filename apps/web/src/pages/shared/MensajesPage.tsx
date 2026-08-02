@@ -1,8 +1,10 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { api, ApiError } from '../../lib/api'
 import { useToast } from '../../components/ui/Toast'
 import { Modal } from '../../components/ui/Modal'
 import { Button, Spinner, Badge } from '@edusync/ui'
+import { ROL_LABELS } from '../../lib/roleRoutes'
 
 interface MensajeItem {
   id:              string
@@ -23,7 +25,7 @@ interface UsuarioSearch {
   id:       string
   nombre:   string
   apellido: string
-  rol:      string
+  rol:      keyof typeof ROL_LABELS
   email:    string
 }
 
@@ -31,6 +33,7 @@ export default function MensajesPage() {
   const toast    = useToast()
   const toastRef = useRef(toast)
   toastRef.current = toast
+  const [searchParams, setSearchParams] = useSearchParams()
 
   const [bandeja,   setBandeja]   = useState<Bandeja>({ recibidos: [], enviados: [] })
   const [tab,       setTab]       = useState<'recibidos' | 'enviados'>('recibidos')
@@ -38,8 +41,46 @@ export default function MensajesPage() {
   const [loading,   setLoading]   = useState(true)
   const [compose,   setCompose]   = useState(false)
   const [saving,    setSaving]    = useState(false)
-  const [usuarios,  setUsuarios]  = useState<UsuarioSearch[]>([])
-  const [form,      setForm]      = useState({ destinatario_id: '', asunto: '', cuerpo: '' })
+  const [form,      setForm]      = useState({ asunto: '', cuerpo: '' })
+
+  // ── Búsqueda de destinatario ─────────────────────────────────────────────
+  const [destQuery,       setDestQuery]       = useState('')
+  const [destSuggestions, setDestSuggestions] = useState<UsuarioSearch[]>([])
+  const [destOpen,        setDestOpen]        = useState(false)
+  const [destinatario,    setDestinatario]    = useState<UsuarioSearch | null>(null)
+  const destTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const destWrapRef  = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (destWrapRef.current && !destWrapRef.current.contains(e.target as Node)) setDestOpen(false)
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [])
+
+  const buscarDestinatarios = useCallback(async (q: string) => {
+    if (q.length < 2) { setDestSuggestions([]); setDestOpen(false); return }
+    try {
+      const data = await api.get<UsuarioSearch[]>(`/usuarios?buscar=${encodeURIComponent(q)}`)
+      setDestSuggestions(data)
+      setDestOpen(data.length > 0)
+    } catch {
+      setDestSuggestions([])
+    }
+  }, [])
+
+  const handleDestQueryChange = (v: string) => {
+    setDestQuery(v)
+    setDestinatario(null)
+    if (destTimerRef.current) clearTimeout(destTimerRef.current)
+    destTimerRef.current = setTimeout(() => buscarDestinatarios(v), 300)
+  }
+
+  function resetCompose() {
+    setForm({ asunto: '', cuerpo: '' })
+    setDestinatario(null); setDestQuery(''); setDestSuggestions([])
+  }
 
   function load() {
     setLoading(true)
@@ -51,13 +92,16 @@ export default function MensajesPage() {
 
   useEffect(load, [])
 
+  // Abrir un mensaje específico si se llegó desde una notificación (?mensajeId=...)
   useEffect(() => {
-    if (compose && usuarios.length === 0) {
-      api.get<UsuarioSearch[]>('/usuarios')
-        .then(setUsuarios)
-        .catch(() => {})
-    }
-  }, [compose, usuarios.length])
+    const mensajeId = searchParams.get('mensajeId')
+    if (!mensajeId) return
+    api.get<MensajeItem>(`/mensajes/${mensajeId}`)
+      .then(m => { setSelected(m); load() })
+      .catch(() => toastRef.current.error('No se pudo abrir el mensaje'))
+      .finally(() => setSearchParams({}, { replace: true }))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   async function abrirMensaje(m: MensajeItem) {
     setSelected(m)
@@ -69,13 +113,13 @@ export default function MensajesPage() {
 
   async function enviar(e: React.FormEvent) {
     e.preventDefault()
-    if (!form.destinatario_id || !form.asunto || !form.cuerpo) return
+    if (!destinatario || !form.asunto || !form.cuerpo) return
     setSaving(true)
     try {
-      await api.post('/mensajes', form)
+      await api.post('/mensajes', { destinatario_id: destinatario.id, asunto: form.asunto, cuerpo: form.cuerpo })
       toastRef.current.success('Mensaje enviado')
       setCompose(false)
-      setForm({ destinatario_id: '', asunto: '', cuerpo: '' })
+      resetCompose()
       load()
     } catch (err) {
       toastRef.current.error(err instanceof ApiError ? err.message : 'Error al enviar')
@@ -184,29 +228,62 @@ export default function MensajesPage() {
       {/* Modal compose */}
       <Modal
         isOpen={compose}
-        onClose={() => setCompose(false)}
+        onClose={() => { setCompose(false); resetCompose() }}
         title="Nuevo mensaje"
         footer={
           <div className="flex justify-end gap-3">
-            <Button variant="secondary" onClick={() => setCompose(false)} disabled={saving}>Cancelar</Button>
-            <Button form="form-mensaje" type="submit" loading={saving}>Enviar</Button>
+            <Button variant="secondary" onClick={() => { setCompose(false); resetCompose() }} disabled={saving}>Cancelar</Button>
+            <Button form="form-mensaje" type="submit" loading={saving} disabled={!destinatario}>Enviar</Button>
           </div>
         }
       >
         <form id="form-mensaje" onSubmit={enviar} className="space-y-4">
-          <div className="flex flex-col gap-1">
+          <div className="flex flex-col gap-1" ref={destWrapRef}>
             <label className="text-sm font-medium text-gray-700">Para</label>
-            <select
-              value={form.destinatario_id}
-              onChange={e => setForm(f => ({ ...f, destinatario_id: e.target.value }))}
-              required
-              className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="">— Seleccionar destinatario —</option>
-              {usuarios.map(u => (
-                <option key={u.id} value={u.id}>{u.apellido}, {u.nombre} ({u.rol})</option>
-              ))}
-            </select>
+            {destinatario ? (
+              <div className="flex items-center justify-between rounded-lg border-2 border-blue-200 bg-blue-50 px-3 py-2">
+                <div>
+                  <p className="text-sm font-semibold text-blue-900">{destinatario.apellido}, {destinatario.nombre}</p>
+                  <p className="text-xs text-blue-600">{ROL_LABELS[destinatario.rol]} · {destinatario.email}</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => { setDestinatario(null); setDestQuery('') }}
+                  className="ml-3 text-blue-400 hover:text-blue-700 transition-colors text-lg leading-none"
+                  title="Cambiar destinatario"
+                >
+                  ×
+                </button>
+              </div>
+            ) : (
+              <div className="relative">
+                <input
+                  type="text"
+                  value={destQuery}
+                  onChange={e => handleDestQueryChange(e.target.value)}
+                  required
+                  placeholder="Escribe un nombre o apellido para buscar…"
+                  autoComplete="off"
+                  className="rounded-lg border border-gray-300 px-3 py-2 text-sm w-full focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+                {destOpen && destSuggestions.length > 0 && (
+                  <div className="absolute z-50 mt-1 w-full max-h-64 overflow-y-auto bg-white rounded-xl border border-gray-200 shadow-lg">
+                    {destSuggestions.map(u => (
+                      <button
+                        key={u.id}
+                        type="button"
+                        onMouseDown={e => e.preventDefault()}
+                        onClick={() => { setDestinatario(u); setDestQuery(''); setDestSuggestions([]); setDestOpen(false) }}
+                        className="w-full text-left px-3 py-2.5 hover:bg-blue-50 transition-colors border-b border-gray-50 last:border-0"
+                      >
+                        <p className="text-sm font-medium text-gray-900">{u.apellido}, {u.nombre}</p>
+                        <p className="text-xs text-gray-400">{ROL_LABELS[u.rol]} · {u.email}</p>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
           <div className="flex flex-col gap-1">
             <label className="text-sm font-medium text-gray-700">Asunto</label>
