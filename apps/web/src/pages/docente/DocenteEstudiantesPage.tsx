@@ -111,7 +111,12 @@ export default function DocenteEstudiantesPage() {
                   <td className="px-5 py-3 font-medium text-gray-900">
                     {est.usuario.apellido}, {est.usuario.nombre}
                   </td>
-                  <td className="px-5 py-3 text-right">
+                  <td className="px-5 py-3 text-right space-x-2">
+                    <Button variant="ghost" size="sm"
+                      className="text-gray-600 hover:text-gray-800"
+                      onClick={() => navigate(`/dashboard/docente/estudiante/${est.id}?tab=datos`)}>
+                      Ver datos
+                    </Button>
                     <Button variant="ghost" size="sm"
                       className="text-indigo-600 hover:text-indigo-800"
                       onClick={() => navigate(`/dashboard/docente/estudiante/${est.id}?tab=calificaciones`)}>

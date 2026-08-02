@@ -39,4 +39,16 @@ export class EstudiantesController {
       res.status(204).send()
     } catch (e) { next(e) }
   }
+
+  linkPadre = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      res.status(201).json({ data: await this.service.linkPadre(req.params['id']!, req.body) })
+    } catch (e) { next(e) }
+  }
+
+  unlinkPadre = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      res.json({ data: await this.service.unlinkPadre(req.params['id']!, req.params['padreId']!) })
+    } catch (e) { next(e) }
+  }
 }

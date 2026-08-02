@@ -1,6 +1,7 @@
 import { prisma } from '@edusync/database'
 import { AppError } from '../middlewares/errorHandler'
 import { getSupabaseAdmin } from '../lib/supabase'
+import { updateAuthEmail } from '../lib/supabaseSync'
 
 async function createSupabaseUser(email: string, password: string): Promise<string> {
   const supabase = getSupabaseAdmin()
@@ -93,9 +94,24 @@ export class PadresService {
     return { padre, credentials: { email: data.email, password } }
   }
 
-  async update(id: string, data: { nombre?: string; apellido?: string }) {
-    await this.findOne(id)
-    await prisma.usuario.update({ where: { id }, data })
+  async update(id: string, data: { nombre?: string; apellido?: string; email?: string }) {
+    const padre = await this.findOne(id)
+
+    const usuarioData: Record<string, unknown> = {}
+    if (data.nombre   !== undefined) usuarioData.nombre   = data.nombre
+    if (data.apellido !== undefined) usuarioData.apellido = data.apellido
+
+    if (data.email !== undefined && data.email !== padre.email) {
+      const emailTaken = await prisma.usuario.findUnique({ where: { email: data.email } })
+      if (emailTaken) throw new AppError(409, 'Ya existe un usuario con ese correo', 'DUPLICATE_EMAIL')
+
+      await updateAuthEmail(padre.supabase_auth_id, data.email)
+      usuarioData.email = data.email
+    }
+
+    if (Object.keys(usuarioData).length > 0)
+      await prisma.usuario.update({ where: { id }, data: usuarioData })
+
     return this.findOne(id)
   }
 

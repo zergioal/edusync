@@ -6,6 +6,7 @@ import { useAuth } from '../../context/AuthContext'
 import { Button, Badge, Spinner } from '@edusync/ui'
 import { SelectGestion } from '../../components/select/SelectGestion'
 import { NuevoEstudianteModal } from './NuevoEstudianteModal'
+import { TutorField, type TutorMatch } from '../../components/TutorField'
 import { Rol } from '@edusync/types'
 
 const CAN_MANAGE_ROLES: string[] = [Rol.ADMIN_SISTEMA, Rol.DIRECTOR, Rol.COORDINADOR, Rol.SECRETARIA]
@@ -19,15 +20,16 @@ interface ParaleloCard {
 }
 
 interface Paralelo { id: string; letra: string; grado: { nombre: string; nivel: { nombre: string } } }
+interface PadreRef { id: string; nombre: string; apellido: string; email: string }
 interface Estudiante {
   id:               string
   codigo:           string
   becado:           boolean
   motivo_beca:      string | null
   fecha_nacimiento: string | null
-  usuario:          { nombre: string; apellido: string; email: string }
+  usuario:          { nombre: string; apellido: string; email: string; activo: boolean }
   matriculas:       { paralelo: Paralelo }[]
-  relaciones_padre: { padre: { nombre: string; apellido: string } }[]
+  relaciones_padre: { padre: PadreRef }[]
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -78,6 +80,91 @@ const NIVEL_FALLBACK = {
   badge: 'bg-gray-100 text-gray-600', num: 'text-gray-700', label: '',
 }
 
+// ─── Fila de padre/tutor (dentro del modal de edición) ────────────────────────
+
+function PadreRow({
+  padre, estudianteId, onChanged,
+}: {
+  padre:        PadreRef
+  estudianteId: string
+  onChanged:    (padres: PadreRef[]) => void
+}) {
+  const toast = useToast()
+  const [editing,  setEditing]  = useState(false)
+  const [saving,   setSaving]   = useState(false)
+  const [removing, setRemoving] = useState(false)
+  const [form, setForm] = useState({ apellido: padre.apellido, nombre: padre.nombre, email: padre.email })
+
+  const save = async () => {
+    setSaving(true)
+    try {
+      await api.put(`/padres/${padre.id}`, form)
+      const est = await api.get<{ relaciones_padre: { padre: PadreRef }[] }>(`/estudiantes/${estudianteId}`)
+      onChanged(est.relaciones_padre.map(r => r.padre))
+      setEditing(false)
+      toast.success('Padre/tutor actualizado')
+    } catch (err) {
+      toast.error(err instanceof ApiError ? err.message : 'Error al guardar')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const remove = async () => {
+    if (!confirm(`¿Quitar a ${padre.apellido}, ${padre.nombre} como tutor de este estudiante?`)) return
+    setRemoving(true)
+    try {
+      const est = await api.delete<{ relaciones_padre: { padre: PadreRef }[] }>(
+        `/estudiantes/${estudianteId}/padres/${padre.id}`
+      )
+      onChanged(est.relaciones_padre.map(r => r.padre))
+      toast.success('Padre/tutor desvinculado')
+    } catch (err) {
+      toast.error(err instanceof ApiError ? err.message : 'Error al desvincular')
+      setRemoving(false)
+    }
+  }
+
+  if (editing) {
+    return (
+      <div className="rounded-lg border border-indigo-200 bg-indigo-50 p-3 space-y-2">
+        <div className="grid grid-cols-2 gap-2">
+          <input value={form.apellido} onChange={e => setForm(f => ({ ...f, apellido: e.target.value }))}
+            placeholder="Apellidos"
+            className="rounded-lg border border-gray-200 px-2 py-1.5 text-sm focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-200" />
+          <input value={form.nombre} onChange={e => setForm(f => ({ ...f, nombre: e.target.value }))}
+            placeholder="Nombres"
+            className="rounded-lg border border-gray-200 px-2 py-1.5 text-sm focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-200" />
+        </div>
+        <input value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))}
+          placeholder="Correo electrónico" type="email"
+          className="w-full rounded-lg border border-gray-200 px-2 py-1.5 text-sm focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-200" />
+        <div className="flex justify-end gap-2">
+          <Button type="button" variant="ghost" onClick={() => setEditing(false)} disabled={saving}>Cancelar</Button>
+          <Button type="button" onClick={save} disabled={saving}>{saving ? '…' : 'Guardar'}</Button>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="flex items-center justify-between rounded-lg border border-gray-100 bg-gray-50 px-3 py-2">
+      <div>
+        <p className="text-sm font-medium text-gray-800">{padre.apellido}, {padre.nombre}</p>
+        <p className="text-xs text-gray-400">{padre.email}</p>
+      </div>
+      <div className="flex gap-3 text-xs font-medium">
+        <button type="button" onClick={() => setEditing(true)} className="text-indigo-600 hover:text-indigo-800">
+          Editar
+        </button>
+        <button type="button" onClick={remove} disabled={removing} className="text-red-500 hover:text-red-700">
+          {removing ? '…' : 'Quitar'}
+        </button>
+      </div>
+    </div>
+  )
+}
+
 // ─── Modal de edición ─────────────────────────────────────────────────────────
 
 interface EditModalProps {
@@ -88,10 +175,13 @@ interface EditModalProps {
 
 function EditarEstudianteModal({ estudiante, onClose, onSaved }: EditModalProps) {
   const toast  = useToast()
+  const apellidoParts = estudiante.usuario.apellido.trim().split(/\s+/)
   const [form, setForm] = useState({
-    apellido:         estudiante.usuario.apellido,
+    apellidoPaterno:  apellidoParts[0] ?? '',
+    apellidoMaterno:  apellidoParts.slice(1).join(' '),
     nombre:           estudiante.usuario.nombre,
-    codigo:           estudiante.codigo,
+    email:            estudiante.usuario.email,
+    activo:           estudiante.usuario.activo,
     fecha_nacimiento: estudiante.fecha_nacimiento
       ? new Date(estudiante.fecha_nacimiento).toISOString().split('T')[0]
       : '',
@@ -101,7 +191,15 @@ function EditarEstudianteModal({ estudiante, onClose, onSaved }: EditModalProps)
   const [saving, setSaving] = useState(false)
   const [error,  setError]  = useState<string | null>(null)
 
-  const setField = (k: keyof typeof form) =>
+  const [padres, setPadres] = useState<PadreRef[]>(estudiante.relaciones_padre.map(r => r.padre))
+  const [addingPadre, setAddingPadre] = useState(false)
+  const [nuevoNombre,   setNuevoNombre]   = useState('')
+  const [nuevoTel,      setNuevoTel]      = useState('')
+  const [nuevoEmail,    setNuevoEmail]    = useState('')
+  const [nuevoExisting, setNuevoExisting] = useState<TutorMatch | null>(null)
+  const [linkingPadre,  setLinkingPadre]  = useState(false)
+
+  const setField = (k: 'apellidoPaterno' | 'apellidoMaterno' | 'nombre' | 'email' | 'fecha_nacimiento' | 'motivo_beca') =>
     (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
       setForm(f => ({ ...f, [k]: e.target.value }))
 
@@ -110,9 +208,10 @@ function EditarEstudianteModal({ estudiante, onClose, onSaved }: EditModalProps)
     setSaving(true); setError(null)
     try {
       await api.patch(`/estudiantes/${estudiante.id}`, {
-        apellido:         form.apellido,
+        apellido:         `${form.apellidoPaterno.trim()} ${form.apellidoMaterno.trim()}`.trim(),
         nombre:           form.nombre,
-        codigo:           form.codigo,
+        email:            form.email,
+        activo:           form.activo,
         fecha_nacimiento: form.fecha_nacimiento || null,
         becado:           form.becado,
         motivo_beca:      form.becado ? (form.motivo_beca || null) : null,
@@ -127,9 +226,39 @@ function EditarEstudianteModal({ estudiante, onClose, onSaved }: EditModalProps)
     }
   }
 
+  const linkPadre = async () => {
+    setLinkingPadre(true)
+    try {
+      let body: Record<string, string>
+      if (nuevoExisting) {
+        body = { padre_id: nuevoExisting.id }
+      } else {
+        const [apellido, nombre] = nuevoNombre.split(',').map(s => s.trim())
+        if (!apellido || !nombre || !nuevoEmail) {
+          toast.error('Completa apellidos, nombres y correo del nuevo tutor')
+          setLinkingPadre(false)
+          return
+        }
+        body = { apellido, nombre, email: nuevoEmail }
+      }
+      const est = await api.post<{ relaciones_padre: { padre: PadreRef }[] }>(
+        `/estudiantes/${estudiante.id}/padres`, body
+      )
+      setPadres(est.relaciones_padre.map(r => r.padre))
+      setAddingPadre(false)
+      setNuevoNombre(''); setNuevoTel(''); setNuevoEmail(''); setNuevoExisting(null)
+      toast.success('Padre/tutor enlazado')
+      onSaved()
+    } catch (err) {
+      toast.error(err instanceof ApiError ? err.message : 'Error al enlazar')
+    } finally {
+      setLinkingPadre(false)
+    }
+  }
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
-      <div className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-xl space-y-4">
+      <div className="w-full max-w-xl max-h-[90vh] overflow-y-auto rounded-2xl bg-white p-6 shadow-xl space-y-5">
         <h2 className="text-lg font-bold text-gray-900">Editar estudiante</h2>
 
         {error && <div className="rounded-xl bg-red-50 border border-red-100 p-3 text-sm text-red-700">{error}</div>}
@@ -137,35 +266,35 @@ function EditarEstudianteModal({ estudiante, onClose, onSaved }: EditModalProps)
         <form onSubmit={submit} className="space-y-3">
           <div className="grid grid-cols-2 gap-3">
             <label className="flex flex-col gap-1">
-              <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Apellidos</span>
-              <input required value={form.apellido} onChange={setField('apellido')}
+              <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Apellido Paterno</span>
+              <input required value={form.apellidoPaterno} onChange={setField('apellidoPaterno')}
                 className="rounded-xl border border-gray-200 px-3 py-2 text-sm focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-200" />
             </label>
             <label className="flex flex-col gap-1">
-              <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Nombres</span>
-              <input required value={form.nombre} onChange={setField('nombre')}
+              <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Apellido Materno</span>
+              <input value={form.apellidoMaterno} onChange={setField('apellidoMaterno')}
                 className="rounded-xl border border-gray-200 px-3 py-2 text-sm focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-200" />
             </label>
           </div>
 
           <label className="flex flex-col gap-1">
-            <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Correo electrónico</span>
-            <input value={estudiante.usuario.email} disabled
-              className="rounded-xl border border-gray-100 bg-gray-50 px-3 py-2 text-sm text-gray-400" />
+            <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Nombres</span>
+            <input required value={form.nombre} onChange={setField('nombre')}
+              className="rounded-xl border border-gray-200 px-3 py-2 text-sm focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-200" />
           </label>
 
-          <div className="grid grid-cols-2 gap-3">
-            <label className="flex flex-col gap-1">
-              <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Código</span>
-              <input required value={form.codigo} onChange={setField('codigo')}
-                className="rounded-xl border border-gray-200 px-3 py-2 text-sm font-mono focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-200" />
-            </label>
-            <label className="flex flex-col gap-1">
-              <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Fecha de nacimiento</span>
-              <input type="date" value={form.fecha_nacimiento} onChange={setField('fecha_nacimiento')}
-                className="rounded-xl border border-gray-200 px-3 py-2 text-sm focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-200" />
-            </label>
-          </div>
+          <label className="flex flex-col gap-1">
+            <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Correo electrónico</span>
+            <input required type="email" value={form.email} onChange={setField('email')}
+              className="rounded-xl border border-gray-200 px-3 py-2 text-sm focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-200" />
+            <span className="text-xs text-gray-400">Es también el usuario de acceso — al cambiarlo, el login se actualiza automáticamente.</span>
+          </label>
+
+          <label className="flex flex-col gap-1">
+            <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Fecha de nacimiento</span>
+            <input type="date" value={form.fecha_nacimiento} onChange={setField('fecha_nacimiento')}
+              className="rounded-xl border border-gray-200 px-3 py-2 text-sm focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-200" />
+          </label>
 
           <div className="rounded-xl border border-gray-100 bg-gray-50 p-3 space-y-2">
             <label className="flex items-center gap-2 cursor-pointer select-none">
@@ -184,11 +313,61 @@ function EditarEstudianteModal({ estudiante, onClose, onSaved }: EditModalProps)
             )}
           </div>
 
+          <label className="flex items-center gap-2 cursor-pointer select-none rounded-xl border border-gray-100 bg-gray-50 p-3">
+            <input type="checkbox" checked={form.activo}
+              onChange={e => setForm(f => ({ ...f, activo: e.target.checked }))}
+              className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500" />
+            <span className="text-sm font-medium text-gray-700">Cuenta activa</span>
+          </label>
+
           <div className="flex justify-end gap-2 pt-2">
             <Button type="button" variant="ghost" onClick={onClose} disabled={saving}>Cancelar</Button>
             <Button type="submit" disabled={saving}>{saving ? '…' : 'Guardar cambios'}</Button>
           </div>
         </form>
+
+        <div className="border-t border-gray-100 pt-4 space-y-3">
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-bold text-gray-900">Padres / Tutores</h3>
+            {!addingPadre && (
+              <button type="button" onClick={() => setAddingPadre(true)}
+                className="text-xs font-medium text-indigo-600 hover:text-indigo-800">
+                + Agregar padre/tutor
+              </button>
+            )}
+          </div>
+
+          {padres.length === 0 && !addingPadre && (
+            <p className="text-sm text-gray-400 italic">Sin padres/tutores enlazados.</p>
+          )}
+
+          <div className="space-y-2">
+            {padres.map(p => (
+              <PadreRow key={p.id} padre={p} estudianteId={estudiante.id} onChanged={setPadres} />
+            ))}
+          </div>
+
+          {addingPadre && (
+            <div className="rounded-lg border border-gray-200 bg-white p-3 space-y-3">
+              <TutorField
+                label="Nuevo padre / tutor"
+                nombre={nuevoNombre}     setNombre={setNuevoNombre}
+                tel={nuevoTel}           setTel={setNuevoTel}
+                email={nuevoEmail}       setEmail={setNuevoEmail}
+                existing={nuevoExisting} setExisting={setNuevoExisting}
+              />
+              <div className="flex justify-end gap-2">
+                <Button type="button" variant="ghost" disabled={linkingPadre}
+                  onClick={() => { setAddingPadre(false); setNuevoNombre(''); setNuevoTel(''); setNuevoEmail(''); setNuevoExisting(null) }}>
+                  Cancelar
+                </Button>
+                <Button type="button" onClick={linkPadre} disabled={linkingPadre}>
+                  {linkingPadre ? '…' : 'Enlazar'}
+                </Button>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   )

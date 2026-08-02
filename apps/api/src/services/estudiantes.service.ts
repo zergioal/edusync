@@ -1,6 +1,7 @@
 import { prisma } from '@edusync/database'
 import { AppError } from '../middlewares/errorHandler'
 import { getSupabaseAdmin } from '../lib/supabase'
+import { updateAuthEmail } from '../lib/supabaseSync'
 
 const EST_INCLUDE = {
   usuario: { select: { nombre: true, apellido: true, email: true, activo: true } },
@@ -13,7 +14,7 @@ const EST_INCLUDE = {
     orderBy: { gestion: { anno: 'desc' as const } },
   },
   relaciones_padre: {
-    include: { padre: { select: { nombre: true, apellido: true, email: true } } },
+    include: { padre: { select: { id: true, nombre: true, apellido: true, email: true } } },
   },
 } as const
 
@@ -82,7 +83,7 @@ export class EstudiantesService {
           take:    1,
         },
         relaciones_padre: {
-          include: { padre: { select: { nombre: true, apellido: true, email: true } } },
+          include: { padre: { select: { id: true, nombre: true, apellido: true, email: true } } },
           take:    1,
         },
       },
@@ -206,7 +207,8 @@ export class EstudiantesService {
     data: {
       nombre?:           string
       apellido?:         string
-      codigo?:           string
+      email?:            string
+      activo?:           boolean
       becado?:           boolean
       motivo_beca?:      string | null
       fecha_nacimiento?: string | null
@@ -217,9 +219,21 @@ export class EstudiantesService {
     const usuarioData: Record<string, unknown> = {}
     if (data.nombre   !== undefined) usuarioData.nombre   = data.nombre
     if (data.apellido !== undefined) usuarioData.apellido = data.apellido
+    if (data.activo   !== undefined) usuarioData.activo   = data.activo
+
+    if (data.email !== undefined && data.email !== est.usuario.email) {
+      const emailTaken = await prisma.usuario.findUnique({ where: { email: data.email } })
+      if (emailTaken) throw new AppError(409, 'Ya existe un usuario con ese correo', 'DUPLICATE_EMAIL')
+
+      const usuario = await prisma.usuario.findUnique({
+        where:  { id: est.usuario_id },
+        select: { supabase_auth_id: true },
+      })
+      await updateAuthEmail(usuario!.supabase_auth_id, data.email)
+      usuarioData.email = data.email
+    }
 
     const estData: Record<string, unknown> = {}
-    if (data.codigo      !== undefined) estData.codigo      = data.codigo
     if (data.becado      !== undefined) estData.becado      = data.becado
     if (data.motivo_beca !== undefined) estData.motivo_beca = data.motivo_beca ?? null
     if (data.fecha_nacimiento !== undefined) {
@@ -234,6 +248,58 @@ export class EstudiantesService {
     })
 
     return this.findOne(id)
+  }
+
+  async linkPadre(
+    estudiante_id: string,
+    data: { padre_id?: string; nombre?: string; apellido?: string; email?: string },
+  ) {
+    const est = await prisma.estudiante.findUnique({
+      where:  { id: estudiante_id },
+      select: { id: true, usuario: { select: { institucion_id: true } } },
+    })
+    if (!est) throw new AppError(404, 'Estudiante no encontrado', 'NOT_FOUND')
+
+    let padre_id = data.padre_id
+
+    if (!padre_id) {
+      if (!data.nombre || !data.apellido || !data.email) {
+        throw new AppError(422, 'Se requiere padre_id o nombre/apellido/email para crear uno nuevo', 'VALIDATION')
+      }
+      const existing = await prisma.usuario.findUnique({ where: { email: data.email } })
+      if (existing) throw new AppError(409, 'Ya existe un usuario con ese correo', 'DUPLICATE_EMAIL')
+
+      const password = `Padre2026#`
+      const authId    = await createSupabaseUser(data.email, password)
+      const tutorUsuario = await prisma.usuario.create({
+        data: {
+          supabase_auth_id: authId,
+          email:            data.email,
+          nombre:           data.nombre,
+          apellido:         data.apellido,
+          rol:              'PADRE_TUTOR' as const,
+          institucion_id:   est.usuario.institucion_id,
+        },
+      })
+      padre_id = tutorUsuario.id
+    }
+
+    await prisma.relacionPadreHijo.upsert({
+      where:  { padre_id_estudiante_id: { padre_id, estudiante_id } },
+      create: { padre_id, estudiante_id },
+      update: {},
+    })
+
+    return this.findOne(estudiante_id)
+  }
+
+  async unlinkPadre(estudiante_id: string, padre_id: string) {
+    await prisma.relacionPadreHijo.delete({
+      where: { padre_id_estudiante_id: { padre_id, estudiante_id } },
+    }).catch(() => {
+      throw new AppError(404, 'Relación no encontrada', 'NOT_FOUND')
+    })
+    return this.findOne(estudiante_id)
   }
 
   async remove(id: string) {

@@ -6,7 +6,7 @@ import { Rol } from '@edusync/types'
 export const padresRouter = Router()
 const ctrl = new PadresController()
 
-const canManage = requireRol(Rol.DIRECTOR, Rol.COORDINADOR, Rol.ADMIN_SISTEMA)
+const canManage = requireRol(Rol.DIRECTOR, Rol.COORDINADOR, Rol.ADMIN_SISTEMA, Rol.SECRETARIA)
 
 padresRouter.get('/',       canManage, ctrl.findAll)
 padresRouter.get('/:id',    canManage, ctrl.findOne)
