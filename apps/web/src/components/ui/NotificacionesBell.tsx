@@ -1,13 +1,18 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { api } from '../../lib/api'
+import { useAuth } from '../../context/AuthContext'
+import { getRolDashboardPath } from '../../lib/roleRoutes'
 
 interface Notificacion {
-  id:        string
-  tipo:      string
-  titulo:    string
-  cuerpo:    string
-  leida:     boolean
-  creada_en: string
+  id:               string
+  tipo:             string
+  titulo:           string
+  cuerpo:           string
+  leida:            boolean
+  creada_en:        string
+  referencia_id?:   string | null
+  referencia_tipo?: string | null
 }
 
 interface ApiResult {
@@ -24,6 +29,8 @@ const TIPO_COLOR: Record<string, string> = {
 }
 
 export function NotificacionesBell() {
+  const navigate = useNavigate()
+  const { user }  = useAuth()
   const [open,      setOpen]      = useState(false)
   const [notifs,    setNotifs]    = useState<Notificacion[]>([])
   const [noLeidas,  setNoLeidas]  = useState(0)
@@ -59,6 +66,20 @@ export function NotificacionesBell() {
       setNotifs(prev => prev.map(n => n.id === id ? { ...n, leida: true } : n))
       setNoLeidas(prev => Math.max(0, prev - 1))
     } catch { /* silencioso */ }
+  }
+
+  function handleClick(n: Notificacion) {
+    if (!n.leida) marcarLeida(n.id)
+
+    if (!user) return
+    const base = getRolDashboardPath(user.rol)
+    if (n.referencia_tipo === 'MENSAJE' && n.referencia_id) {
+      navigate(`${base}/mensajes?mensajeId=${n.referencia_id}`)
+      setOpen(false)
+    } else if (n.referencia_tipo === 'ANUNCIO') {
+      navigate(`${base}/anuncios`)
+      setOpen(false)
+    }
   }
 
   async function marcarTodas() {
@@ -110,7 +131,7 @@ export function NotificacionesBell() {
               notifs.map(n => (
                 <div
                   key={n.id}
-                  onClick={() => { if (!n.leida) marcarLeida(n.id) }}
+                  onClick={() => handleClick(n)}
                   className={`px-4 py-3 cursor-pointer hover:bg-gray-50 transition-colors ${!n.leida ? 'bg-blue-50' : ''}`}
                 >
                   <div className="flex items-start gap-3">
