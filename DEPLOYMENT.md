@@ -4,8 +4,8 @@ Infraestructura objetivo:
 
 | Servicio | Plataforma | URL |
 |----------|-----------|-----|
-| API (Express) | Google Cloud Run | `https://[servicio]-[hash].a.run.app` (dominio propio `api.edusync.bo` — paso posterior, ver §3.6) |
-| Web (React/Vite) | Vercel | `https://[subdominio].edusync.bo` |
+| API (Express) | Google Cloud Run | `https://[servicio]-[hash].a.run.app` (dominio propio `api.edusync.com.bo` — paso posterior, ver §3.6) |
+| Web (React/Vite) | Vercel | `https://[subdominio].edusync.com.bo` |
 | Base de datos | Supabase | `aws-1-sa-east-1.pooler.supabase.com` |
 | Auth | Supabase Auth | — |
 
@@ -18,7 +18,7 @@ Infraestructura objetivo:
 - Cuenta en [Supabase](https://supabase.com) con proyecto creado
 - Cuenta en [Google Cloud](https://console.cloud.google.com) con facturación habilitada (requerida incluso dentro del free tier de Cloud Run)
 - Cuenta en [Vercel](https://vercel.com)
-- Dominio `edusync.bo` con acceso al panel DNS
+- Dominio `edusync.com.bo` con acceso al panel DNS
 - `pnpm` >= 8, `Node.js` >= 20 instalados localmente
 
 ---
@@ -56,8 +56,8 @@ pnpm db:seed
 ### 2.4 Configurar Auth
 
 En **Authentication → Settings**:
-- **Site URL**: `https://app.edusync.bo` (o el subdominio principal)
-- **Redirect URLs**: añadir `https://*.edusync.bo/**`
+- **Site URL**: `https://app.edusync.com.bo` (o el subdominio principal)
+- **Redirect URLs**: añadir `https://*.edusync.com.bo/**`
 - **JWT expiry**: 3600 (1 hora recomendado)
 
 Para crear usuarios de producción con roles correctos, usar el script de creación de institución (ver sección 5) que llama a la Admin API de Supabase y configura `app_metadata`.
@@ -94,8 +94,8 @@ SUPABASE_URL=https://[project-ref].supabase.co
 SUPABASE_ANON_KEY=eyJ...
 SUPABASE_SERVICE_ROLE_KEY=eyJ...   # *
 SUPABASE_JWT_SECRET=...   # *
-BASE_DOMAIN=edusync.bo
-CORS_ORIGIN=https://app.edusync.bo,https://[proyecto-web].vercel.app   # *
+BASE_DOMAIN=edusync.com.bo
+CORS_ORIGIN=https://app.edusync.com.bo,https://[proyecto-web].vercel.app   # *
 PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=false
 PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
 ```
@@ -118,7 +118,7 @@ Apuntar temporalmente `VITE_API_URL` (env var del proyecto web en Vercel) a la U
 ### 3.6 Dominio personalizado (paso posterior, no inmediato)
 
 Cuando la URL `*.run.app` lleve un tiempo funcionando establemente:
-- En Cloud Run → **Manage Custom Domains** → mapear `api.edusync.bo`.
+- En Cloud Run → **Manage Custom Domains** → mapear `api.edusync.com.bo`.
 - Actualizar el registro DNS `CNAME api` (hoy apunta a Railway) al target que indique Cloud Run.
 - Esperar propagación y verificar SSL antes de dar de baja la URL anterior.
 
@@ -146,10 +146,10 @@ Install Command:  pnpm install --frozen-lockfile
 En **Settings → Environment Variables** (Environment: Production):
 
 ```env
-VITE_API_URL=https://api.edusync.bo/api/v1
+VITE_API_URL=https://api.edusync.com.bo/api/v1
 VITE_SUPABASE_URL=https://[project-ref].supabase.co
 VITE_SUPABASE_ANON_KEY=eyJ...
-VITE_BASE_DOMAIN=edusync.bo
+VITE_BASE_DOMAIN=edusync.com.bo
 ```
 
 > `VITE_DEV_TENANT` solo se usa en desarrollo local. **No configurar en Vercel.**
@@ -157,7 +157,7 @@ VITE_BASE_DOMAIN=edusync.bo
 ### 4.4 Dominio wildcard (multi-tenant)
 
 En **Settings → Domains**:
-- Añadir `*.edusync.bo` (wildcard)
+- Añadir `*.edusync.com.bo` (wildcard)
 - Crear registro DNS `CNAME * → cname.vercel-dns.com`
 
 Vercel servirá la misma SPA para todos los subdominios. El frontend detecta el subdominio del `window.location.hostname` y lo envía como `X-Tenant-Subdomain`.
@@ -190,7 +190,7 @@ pnpm ts-node scripts/nueva-institucion.ts \
 El script:
 1. Crea el registro `Institucion` en la BD
 2. Crea el usuario Admin en Supabase Auth con `app_metadata: { rol: "ADMIN_SISTEMA", institucion_id }`
-3. Imprime la URL del subdominio: `https://sanignacio.edusync.bo`
+3. Imprime la URL del subdominio: `https://sanignacio.edusync.com.bo`
 
 ---
 
@@ -210,9 +210,9 @@ El script:
 - [ ] Seed ejecutado (al menos institución base + admin)
 - [ ] Variables de entorno configuradas en Cloud Run y Vercel
 - [ ] Chromium funcionando en el contenedor de Cloud Run (PDF funcional)
-- [ ] DNS propagado (`dig pioxii.edusync.bo`; `dig api.edusync.bo` solo tras §3.6)
+- [ ] DNS propagado (`dig pioxii.edusync.com.bo`; `dig api.edusync.com.bo` solo tras §3.6)
 - [ ] SSL activo (Cloud Run y Vercel lo gestionan automáticamente)
-- [ ] CORS verificado: `curl -H "Origin: https://pioxii.edusync.bo" https://[servicio]-[hash].a.run.app/health`
+- [ ] CORS verificado: `curl -H "Origin: https://pioxii.edusync.com.bo" https://[servicio]-[hash].a.run.app/health`
 - [ ] Login con usuario admin de producción
 - [ ] Generación de boletin PDF probada en producción
 - [ ] Backup automático de Supabase activado (Settings → Backups)

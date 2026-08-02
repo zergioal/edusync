@@ -14,7 +14,7 @@ const app = express()
 
 // ─── CORS dinámico: permite cualquier subdominio de BASE_DOMAIN ───────────────
 
-const baseDomain  = process.env['BASE_DOMAIN'] ?? 'edusync.bo'
+const baseDomain  = process.env['BASE_DOMAIN'] ?? 'edusync.com.bo'
 const devOrigins  = (process.env['CORS_ORIGIN'] ?? 'http://localhost:5173')
   .split(',').map(o => o.trim()).filter(Boolean)
 

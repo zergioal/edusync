@@ -102,7 +102,7 @@ function InstModal({
                 placeholder="ue-ejemplo"
                 className="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
-              <span className="text-sm text-gray-400">.edusync.bo</span>
+              <span className="text-sm text-gray-400">.edusync.com.bo</span>
             </div>
             <p className="mt-1 text-xs text-gray-400">Solo minúsculas, números y guiones.</p>
           </div>
@@ -218,7 +218,7 @@ export default function InstitucionesPage() {
                     </div>
                   </td>
                   <td className="px-5 py-3.5 text-gray-500 font-mono text-xs">
-                    {inst.subdominio}.edusync.bo
+                    {inst.subdominio}.edusync.com.bo
                   </td>
                   <td className="px-5 py-3.5 text-center">
                     <Badge variant={inst.activa ? 'success' : 'default'}>
