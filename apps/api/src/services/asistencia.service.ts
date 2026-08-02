@@ -231,9 +231,9 @@ export class AsistenciaService {
         dias: diaria.map(r => ({ fecha: r.fecha.toISOString().slice(0, 10), estado: r.estado })),
       },
       por_materia: Object.values(
-        clase.reduce<Record<string, { materia: string; presentes: number; ausentes: number; tardanzas: number }>>((acc, r) => {
-          const key = r.asignacion.materia.nombre
-          if (!acc[key]) acc[key] = { materia: key, presentes: 0, ausentes: 0, tardanzas: 0 }
+        clase.reduce<Record<string, { asignacion_id: string; materia: string; presentes: number; ausentes: number; tardanzas: number }>>((acc, r) => {
+          const key = r.asignacion_id
+          if (!acc[key]) acc[key] = { asignacion_id: key, materia: r.asignacion.materia.nombre, presentes: 0, ausentes: 0, tardanzas: 0 }
           if (r.estado === 'PRESENTE')  acc[key]!.presentes++
           if (r.estado === 'AUSENTE')   acc[key]!.ausentes++
           if (r.estado === 'TARDANZA')  acc[key]!.tardanzas++
@@ -241,6 +241,39 @@ export class AsistenciaService {
         }, {}),
       ),
     }
+  }
+
+  // ── Asistencia de clase detallada por materia (vista estudiante/padre) ────
+
+  async getClaseMensualEstudiante(estudiante_id: string, asignacion_id: string, mes: string) {
+    const [yearStr, monthStr] = mes.split('-')
+    const year  = parseInt(yearStr!)
+    const month = parseInt(monthStr!) - 1
+    const inicio = new Date(year, month, 1)
+    const fin    = new Date(year, month + 1, 0, 23, 59, 59, 999)
+
+    const registros = await prisma.asistenciaClase.findMany({
+      where:  { asignacion_id, estudiante_id, fecha: { gte: inicio, lte: fin } },
+      select: { fecha: true, estado: true },
+    })
+
+    return {
+      records: Object.fromEntries(registros.map(r => [r.fecha.toISOString().slice(0, 10), r.estado])),
+    }
+  }
+
+  async getClaseMensualMia(usuario_id: string, asignacion_id: string, mes: string) {
+    const estudiante = await prisma.estudiante.findFirst({ where: { usuario_id } })
+    if (!estudiante) throw new AppError(404, 'Perfil de estudiante no encontrado', 'NOT_FOUND')
+    return this.getClaseMensualEstudiante(estudiante.id, asignacion_id, mes)
+  }
+
+  async getClaseMensualHijo(padre_usuario_id: string, estudiante_id: string, asignacion_id: string, mes: string) {
+    const rel = await prisma.relacionPadreHijo.findFirst({
+      where: { padre_id: padre_usuario_id, estudiante_id },
+    })
+    if (!rel) throw new AppError(403, 'Sin acceso', 'FORBIDDEN')
+    return this.getClaseMensualEstudiante(estudiante_id, asignacion_id, mes)
   }
 
   // ── Paralelos del regente (para selector) ────────────────────────────────

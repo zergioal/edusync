@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react'
 import { api } from '../../lib/api'
 import { useAuth } from '../../context/AuthContext'
+import { useGestionActiva } from '../../hooks/useGestionActiva'
 import { PensionBlockModal } from '../../components/ui/PensionBlockModal'
+import { AsistenciaMateriaDetalle } from '../../components/asistencia/AsistenciaMateriaDetalle'
 
 type Estado = 'PRESENTE' | 'AUSENTE' | 'TARDANZA' | 'LICENCIA'
 
@@ -18,12 +20,18 @@ interface DiariaSummary {
   dias:              DiaAsistencia[]
 }
 
-interface AsistenciaData {
-  diaria:      DiariaSummary
-  por_materia: unknown[]
+interface MateriaResumen {
+  asignacion_id: string
+  materia:       string
+  presentes:     number
+  ausentes:      number
+  tardanzas:     number
 }
 
-interface Trimestre { id: string; numero: number; cerrado: boolean; gestion_id: string }
+interface AsistenciaData {
+  diaria:      DiariaSummary
+  por_materia: MateriaResumen[]
+}
 
 const DIA_ABREV = ['D', 'L', 'M', 'X', 'J', 'V', 'S']
 const MESES_NOMBRES = [
@@ -155,21 +163,17 @@ export default function MiAsistenciaPage({ estudianteId }: Props) {
   const { estadoFinanciero } = useAuth()
   const esSelfView = !estudianteId
 
-  const [trimestres,    setTrimestres]    = useState<Trimestre[]>([])
+  const { trimestres, trimestreActual } = useGestionActiva()
   const [trimestreId,   setTrimestreId]   = useState('')
   const [data,          setData]          = useState<AsistenciaData | null>(null)
   const [loading,       setLoading]       = useState(false)
   const [error,         setError]         = useState<string | null>(null)
   const [selectedMonth, setSelectedMonth] = useState<string>('')
+  const [detalleAbierto, setDetalleAbierto] = useState<MateriaResumen | null>(null)
 
   useEffect(() => {
-    api.get<{ id: string; trimestres: Trimestre[] }>('/gestiones/activa')
-      .then(g => {
-        setTrimestres(g.trimestres)
-        const activo = g.trimestres.find(t => !t.cerrado) ?? g.trimestres[g.trimestres.length - 1]
-        if (activo) setTrimestreId(activo.id)
-      }).catch(() => {})
-  }, [])
+    if (trimestreActual && !trimestreId) setTrimestreId(trimestreActual.id)
+  }, [trimestreActual, trimestreId])
 
   useEffect(() => {
     if (!trimestreId) return
@@ -315,7 +319,58 @@ export default function MiAsistenciaPage({ estudianteId }: Props) {
             </div>
           ) : null}
 
+          {/* Asistencia por materia */}
+          <div className="space-y-2">
+            <h2 className="text-sm font-semibold uppercase tracking-wide text-gray-500">Asistencia por materia</h2>
+            {data.por_materia.length === 0 ? (
+              <div className="rounded-xl border-2 border-dashed border-gray-200 p-6 text-center text-sm text-gray-400">
+                Sin registros de asistencia por materia en este trimestre.
+              </div>
+            ) : (
+              <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-gray-100 bg-gray-50 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
+                      <th className="px-4 py-2">Materia</th>
+                      <th className="px-3 py-2 text-center">Presentes</th>
+                      <th className="px-3 py-2 text-center">Ausentes</th>
+                      <th className="px-3 py-2 text-center">Tardanzas</th>
+                      <th className="px-3 py-2 text-right">Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-50">
+                    {data.por_materia.map(m => (
+                      <tr key={m.asignacion_id} className="hover:bg-gray-50">
+                        <td className="px-4 py-2.5 font-medium text-gray-900">{m.materia}</td>
+                        <td className="px-3 py-2.5 text-center text-emerald-700">{m.presentes}</td>
+                        <td className="px-3 py-2.5 text-center text-red-700">{m.ausentes}</td>
+                        <td className="px-3 py-2.5 text-center text-amber-700">{m.tardanzas}</td>
+                        <td className="px-3 py-2.5 text-right">
+                          <button
+                            onClick={() => setDetalleAbierto(m)}
+                            className="text-xs font-medium text-indigo-600 hover:text-indigo-800"
+                          >
+                            Ver detalle →
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+
         </div>
+      )}
+
+      {detalleAbierto && (
+        <AsistenciaMateriaDetalle
+          asignacionId={detalleAbierto.asignacion_id}
+          materiaNombre={detalleAbierto.materia}
+          onClose={() => setDetalleAbierto(null)}
+          {...(estudianteId ? { estudianteId } : {})}
+        />
       )}
     </div>
   )

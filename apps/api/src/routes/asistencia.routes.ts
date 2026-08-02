@@ -13,6 +13,8 @@ const isRegente = requireRol(Rol.REGENTE, Rol.COORDINADOR, Rol.DIRECTOR, Rol.ADM
 // ── Vistas estudiante/padre ────────────────────────────────────────────────
 asistenciaRouter.get('/mia',                      ctrl.getMia)
 asistenciaRouter.get('/hijo/:estudiante_id',       ctrl.getHijo)
+asistenciaRouter.get('/clase/mensual/mia',            ctrl.getClaseMensualMia)
+asistenciaRouter.get('/clase/mensual/hijo/:estudiante_id', ctrl.getClaseMensualHijo)
 
 // ── Asistencia de clase (docente) ──────────────────────────────────────────
 asistenciaRouter.post('/clase',                    isDocente,  ctrl.registrarClase)
