@@ -8,11 +8,15 @@ import { useToast } from '../../components/ui/Toast'
 import { api, ApiError } from '../../lib/api'
 import { Badge, Spinner, Button } from '@edusync/ui'
 import { AvatarDisplay, AvatarPickerModal, useAvatar } from '../../components/ui/AvatarSelector'
+import { EditarPerfilModal } from '../../components/EditarPerfilModal'
 import { ROL_LABELS } from '../../lib/roleRoutes'
 const CargaHorariaDocentesPage = lazy(() => import('../director/CargaHorariaDocentesPage'))
 const AnunciosInternosPage     = lazy(() => import('../shared/AnunciosInternosPage'))
 const MensajesPage             = lazy(() => import('../shared/MensajesPage'))
 const ReportesPage             = lazy(() => import('../coordinador/ReportesPage'))
+const ParalelosPage            = lazy(() => import('../coordinador/ParalelosPage'))
+const AsignacionesPage         = lazy(() => import('../coordinador/AsignacionesPage'))
+const HorariosPage             = lazy(() => import('../coordinador/HorariosPage'))
 const GestionesPage            = lazy(() => import('../secretaria/GestionesPage'))
 const DocentesPage             = lazy(() => import('../secretaria/DocentesPage'))
 const EstudiantesPage          = lazy(() => import('../secretaria/EstudiantesPage'))
@@ -46,6 +50,7 @@ function DirectorHome() {
   const [stats,      setStats]      = useState<Stats | null>(null)
   const [loadingStats, setLoadingStats] = useState(true)
   const [cerrando,   setCerrando]   = useState<string | null>(null)
+  const [showEditPerfil, setShowEditPerfil] = useState(false)
 
   useEffect(() => {
     Promise.all([
@@ -96,7 +101,7 @@ function DirectorHome() {
 
         <div className="flex-1 min-w-0">
           <h1 className="text-2xl font-bold text-gray-900 leading-tight">
-            {user?.nombre} {user?.apellido}
+            {user?.grado_academico ? `${user.grado_academico} ` : ''}{user?.nombre} {user?.apellido}
           </h1>
           <p className="text-sm text-gray-400 mt-0.5 truncate">{user?.email}</p>
           <div className="mt-2 flex flex-wrap items-center gap-2">
@@ -104,6 +109,12 @@ function DirectorHome() {
             {gestionLabel && (
               <span className="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">{gestionLabel}</span>
             )}
+            <button
+              onClick={() => setShowEditPerfil(true)}
+              className="text-xs font-medium text-indigo-600 hover:text-indigo-800"
+            >
+              Editar mis datos
+            </button>
           </div>
         </div>
 
@@ -197,6 +208,9 @@ function DirectorHome() {
       {showPicker && user && (
         <AvatarPickerModal userId={user.id} onClose={closePicker} onSaved={onSaved} />
       )}
+      {showEditPerfil && (
+        <EditarPerfilModal onClose={() => setShowEditPerfil(false)} />
+      )}
     </div>
   )
 }
@@ -210,7 +224,10 @@ export default function DirectorDashboard() {
         <Route path="padres"            element={<PadresPage />} />
         <Route path="estudiantes"       element={<EstudiantesPage basePath="/dashboard/director" />} />
         <Route path="estudiante/:id"    element={<PerfilEstudiantePage />} />
+        <Route path="paralelos"         element={<ParalelosPage />} />
+        <Route path="asignaciones"      element={<AsignacionesPage />} />
         <Route path="gestiones"         element={<GestionesPage />} />
+        <Route path="horarios"          element={<HorariosPage />} />
         <Route path="reportes/*"        element={<ReportesPage />} />
         <Route path="carga-horaria"     element={<CargaHorariaDocentesPage />} />
         <Route path="anuncios"          element={<AnunciosInternosPage />} />
