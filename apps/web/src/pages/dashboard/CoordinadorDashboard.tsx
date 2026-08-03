@@ -6,6 +6,7 @@ import { useAuth } from '../../context/AuthContext'
 import { ROL_LABELS } from '../../lib/roleRoutes'
 import { api } from '../../lib/api'
 import { Badge } from '@edusync/ui'
+import { EditarPerfilModal } from '../../components/EditarPerfilModal'
 
 import { useGestionActiva } from '../../hooks/useGestionActiva'
 const ParalelosPage        = lazy(() => import('../coordinador/ParalelosPage'))
@@ -35,6 +36,7 @@ function CoordinadorHome() {
 
   const [stats,        setStats]        = useState<CoordinadorStats | null>(null)
   const [loadingStats, setLoadingStats] = useState(true)
+  const [showEditPerfil, setShowEditPerfil] = useState(false)
 
   useEffect(() => {
     Promise.all([
@@ -56,11 +58,17 @@ function CoordinadorHome() {
       <div className="flex items-start justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">
-            Bienvenido, {user?.nombre} {user?.apellido}
+            Bienvenido, {user?.grado_academico ? `${user.grado_academico} ` : ''}{user?.nombre} {user?.apellido}
           </h1>
           <div className="mt-1 flex items-center gap-2">
             <Badge variant="info">{user?.rol ? ROL_LABELS[user.rol] : ''}</Badge>
             {gestionLabel && <span className="text-sm text-gray-400">{gestionLabel}</span>}
+            <button
+              onClick={() => setShowEditPerfil(true)}
+              className="text-xs font-medium text-indigo-600 hover:text-indigo-800"
+            >
+              Editar mis datos
+            </button>
           </div>
         </div>
         {trimestreLabel && (
@@ -82,6 +90,10 @@ function CoordinadorHome() {
           <StatCard label="Sin asesor"   value={loadingStats ? '…' : (stats?.sinAsesor    ?? '—')} sublabel="paralelos sin tutor" icon="student"  color="yellow" />
         </div>
       </div>
+
+      {showEditPerfil && (
+        <EditarPerfilModal onClose={() => setShowEditPerfil(false)} />
+      )}
     </div>
   )
 }

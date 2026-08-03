@@ -40,7 +40,7 @@ export class UsuariosService {
     return prisma.usuario.create({ data: { ...data, institucion_id } })
   }
 
-  async update(id: string, data: Partial<{ nombre: string; apellido: string; activo: boolean }>) {
+  async update(id: string, data: Partial<{ nombre: string; apellido: string; activo: boolean; grado_academico: string | null }>) {
     await this.findOne(id)
     return prisma.usuario.update({ where: { id }, data })
   }

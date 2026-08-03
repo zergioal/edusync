@@ -10,13 +10,14 @@ import { getTenantHeaders } from '../config/tenant'
 // ─── Tipos ────────────────────────────────────────────────────────────────────
 
 export interface AppUser {
-  id:             string
-  email:          string
-  nombre:         string
-  apellido:       string
-  rol:            Rol
-  institucion_id: string
-  activo:         boolean
+  id:              string
+  email:           string
+  nombre:          string
+  apellido:        string
+  rol:             Rol
+  institucion_id:  string
+  activo:          boolean
+  grado_academico?: string | null
 }
 
 export interface EstadoFinanciero {
@@ -48,6 +49,7 @@ interface AuthContextValue extends AuthState {
   login:                  (email: string, password: string) => Promise<void>
   logout:                 () => Promise<void>
   refreshEstadoFinanciero: () => Promise<void>
+  refreshUser:             () => Promise<void>
 }
 
 // ─── Context ──────────────────────────────────────────────────────────────────
@@ -169,8 +171,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [state.user])
 
+  const refreshUser = useCallback(async () => {
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session) return
+    try {
+      const appUser = await fetchAppUser(session.access_token)
+      setState(prev => ({ ...prev, user: appUser }))
+    } catch {
+      // ignore
+    }
+  }, [])
+
   return (
-    <AuthContext.Provider value={{ ...state, login, logout, refreshEstadoFinanciero }}>
+    <AuthContext.Provider value={{ ...state, login, logout, refreshEstadoFinanciero, refreshUser }}>
       {children}
     </AuthContext.Provider>
   )

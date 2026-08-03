@@ -43,6 +43,22 @@ export class UsuariosController {
     } catch (e) { next(e) }
   }
 
+  updateMe = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      // Whitelist explícito — nunca pasar req.body completo aquí (evitaría que
+      // un usuario se autoedite campos sensibles como rol o activo).
+      const { nombre, apellido, grado_academico } = req.body as {
+        nombre?: string; apellido?: string; grado_academico?: string | null
+      }
+      const data = await this.service.update(req.auth!.usuario_id, {
+        ...(nombre           !== undefined ? { nombre }          : {}),
+        ...(apellido         !== undefined ? { apellido }        : {}),
+        ...(grado_academico  !== undefined ? { grado_academico } : {}),
+      })
+      res.json({ data })
+    } catch (e) { next(e) }
+  }
+
   remove = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       await this.service.remove(req.params['id']!)

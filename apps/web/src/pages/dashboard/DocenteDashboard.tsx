@@ -8,6 +8,7 @@ import { useToast } from '../../components/ui/Toast'
 import { Badge } from '@edusync/ui'
 import { api } from '../../lib/api'
 import { AvatarDisplay, AvatarPickerModal, useAvatar } from '../../components/ui/AvatarSelector'
+import { EditarPerfilModal } from '../../components/EditarPerfilModal'
 
 const MisMateriasPage          = lazy(() => import('../docente/MisMateriasPage'))
 const PlanillaPage             = lazy(() => import('../docente/PlanillaPage'))
@@ -42,6 +43,7 @@ function DocenteHome() {
 
   const [asignaciones, setAsignaciones] = useState<AsignacionCard[]>([])
   const [loadingStats, setLoadingStats] = useState(true)
+  const [showEditPerfil, setShowEditPerfil] = useState(false)
 
   useEffect(() => {
     api.get<AsignacionCard[]>('/asignaciones/mias')
@@ -70,7 +72,7 @@ function DocenteHome() {
 
         <div className="flex-1 min-w-0">
           <h1 className="text-2xl font-bold text-gray-900 leading-tight">
-            Prof. {user?.nombre} {user?.apellido}
+            {user?.grado_academico ? `${user.grado_academico} ` : 'Prof. '}{user?.nombre} {user?.apellido}
           </h1>
           <p className="text-sm text-gray-400 mt-0.5 truncate">{user?.email}</p>
           <div className="mt-2 flex flex-wrap items-center gap-2">
@@ -78,6 +80,12 @@ function DocenteHome() {
             {gestionLabel && (
               <span className="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">{gestionLabel}</span>
             )}
+            <button
+              onClick={() => setShowEditPerfil(true)}
+              className="text-xs font-medium text-indigo-600 hover:text-indigo-800"
+            >
+              Editar mis datos
+            </button>
           </div>
         </div>
 
@@ -171,6 +179,9 @@ function DocenteHome() {
 
       {showPicker && user && (
         <AvatarPickerModal userId={user.id} onClose={closePicker} onSaved={onSaved} />
+      )}
+      {showEditPerfil && (
+        <EditarPerfilModal onClose={() => setShowEditPerfil(false)} />
       )}
     </div>
   )
