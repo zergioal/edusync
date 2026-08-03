@@ -8,10 +8,14 @@ export const planillaRouter = Router()
 const ctrl = new PlanillaController()
 
 const canManage = requireRol(Rol.DOCENTE, Rol.ADMIN_SISTEMA, Rol.DIRECTOR, Rol.COORDINADOR)
+const canViewEstudiante = requireRol(Rol.ADMIN_SISTEMA, Rol.DIRECTOR, Rol.COORDINADOR, Rol.SECRETARIA)
 
 // ── Vistas estudiante/padre: planilla detallada de un solo estudiante ────────
 planillaRouter.get('/mia',                checkAccesoAcademico, ctrl.getMia)
 planillaRouter.get('/hijo/:estudiante_id', checkAccesoAcademico, ctrl.getHijo)
+
+// ── Vista staff: planilla detallada de cualquier estudiante de la institución ─
+planillaRouter.get('/estudiante/:estudiante_id', canViewEstudiante, ctrl.getParaStaff)
 
 // ── Vista docente: planilla completa de un paralelo ───────────────────────────
 planillaRouter.get('/:asignacion_id', canManage, ctrl.get)

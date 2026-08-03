@@ -7,7 +7,10 @@ import { Button, Badge, Spinner } from '@edusync/ui'
 import { SelectGestion } from '../../components/select/SelectGestion'
 import { NuevoEstudianteModal } from './NuevoEstudianteModal'
 import { TutorField, type TutorMatch } from '../../components/TutorField'
+import { useGestionActiva } from '../../hooks/useGestionActiva'
 import { Rol } from '@edusync/types'
+
+const BASE_PATHS_CON_REPORTES = new Set(['/dashboard/coordinador', '/dashboard/director'])
 
 const CAN_MANAGE_ROLES: string[] = [Rol.ADMIN_SISTEMA, Rol.DIRECTOR, Rol.COORDINADOR, Rol.SECRETARIA]
 
@@ -384,6 +387,8 @@ export default function EstudiantesPage({ basePath = '/dashboard/admin' }: { bas
   toastRef.current = toast
   const { user }  = useAuth()
   const canManage = user?.rol ? CAN_MANAGE_ROLES.includes(user.rol) : false
+  const { id: gestionActivaId, trimestres } = useGestionActiva()
+  const puedeVerReportes = BASE_PATHS_CON_REPORTES.has(basePath)
 
   // Vista
   const [view,             setView]             = useState<View>('cursos')
@@ -562,7 +567,21 @@ export default function EstudiantesPage({ basePath = '/dashboard/admin' }: { bas
               {selectedParalelo?.grado.nombre} &ldquo;{selectedParalelo?.letra}&rdquo;
             </h1>
           </div>
-          {canManage && <Button onClick={() => setModalNuevo(true)}>+ Matricular estudiante</Button>}
+          <div className="flex items-center gap-2 flex-wrap justify-end">
+            {puedeVerReportes && selectedParalelo && trimestres.map(t => (
+              <Button
+                key={t.id}
+                variant="secondary"
+                size="sm"
+                onClick={() => navigate(
+                  `${basePath}/reportes/centralizador?paralelo_id=${selectedParalelo.id}&gestion_id=${gestionActivaId ?? ''}&trimestre_id=${t.id}`
+                )}
+              >
+                Centralizador {t.numero}° Trimestre
+              </Button>
+            ))}
+            {canManage && <Button onClick={() => setModalNuevo(true)}>+ Matricular estudiante</Button>}
+          </div>
         </div>
       </div>
 

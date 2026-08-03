@@ -6,6 +6,9 @@ import { Rol } from '@edusync/types'
 import { Button, Badge, Spinner } from '@edusync/ui'
 import { SelectGestion } from '../../components/select/SelectGestion'
 import { SelectTrimestre } from '../../components/select/SelectTrimestre'
+import { useGestionActiva } from '../../hooks/useGestionActiva'
+import { PlanillaMateriaDetalle } from '../../components/planilla/PlanillaMateriaDetalle'
+import type { DimensionPlanilla, EstudiantePlanilla } from '../../hooks/usePlanilla'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -204,18 +207,47 @@ function escalaColor(e: string) {
   return 'bg-emerald-100 text-emerald-700'
 }
 
+interface MateriaPlanillaStaff {
+  asignacion_id: string
+  materia:       { nombre: string; campo: string }
+  observacion:   string | null
+  dimensiones:   DimensionPlanilla[]
+  estudiante:    EstudiantePlanilla | null
+}
+interface PlanillaStaffResponse {
+  tipo:     'REGULAR' | 'INICIAL'
+  materias?: MateriaPlanillaStaff[]
+}
+
 function CalificacionesTab({ estudianteId }: { estudianteId: string }) {
+  const { id: gestionActivaId, trimestreActual } = useGestionActiva()
   const [gestionId,    setGestionId]    = useState('')
   const [trimestreId,  setTrimestreId]  = useState('')
   const [boletin,      setBoletin]      = useState<Boletin | null>(null)
+  const [planilla,     setPlanilla]     = useState<MateriaPlanillaStaff[]>([])
   const [loading,      setLoading]      = useState(false)
   const [error,        setError]        = useState('')
+  const [detalleAbierto, setDetalleAbierto] = useState<MateriaPlanillaStaff | null>(null)
+
+  // Por defecto: gestión activa + primer trimestre no cerrado (se puede cambiar con el selector)
+  useEffect(() => {
+    if (gestionActivaId && !gestionId) setGestionId(gestionActivaId)
+  }, [gestionActivaId, gestionId])
+  useEffect(() => {
+    if (trimestreActual && !trimestreId) setTrimestreId(trimestreActual.id)
+  }, [trimestreActual, trimestreId])
 
   useEffect(() => {
-    if (!trimestreId) { setBoletin(null); return }
+    if (!trimestreId) { setBoletin(null); setPlanilla([]); return }
     setLoading(true); setError('')
-    api.get<Boletin>(`/boletines/${estudianteId}?trimestre_id=${trimestreId}`)
-      .then(setBoletin)
+    Promise.all([
+      api.get<Boletin>(`/boletines/${estudianteId}?trimestre_id=${trimestreId}`),
+      api.get<PlanillaStaffResponse>(`/planilla/estudiante/${estudianteId}?trimestre_id=${trimestreId}`).catch(() => null),
+    ])
+      .then(([b, p]) => {
+        setBoletin(b)
+        setPlanilla(p?.tipo === 'REGULAR' ? (p.materias ?? []) : [])
+      })
       .catch(e => setError(e?.message ?? 'Error al cargar calificaciones'))
       .finally(() => setLoading(false))
   }, [estudianteId, trimestreId])
@@ -256,23 +288,37 @@ function CalificacionesTab({ estudianteId }: { estudianteId: string }) {
                 ))}
                 <th className="px-3 py-3 text-center">Total</th>
                 <th className="px-3 py-3 text-center">Escala</th>
+                <th className="px-3 py-3 text-right">Acciones</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
-              {boletin.materias.map((m, i) => (
-                <tr key={i} className="hover:bg-gray-50">
-                  <td className="px-5 py-2.5 text-gray-500 text-xs">{m.campo}</td>
-                  <td className="px-5 py-2.5 font-medium text-gray-900">{m.nombre}</td>
-                  <td className="px-3 py-2.5 text-center">{m.ser}</td>
-                  <td className="px-3 py-2.5 text-center">{m.saber}</td>
-                  <td className="px-3 py-2.5 text-center">{m.hacer}</td>
-                  <td className="px-3 py-2.5 text-center">{m.autoevaluacion}</td>
-                  <td className="px-3 py-2.5 text-center font-semibold">{m.total}</td>
-                  <td className="px-3 py-2.5 text-center">
-                    <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${escalaColor(m.escala)}`}>{m.escala}</span>
-                  </td>
-                </tr>
-              ))}
+              {boletin.materias.map((m, i) => {
+                const detalle = planilla.find(p => p.materia.nombre === m.nombre)
+                return (
+                  <tr key={i} className="hover:bg-gray-50">
+                    <td className="px-5 py-2.5 text-gray-500 text-xs">{m.campo}</td>
+                    <td className="px-5 py-2.5 font-medium text-gray-900">{m.nombre}</td>
+                    <td className="px-3 py-2.5 text-center">{m.ser}</td>
+                    <td className="px-3 py-2.5 text-center">{m.saber}</td>
+                    <td className="px-3 py-2.5 text-center">{m.hacer}</td>
+                    <td className="px-3 py-2.5 text-center">{m.autoevaluacion}</td>
+                    <td className="px-3 py-2.5 text-center font-semibold">{m.total}</td>
+                    <td className="px-3 py-2.5 text-center">
+                      <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${escalaColor(m.escala)}`}>{m.escala}</span>
+                    </td>
+                    <td className="px-3 py-2.5 text-right">
+                      {detalle && (
+                        <button
+                          onClick={() => setDetalleAbierto(detalle)}
+                          className="text-xs font-medium text-indigo-600 hover:text-indigo-800"
+                        >
+                          Ver registro del profesor
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                )
+              })}
             </tbody>
           </table>
         </div>
@@ -298,6 +344,32 @@ function CalificacionesTab({ estudianteId }: { estudianteId: string }) {
               ))}
             </tbody>
           </table>
+        </div>
+      )}
+
+      {detalleAbierto && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+          <div className="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl bg-white p-6 shadow-xl space-y-4">
+            <div className="flex items-start justify-between">
+              <div>
+                <h2 className="text-lg font-bold text-gray-900">{detalleAbierto.materia.nombre}</h2>
+                <p className="text-sm text-gray-400">{detalleAbierto.materia.campo}</p>
+              </div>
+              <button
+                onClick={() => setDetalleAbierto(null)}
+                className="text-gray-400 hover:text-gray-700 text-2xl leading-none"
+              >×</button>
+            </div>
+            {detalleAbierto.observacion && (
+              <div className="rounded-lg bg-blue-50 border-l-4 border-blue-400 px-3 py-2 text-sm text-blue-800">
+                <span className="font-medium">Observación del docente: </span>{detalleAbierto.observacion}
+              </div>
+            )}
+            <PlanillaMateriaDetalle
+              dimensiones={detalleAbierto.dimensiones}
+              estudiante={detalleAbierto.estudiante}
+            />
+          </div>
         </div>
       )}
     </div>

@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { useState, useEffect, useRef } from 'react'
+import { Link, useSearchParams } from 'react-router-dom'
 import { api, apiDownload } from '../../../lib/api'
 import { SelectGestion }   from '../../../components/select/SelectGestion'
 import { SelectTrimestre } from '../../../components/select/SelectTrimestre'
@@ -18,9 +18,12 @@ interface Data {
 }
 
 export default function CentralizadorPage() {
-  const [gestionId,   setGestionId]   = useState('')
-  const [trimestreId, setTrimestreId] = useState('')
-  const [paraleloId,  setParaleloId]  = useState('')
+  const [searchParams] = useSearchParams()
+  const autoGenRef = useRef(false)
+
+  const [gestionId,   setGestionId]   = useState(() => searchParams.get('gestion_id') ?? '')
+  const [trimestreId, setTrimestreId] = useState(() => searchParams.get('trimestre_id') ?? '')
+  const [paraleloId,  setParaleloId]  = useState(() => searchParams.get('paralelo_id') ?? '')
   const [data,        setData]        = useState<Data | null>(null)
   const [loading,     setLoading]     = useState(false)
   const [error,       setError]       = useState<string | null>(null)
@@ -36,6 +39,16 @@ export default function CentralizadorPage() {
       setError(e instanceof Error ? e.message : 'Error al cargar')
     } finally { setLoading(false) }
   }
+
+  // Si se llegó con paralelo_id + trimestre_id en la URL (ej. desde el curso de un estudiante), generar automáticamente
+  useEffect(() => {
+    if (autoGenRef.current) return
+    if (paraleloId && trimestreId) {
+      autoGenRef.current = true
+      generar()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [paraleloId, trimestreId])
 
   async function descargar(tipo: 'pdf' | 'xlsx') {
     if (!paraleloId || !trimestreId || !data) return

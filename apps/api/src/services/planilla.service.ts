@@ -160,6 +160,11 @@ export class PlanillaService {
     return this.getParaEstudiante(estudiante_id, trimestre_id, institucion_id)
   }
 
+  /** Vista de staff: cualquier estudiante de la institución (control de acceso por rol en la ruta). */
+  async getParaStaff(estudiante_id: string, trimestre_id: string, institucion_id: string) {
+    return this.getParaEstudiante(estudiante_id, trimestre_id, institucion_id)
+  }
+
   private async getParaEstudiante(estudiante_id: string, trimestre_id: string, institucion_id: string) {
     const trimestre = await prisma.trimestre.findUnique({
       where:   { id: trimestre_id },

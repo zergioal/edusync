@@ -1,10 +1,12 @@
-import { lazy } from 'react'
+import { lazy, useState, useEffect } from 'react'
 import { Routes, Route } from 'react-router-dom'
 import { DashboardLayout } from '../../components/layout/DashboardLayout'
 import { StatCard } from '../../components/ui/StatCard'
 import { useAuth } from '../../context/AuthContext'
 import { ROL_LABELS } from '../../lib/roleRoutes'
+import { api } from '../../lib/api'
 import { Badge } from '@edusync/ui'
+import { EditarPerfilModal } from '../../components/EditarPerfilModal'
 
 import { useGestionActiva } from '../../hooks/useGestionActiva'
 const EstudiantesPage      = lazy(() => import('../secretaria/EstudiantesPage'))
@@ -26,20 +28,72 @@ const PadresPage           = lazy(() => import('../secretaria/PadresPage'))
 
 // ─── Panel principal ──────────────────────────────────────────────────────────
 
+interface AdminStats {
+  estudiantes: number
+  docentes:    number
+  paralelos:   number
+  pensionPend: number
+}
+
+interface AnuncioResumen {
+  id:           string
+  titulo:       string
+  contenido:    string
+  publicado_en: string
+  destacado:    boolean
+}
+
 function AdminHome() {
   const { user } = useAuth()
   const { gestionLabel, trimestreLabel } = useGestionActiva()
+  const [showEditPerfil, setShowEditPerfil] = useState(false)
+
+  const [stats,        setStats]        = useState<AdminStats | null>(null)
+  const [loadingStats, setLoadingStats] = useState(true)
+  const [anuncios,        setAnuncios]        = useState<AnuncioResumen[]>([])
+  const [loadingAnuncios, setLoadingAnuncios] = useState(true)
+
+  useEffect(() => {
+    Promise.all([
+      api.get<unknown[]>('/estudiantes').catch(() => []),
+      api.get<unknown[]>('/docentes').catch(() => []),
+      api.get<{ activo: boolean }[]>('/paralelos').catch(() => []),
+      api.get<unknown[]>('/pensiones/morosidad').catch(() => []),
+    ]).then(([estudiantes, docentes, paralelos, morosidad]) => {
+      setStats({
+        estudiantes: estudiantes.length,
+        docentes:    docentes.length,
+        paralelos:   paralelos.filter(p => p.activo).length,
+        pensionPend: morosidad.length,
+      })
+    }).finally(() => setLoadingStats(false))
+
+    api.get<AnuncioResumen[]>('/anuncios')
+      .then(setAnuncios)
+      .catch(() => {})
+      .finally(() => setLoadingAnuncios(false))
+  }, [])
+
+  function fmt(s: string) {
+    return new Date(s).toLocaleDateString('es-BO', { day: '2-digit', month: 'short' })
+  }
 
   return (
     <div className="space-y-8">
       <div className="flex items-start justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">
-            Bienvenido, {user?.nombre} {user?.apellido}
+            Bienvenido, {user?.grado_academico ? `${user.grado_academico} ` : ''}{user?.nombre} {user?.apellido}
           </h1>
           <div className="mt-1 flex items-center gap-2">
             <Badge variant="info">{user?.rol ? ROL_LABELS[user.rol] : ''}</Badge>
             {gestionLabel && <span className="text-sm text-gray-400">{gestionLabel}</span>}
+            <button
+              onClick={() => setShowEditPerfil(true)}
+              className="text-xs font-medium text-indigo-600 hover:text-indigo-800"
+            >
+              Editar mis datos
+            </button>
           </div>
         </div>
         {trimestreLabel && (
@@ -55,31 +109,37 @@ function AdminHome() {
           Resumen de la institución
         </h2>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          <StatCard label="Estudiantes"     value="—" sublabel="matriculados"   icon="student"  color="blue"   />
-          <StatCard label="Docentes"        value="—" sublabel="activos"        icon="teacher"  color="green"  />
-          <StatCard label="Paralelos"       value="—" sublabel="en actividad"   icon="users"    color="purple" />
-          <StatCard label="Pensiones pend." value="—" sublabel="por cobrar"     icon="cash"     color="yellow" />
+          <StatCard label="Estudiantes"     value={loadingStats ? '…' : (stats?.estudiantes ?? '—')} sublabel="matriculados"   icon="student"  color="blue"   />
+          <StatCard label="Docentes"        value={loadingStats ? '…' : (stats?.docentes    ?? '—')} sublabel="activos"        icon="teacher"  color="green"  />
+          <StatCard label="Paralelos"       value={loadingStats ? '…' : (stats?.paralelos   ?? '—')} sublabel="en actividad"   icon="users"    color="purple" />
+          <StatCard label="Pensiones pend." value={loadingStats ? '…' : (stats?.pensionPend ?? '—')} sublabel="por cobrar"     icon="cash"     color="yellow" />
         </div>
       </div>
 
       <div>
         <h2 className="mb-4 text-sm font-semibold uppercase tracking-wide text-gray-500">
-          Actividad reciente
+          Últimos comunicados
         </h2>
-        <div className="rounded-xl border border-gray-100 bg-white divide-y divide-gray-50 shadow-sm">
-          {[
-            { text: 'Sistema listo para configurar',        time: 'ahora', dot: 'bg-green-400' },
-            { text: 'Seed inicial ejecutado correctamente', time: 'hoy',   dot: 'bg-blue-400'  },
-            { text: 'Base de datos sincronizada',           time: 'hoy',   dot: 'bg-blue-400'  },
-          ].map((item, i) => (
-            <div key={i} className="flex items-center gap-4 px-5 py-3.5">
-              <span className={`h-2 w-2 rounded-full flex-shrink-0 ${item.dot}`} />
-              <p className="flex-1 text-sm text-gray-700">{item.text}</p>
-              <span className="text-xs text-gray-400 whitespace-nowrap">{item.time}</span>
-            </div>
-          ))}
+        <div className="rounded-xl border border-gray-100 bg-white divide-y divide-gray-50 shadow-sm overflow-hidden">
+          {loadingAnuncios ? (
+            <div className="px-5 py-12 text-center text-sm text-gray-400">Cargando…</div>
+          ) : anuncios.length === 0 ? (
+            <div className="px-5 py-12 text-center text-sm text-gray-400">No hay comunicados recientes</div>
+          ) : (
+            anuncios.slice(0, 5).map(a => (
+              <div key={a.id} className="flex items-center gap-4 px-5 py-3.5">
+                <span className={`h-2 w-2 rounded-full flex-shrink-0 ${a.destacado ? 'bg-amber-400' : 'bg-blue-400'}`} />
+                <p className="flex-1 text-sm text-gray-700 truncate">{a.titulo}</p>
+                <span className="text-xs text-gray-400 whitespace-nowrap">{fmt(a.publicado_en)}</span>
+              </div>
+            ))
+          )}
         </div>
       </div>
+
+      {showEditPerfil && (
+        <EditarPerfilModal onClose={() => setShowEditPerfil(false)} />
+      )}
     </div>
   )
 }

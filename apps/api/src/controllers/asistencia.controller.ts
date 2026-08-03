@@ -100,6 +100,12 @@ export class AsistenciaController {
     } catch (e) { next(e) }
   }
 
+  resumenHoy = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      res.json({ data: await this.service.resumenHoy(req.auth!.institucion_id) })
+    } catch (e) { next(e) }
+  }
+
   // ── Asistencia diaria (regente) ───────────────────────────────────────────
 
   registrarDiaria = async (req: Request, res: Response, next: NextFunction): Promise<void> => {

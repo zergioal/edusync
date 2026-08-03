@@ -276,6 +276,24 @@ export class AsistenciaService {
     return this.getClaseMensualEstudiante(estudiante_id, asignacion_id, mes)
   }
 
+  // ── Resumen del día (institución completa, para el panel del regente) ────
+
+  async resumenHoy(institucion_id: string) {
+    const hoy    = new Date(); hoy.setHours(0, 0, 0, 0)
+    const manana = new Date(hoy); manana.setDate(manana.getDate() + 1)
+
+    const registros = await prisma.asistenciaDiaria.findMany({
+      where:  { fecha: { gte: hoy, lt: manana }, estudiante: { usuario: { institucion_id } } },
+      select: { estado: true },
+    })
+
+    return {
+      presentes: registros.filter(r => r.estado === 'PRESENTE').length,
+      ausentes:  registros.filter(r => r.estado === 'AUSENTE').length,
+      tardanzas: registros.filter(r => r.estado === 'TARDANZA').length,
+    }
+  }
+
   // ── Paralelos del regente (para selector) ────────────────────────────────
 
   async getParalelosRegente(usuario_id: string) {
