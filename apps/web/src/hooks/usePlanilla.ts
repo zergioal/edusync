@@ -54,10 +54,41 @@ export interface PlanillaData {
   estudiantes:  EstudiantePlanilla[]
 }
 
-interface PromediosResponse {
-  promedios: Record<string, number | null>
-  total:     number | null
-  escala:    'ED' | 'DA' | 'DO' | 'DP' | null
+function calcEscalaLocal(total: number): 'ED' | 'DA' | 'DO' | 'DP' {
+  if (total <= 50) return 'ED'
+  if (total <= 68) return 'DA'
+  if (total <= 84) return 'DO'
+  return 'DP'
+}
+
+/**
+ * Recalcula promedios/total/escala a partir del mapa de notas ACTUAL en memoria.
+ * Se calcula siempre en el cliente (en vez de confiar en la respuesta del PUT /notas)
+ * para que sea inmune al orden de llegada de las respuestas cuando se editan varias
+ * notas seguidas rápido — cada setData funcional ve siempre el estado más reciente.
+ */
+function calcularFilaLocal(dimensiones: DimensionPlanilla[], notas: Record<string, number | null>) {
+  const promedios: Record<string, number | null> = {}
+  let total  = 0
+  let hasAny = false
+
+  for (const dim of dimensiones) {
+    if (dim.indicadores.length === 0) { promedios[dim.id] = null; continue }
+    const valores = dim.indicadores
+      .map(i => notas[i.id] ?? null)
+      .filter((v): v is number => v !== null)
+    if (valores.length === 0) { promedios[dim.id] = null; continue }
+    hasAny = true
+    const avg = Math.round(valores.reduce((a, b) => a + b, 0) / valores.length)
+    promedios[dim.id] = avg
+    total += avg
+  }
+
+  return {
+    promedios,
+    total:  hasAny ? total : null,
+    escala: hasAny ? calcEscalaLocal(total) : null,
+  }
 }
 
 export interface CreateIndicadorData {
@@ -105,35 +136,23 @@ export function usePlanilla(asignacion_id: string, trimestre_id?: string) {
     const key = `${indicador_id}-${estudiante_id}`
     setSaving(s => new Set(s).add(key))
 
-    // Optimistic update de la nota cruda
+    // Optimistic update: nota + promedios/total/escala se recalculan juntos, en el
+    // mismo setData funcional, a partir del estado más reciente (prev) — así no
+    // importa el orden en que lleguen las respuestas de ediciones concurrentes.
     setData(prev => {
       if (!prev) return prev
       return {
         ...prev,
-        estudiantes: prev.estudiantes.map(est =>
-          est.id !== estudiante_id ? est : { ...est, notas: { ...est.notas, [indicador_id]: puntaje } }
-        ),
+        estudiantes: prev.estudiantes.map(est => {
+          if (est.id !== estudiante_id) return est
+          const notas = { ...est.notas, [indicador_id]: puntaje }
+          return { ...est, notas, ...calcularFilaLocal(prev.dimensiones, notas) }
+        }),
       }
     })
 
     try {
-      const result = await api.put<PromediosResponse>('/notas', { indicador_id, estudiante_id, puntaje })
-
-      // Actualizar promedios/total/escala con valores del servidor
-      setData(prev => {
-        if (!prev) return prev
-        return {
-          ...prev,
-          estudiantes: prev.estudiantes.map(est =>
-            est.id !== estudiante_id ? est : {
-              ...est,
-              promedios: result.promedios,
-              total:     result.total,
-              escala:    result.escala,
-            }
-          ),
-        }
-      })
+      await api.put('/notas', { indicador_id, estudiante_id, puntaje })
     } catch (err) {
       // Revertir optimistic update en error
       load()
