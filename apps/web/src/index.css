@@ -3,11 +3,115 @@
 @tailwind utilities;
 
 @layer base {
+  :root {
+    --color-bg:            248 250 252;  /* slate-50 */
+    --color-surface:       255 255 255;  /* white */
+    --color-surface-2:     241 245 249;  /* slate-100 */
+    --color-border:        226 232 240;  /* slate-200 */
+    --color-fg:             15  23  42;  /* slate-900 */
+    --color-fg-muted:      100 116 139;  /* slate-500 */
+    --color-primary:        79  70 229;  /* indigo-600 */
+    --color-primary-hover:  67  56 202;  /* indigo-700 */
+    --color-primary-fg:    255 255 255;
+  }
+
+  :root.dark {
+    --color-bg:              2   6  23;  /* slate-950 */
+    --color-surface:        15  23  42;  /* slate-900 */
+    --color-surface-2:      30  41  59;  /* slate-800 */
+    --color-border:         51  65  85;  /* slate-700 */
+    --color-fg:            241 245 249;  /* slate-100 */
+    --color-fg-muted:      148 163 184;  /* slate-400 */
+    --color-primary:        99 102 241;  /* indigo-500 */
+    --color-primary-hover: 129 140 248;  /* indigo-400 */
+    --color-primary-fg:    255 255 255;
+  }
+
   *, *::before, *::after {
     box-sizing: border-box;
   }
 
   body {
-    @apply bg-gray-50 text-gray-900 antialiased;
+    @apply bg-bg text-fg antialiased transition-colors duration-150;
   }
+}
+
+/* ── Botones del Sidebar: borde de neón animado al pasar el mouse ────────── */
+
+.glow-on-hover {
+  position: relative;
+  z-index: 0;
+  border-radius: 0.75rem;
+}
+
+.glow-on-hover::before {
+  content: '';
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  width: calc(100% + 4px);
+  height: calc(100% + 4px);
+  background: linear-gradient(45deg, #ff0000, #ff7300, #fffb00, #48ff00, #00ffd5, #002bff, #7a00ff, #ff00c8, #ff0000);
+  background-size: 400%;
+  z-index: -1;
+  filter: blur(5px);
+  opacity: 0;
+  border-radius: inherit;
+  transition: opacity 0.3s ease-in-out;
+  animation: glowing 20s linear infinite;
+}
+
+.glow-on-hover::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: #0f172a;
+  border-radius: inherit;
+}
+
+.glow-on-hover:hover::before {
+  opacity: 1;
+}
+
+@keyframes glowing {
+  0%   { background-position: 0 0; }
+  50%  { background-position: 400% 0; }
+  100% { background-position: 0 0; }
+}
+
+/* ── Íconos del Sidebar: se "dibujan" y engrosan al pasar el mouse ────────── */
+
+.nav-icon-path {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 0;
+  transition: stroke-width 0.3s;
+}
+
+.sidebar-nav-item:hover .nav-icon-path {
+  stroke-width: 2.4;
+  animation: draw-icon 500ms ease-in forwards;
+}
+
+@keyframes draw-icon {
+  0%   { stroke-dashoffset: 1; }
+  100% { stroke-dashoffset: 0; }
+}
+
+/* ── Accesos rápidos del bloque de usuario: aparición tipo "goo" ──────────── */
+
+.goo-pop {
+  transition: opacity 0.3s ease-out, transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), filter 0.3s ease-out;
+}
+
+.goo-pop-out {
+  opacity: 0;
+  transform: scale(0.4);
+  filter: blur(4px);
+}
+
+.goo-pop-in {
+  opacity: 1;
+  transform: scale(1);
+  filter: blur(0);
 }

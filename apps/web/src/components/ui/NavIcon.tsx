@@ -68,7 +68,7 @@ export function NavIcon({ icon, className = 'h-5 w-5' }: Props) {
       aria-hidden="true"
     >
       {ICONS[icon].map((d, i) => (
-        <path key={i} strokeLinecap="round" strokeLinejoin="round" d={d} />
+        <path key={i} className="nav-icon-path" pathLength={1} strokeLinecap="round" strokeLinejoin="round" d={d} />
       ))}
     </svg>
   )

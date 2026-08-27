@@ -3,6 +3,7 @@ import { Navigate, Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { getRolDashboardPath } from '../lib/roleRoutes'
 import { Button, Input, Spinner } from '@edusync/ui'
+import { ThemeToggle } from '../components/ui/ThemeToggle'
 import logo from '../assets/logo-pio-xii.png'
 
 // ── Eye icon ─────────────────────────────────────────────────────────────────
@@ -55,30 +56,34 @@ export default function LoginPage() {
 
   if (isLoading) {
     return (
-      <div className="flex h-screen items-center justify-center bg-slate-100">
+      <div className="flex h-screen items-center justify-center bg-bg">
         <Spinner size="lg" />
       </div>
     )
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-100 via-blue-50 to-slate-200 p-4">
+    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-100 via-blue-50 to-slate-200 dark:from-slate-950 dark:via-indigo-950/30 dark:to-slate-900 p-4">
       {/* Decoración de fondo */}
       <div className="pointer-events-none fixed inset-0 overflow-hidden">
-        <div className="absolute -top-32 -left-32 h-96 w-96 rounded-full bg-blue-200/40 blur-3xl" />
-        <div className="absolute -bottom-32 -right-32 h-96 w-96 rounded-full bg-indigo-200/40 blur-3xl" />
+        <div className="absolute -top-32 -left-32 h-96 w-96 rounded-full bg-blue-200/40 dark:bg-indigo-500/10 blur-3xl" />
+        <div className="absolute -bottom-32 -right-32 h-96 w-96 rounded-full bg-indigo-200/40 dark:bg-indigo-500/10 blur-3xl" />
+      </div>
+
+      <div className="fixed top-4 right-4">
+        <ThemeToggle className="bg-surface/70 backdrop-blur-sm shadow-sm" />
       </div>
 
       {/* Card */}
       <div className="relative w-full max-w-sm">
-        <div className="rounded-2xl bg-white shadow-2xl ring-1 ring-gray-200 p-8">
+        <div className="rounded-2xl bg-surface shadow-2xl ring-1 ring-border p-8">
 
           {/* Botón volver */}
           <Link
             to="/"
-            className="group mb-6 flex items-center gap-2 text-sm text-gray-400 hover:text-blue-600 transition-colors w-fit"
+            className="group mb-6 flex items-center gap-2 text-sm text-fg-muted hover:text-brand transition-colors w-fit"
           >
-            <span className="flex h-7 w-7 items-center justify-center rounded-full border border-gray-200 bg-gray-50 group-hover:border-blue-300 group-hover:bg-blue-50 transition-all shadow-sm">
+            <span className="flex h-7 w-7 items-center justify-center rounded-full border border-border bg-surface-2 group-hover:border-brand/40 group-hover:bg-brand/10 transition-all shadow-sm">
               <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
               </svg>
@@ -94,14 +99,14 @@ export default function LoginPage() {
               className="h-28 w-28 object-contain drop-shadow-md"
             />
             <div className="text-center">
-              <p className="text-sm font-semibold text-gray-600 leading-tight">U.E. Privada</p>
-              <p className="text-base font-bold text-gray-900 leading-tight">Pío XII</p>
+              <p className="text-sm font-semibold text-fg-muted leading-tight">U.E. Privada</p>
+              <p className="text-base font-bold text-fg leading-tight">Pío XII</p>
             </div>
           </div>
 
           <div className="mb-5 text-center">
-            <h1 className="text-xl font-bold text-gray-900">Iniciar sesión</h1>
-            <p className="mt-1 text-sm text-gray-500">Ingresa tus credenciales para continuar</p>
+            <h1 className="text-xl font-bold text-fg">Iniciar sesión</h1>
+            <p className="mt-1 text-sm text-fg-muted">Ingresa tus credenciales para continuar</p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -120,7 +125,7 @@ export default function LoginPage() {
 
             {/* Contraseña con botón ojo */}
             <div className="flex flex-col gap-1">
-              <label className="text-sm font-medium text-gray-700">Contraseña</label>
+              <label className="text-sm font-medium text-fg">Contraseña</label>
               <div className="relative">
                 <input
                   type={showPwd ? 'text' : 'password'}
@@ -130,12 +135,12 @@ export default function LoginPage() {
                   onKeyUp={handleCapsLock}
                   required
                   autoComplete="current-password"
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 pr-10 text-sm shadow-sm transition-colors focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full rounded-lg border border-border bg-surface px-3 py-2 pr-10 text-sm text-fg shadow-sm transition-colors focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPwd(v => !v)}
-                  className="absolute inset-y-0 right-0 flex items-center px-3 text-gray-400 hover:text-gray-600 transition-colors"
+                  className="absolute inset-y-0 right-0 flex items-center px-3 text-fg-muted hover:text-fg transition-colors"
                   tabIndex={-1}
                   aria-label={showPwd ? 'Ocultar contraseña' : 'Mostrar contraseña'}
                 >
@@ -143,7 +148,7 @@ export default function LoginPage() {
                 </button>
               </div>
               {capsLock && (
-                <div className="flex items-center gap-1.5 rounded-md bg-amber-50 border border-amber-200 px-3 py-1.5 text-xs text-amber-700">
+                <div className="flex items-center gap-1.5 rounded-md bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900 px-3 py-1.5 text-xs text-amber-700 dark:text-amber-400">
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M12 9V3m0 0L9 6m3-3l3 3M5 11v8a2 2 0 002 2h10a2 2 0 002-2v-8M3 11h18" />
                   </svg>
@@ -154,11 +159,11 @@ export default function LoginPage() {
 
             {/* Error */}
             {error && (
-              <div className="flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 px-4 py-3">
-                <svg className="h-4 w-4 flex-shrink-0 text-red-500" viewBox="0 0 20 20" fill="currentColor">
+              <div className="flex items-center gap-2 rounded-lg border border-red-200 dark:border-red-900 bg-red-50 dark:bg-red-950/40 px-4 py-3">
+                <svg className="h-4 w-4 flex-shrink-0 text-red-500 dark:text-red-400" viewBox="0 0 20 20" fill="currentColor">
                   <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
                 </svg>
-                <p className="text-sm text-red-700">{error}</p>
+                <p className="text-sm text-red-700 dark:text-red-400">{error}</p>
               </div>
             )}
 
@@ -172,10 +177,10 @@ export default function LoginPage() {
             </Button>
           </form>
 
-          <p className="mt-6 text-center text-xs text-gray-400 leading-relaxed">
+          <p className="mt-6 text-center text-xs text-fg-muted leading-relaxed">
             EduSync &copy; {new Date().getFullYear()} — U.E. Privada Pío XII
             <br />
-            <span className="text-gray-300">Desarrollado por Sergio M. Alcocer V.</span>
+            <span className="text-fg-muted/70">Desarrollado por Sergio M. Alcocer V.</span>
           </p>
         </div>
       </div>
