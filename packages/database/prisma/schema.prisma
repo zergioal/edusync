@@ -355,6 +355,7 @@ model Indicador {
   trimestre_id      String?
   nombre            String
   instrumento       Instrumento
+  instrumento_otro  String?
   fecha_aplicacion  DateTime    @db.Date
   es_parcial        Boolean     @default(false)
   orden             Int         @default(0)

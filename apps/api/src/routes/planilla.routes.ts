@@ -18,4 +18,9 @@ planillaRouter.get('/hijo/:estudiante_id', checkAccesoAcademico, ctrl.getHijo)
 planillaRouter.get('/estudiante/:estudiante_id', canViewEstudiante, ctrl.getParaStaff)
 
 // ── Vista docente: planilla completa de un paralelo ───────────────────────────
+planillaRouter.get('/:asignacion_id/registro/pdf',            canManage, ctrl.getRegistroPdf)
+planillaRouter.get('/:asignacion_id/registro/excel',           canManage, ctrl.getRegistroExcel)
+planillaRouter.get('/:asignacion_id/centralizador/pdf',        canManage, ctrl.getCentralizadorAsignacionPdf)
+planillaRouter.get('/:asignacion_id/centralizador/excel',      canManage, ctrl.getCentralizadorAsignacionExcel)
+planillaRouter.get('/:asignacion_id/centralizador',            canManage, ctrl.getCentralizadorAsignacion)
 planillaRouter.get('/:asignacion_id', canManage, ctrl.get)

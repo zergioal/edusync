@@ -8,6 +8,7 @@ export interface IndicadorPlanilla {
   id:               string
   nombre:           string
   instrumento:      Instrumento
+  instrumento_otro?: string | null
   fecha_aplicacion: string
   es_parcial:       boolean
   orden:            number
@@ -65,6 +66,7 @@ export interface CreateIndicadorData {
   trimestre_id?:    string
   nombre:           string
   instrumento:      Instrumento
+  instrumento_otro?: string
   fecha_aplicacion: string
   es_parcial:       boolean
   orden:            number

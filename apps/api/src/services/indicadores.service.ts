@@ -9,6 +9,7 @@ export const createIndicadorSchema = z.object({
   trimestre_id:     z.string().uuid().optional(),
   nombre:           z.string().min(2).max(200),
   instrumento:      z.nativeEnum(Instrumento),
+  instrumento_otro: z.string().min(1).max(100).optional(),
   fecha_aplicacion: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Formato de fecha inválido (YYYY-MM-DD)'),
   es_parcial:       z.boolean().default(false),
   orden:            z.number().int().min(0).default(0),
@@ -36,12 +37,24 @@ export class IndicadoresService {
 
   async create(data: CreateIndicadorDto, usuario_id: string) {
     await this.verifyOwnership(data.asignacion_id, usuario_id)
+
+    const dimension = await prisma.dimension.findUnique({ where: { id: data.dimension_id } })
+    if (!dimension) throw new AppError(404, 'Dimensión no encontrada', 'NOT_FOUND')
+    if (dimension.nombre === 'AUTOEVALUACION') {
+      throw new AppError(409, 'La autoevaluación no admite indicadores adicionales', 'AUTOEVAL_FIXED')
+    }
+
+    if (data.instrumento === Instrumento.OTRO && !data.instrumento_otro?.trim()) {
+      throw new AppError(400, 'Debes especificar el nombre del instrumento', 'VALIDATION')
+    }
+
     return prisma.indicador.create({
       data: {
         asignacion_id:    data.asignacion_id,
         dimension_id:     data.dimension_id,
         nombre:           data.nombre,
         instrumento:      data.instrumento,
+        instrumento_otro: data.instrumento === Instrumento.OTRO ? data.instrumento_otro!.trim() : null,
         fecha_aplicacion: new Date(data.fecha_aplicacion),
         es_parcial:       data.es_parcial,
         orden:            data.orden,
@@ -52,19 +65,30 @@ export class IndicadoresService {
   }
 
   async update(id: string, data: UpdateIndicadorDto, usuario_id: string) {
-    const indicador = await prisma.indicador.findUnique({ where: { id } })
+    const indicador = await prisma.indicador.findUnique({ where: { id }, include: { dimension: true } })
     if (!indicador) throw new AppError(404, 'Indicador no encontrado', 'NOT_FOUND')
     await this.verifyOwnership(indicador.asignacion_id, usuario_id)
+
+    // La autoevaluación es fija: solo se puede ajustar la fecha de aplicación.
+    const esAutoeval = indicador.dimension.nombre === 'AUTOEVALUACION'
+
+    const instrumentoFinal = !esAutoeval && data.instrumento ? data.instrumento : indicador.instrumento
+    if (!esAutoeval && data.instrumento !== undefined && instrumentoFinal === Instrumento.OTRO && !data.instrumento_otro?.trim()) {
+      throw new AppError(400, 'Debes especificar el nombre del instrumento', 'VALIDATION')
+    }
 
     return prisma.indicador.update({
       where: { id },
       data: {
-        ...(data.nombre           ? { nombre: data.nombre }                                         : {}),
-        ...(data.instrumento      ? { instrumento: data.instrumento }                               : {}),
+        ...(!esAutoeval && data.nombre           ? { nombre: data.nombre }                          : {}),
+        ...(!esAutoeval && data.instrumento      ? { instrumento: data.instrumento }                 : {}),
+        ...(!esAutoeval && (data.instrumento !== undefined || data.instrumento_otro !== undefined)
+          ? { instrumento_otro: instrumentoFinal === Instrumento.OTRO ? (data.instrumento_otro?.trim() ?? indicador.instrumento_otro) : null }
+          : {}),
         ...(data.fecha_aplicacion ? { fecha_aplicacion: new Date(data.fecha_aplicacion) }           : {}),
-        ...(data.es_parcial !== undefined ? { es_parcial: data.es_parcial }                         : {}),
-        ...(data.orden      !== undefined ? { orden: data.orden }                                   : {}),
-        ...(data.trimestre_id     ? { trimestre_id: data.trimestre_id }                             : {}),
+        ...(!esAutoeval && data.es_parcial !== undefined ? { es_parcial: data.es_parcial }           : {}),
+        ...(!esAutoeval && data.orden      !== undefined ? { orden: data.orden }                     : {}),
+        ...(!esAutoeval && data.trimestre_id     ? { trimestre_id: data.trimestre_id }               : {}),
       },
       include: { dimension: true },
     })
@@ -73,10 +97,14 @@ export class IndicadoresService {
   async remove(id: string, usuario_id: string) {
     const indicador = await prisma.indicador.findUnique({
       where: { id },
-      include: { _count: { select: { notas: true } } },
+      include: { _count: { select: { notas: true } }, dimension: true },
     })
     if (!indicador) throw new AppError(404, 'Indicador no encontrado', 'NOT_FOUND')
     await this.verifyOwnership(indicador.asignacion_id, usuario_id)
+
+    if (indicador.dimension.nombre === 'AUTOEVALUACION') {
+      throw new AppError(409, 'No se puede eliminar el indicador de autoevaluación', 'AUTOEVAL_FIXED')
+    }
 
     if (indicador._count.notas > 0) {
       throw new AppError(

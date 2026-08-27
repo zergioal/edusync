@@ -12,6 +12,7 @@ import { EditarPerfilModal } from '../../components/EditarPerfilModal'
 
 const MisMateriasPage          = lazy(() => import('../docente/MisMateriasPage'))
 const PlanillaPage             = lazy(() => import('../docente/PlanillaPage'))
+const CentralizadorAsignacionPage = lazy(() => import('../docente/CentralizadorAsignacionPage'))
 const ObservacionesInicialPage = lazy(() => import('../docente/ObservacionesInicialPage'))
 const AsistenciaClasePage      = lazy(() => import('../docente/AsistenciaClasePage'))
 const DocenteAsistenciaPage    = lazy(() => import('../docente/DocenteAsistenciaPage'))
@@ -60,7 +61,7 @@ function DocenteHome() {
     <div className="space-y-6">
 
       {/* Profile card */}
-      <div className="rounded-2xl bg-white border border-gray-200 shadow-sm p-5 flex items-start gap-5">
+      <div className="rounded-2xl bg-surface border border-border shadow-sm p-5 flex items-start gap-5">
         <div className="relative">
           <AvatarDisplay userId={user?.id ?? ''} avatarId={avatarId} size="xl" />
           <button
@@ -71,14 +72,14 @@ function DocenteHome() {
         </div>
 
         <div className="flex-1 min-w-0">
-          <h1 className="text-2xl font-bold text-gray-900 leading-tight">
+          <h1 className="text-2xl font-bold text-fg leading-tight">
             {user?.grado_academico ? `${user.grado_academico} ` : 'Prof. '}{user?.nombre} {user?.apellido}
           </h1>
-          <p className="text-sm text-gray-400 mt-0.5 truncate">{user?.email}</p>
+          <p className="text-sm text-fg-muted mt-0.5 truncate">{user?.email}</p>
           <div className="mt-2 flex flex-wrap items-center gap-2">
             <Badge variant="success">Docente</Badge>
             {gestionLabel && (
-              <span className="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">{gestionLabel}</span>
+              <span className="text-xs text-fg-muted bg-surface-2 px-2 py-0.5 rounded-full">{gestionLabel}</span>
             )}
             <button
               onClick={() => setShowEditPerfil(true)}
@@ -99,7 +100,7 @@ function DocenteHome() {
 
       {/* Stats */}
       <div>
-        <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-gray-400">Mi actividad</h2>
+        <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-fg-muted">Mi actividad</h2>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
           <StatCard
             label="Materias asignadas"
@@ -125,7 +126,7 @@ function DocenteHome() {
       {/* Quick access to assignments */}
       {asignaciones.length > 0 && (
         <div>
-          <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-gray-400">
+          <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-fg-muted">
             Mis materias — gestión {asignaciones[0]?.gestion.anno}
           </h2>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
@@ -142,15 +143,15 @@ function DocenteHome() {
               return (
                 <div
                   key={a.id}
-                  className={`rounded-xl border p-4 cursor-pointer hover:shadow-sm transition-all ${nivBg[nivel] ?? 'border-gray-200 bg-white'}`}
+                  className={`rounded-xl border p-4 cursor-pointer hover:shadow-sm transition-all ${nivBg[nivel] ?? 'border-border bg-surface'}`}
                   onClick={() => navigate(nivel === 'INICIAL'
                     ? `/dashboard/docente/inicial/${a.id}`
                     : `/dashboard/docente/planilla/${a.id}`)}
                 >
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
-                      <p className="text-xs text-gray-400 truncate">{a.materia.campo.nombre}</p>
-                      <p className={`font-semibold text-sm leading-tight mt-0.5 ${nivText[nivel] ?? 'text-gray-800'}`}>
+                      <p className="text-xs text-fg-muted truncate">{a.materia.campo.nombre}</p>
+                      <p className={`font-semibold text-sm leading-tight mt-0.5 ${nivText[nivel] ?? 'text-fg'}`}>
                         {a.materia.nombre}
                       </p>
                     </div>
@@ -158,7 +159,7 @@ function DocenteHome() {
                       {a.paralelo.grado.nombre.match(/^(\d+°)/)?.[1] ?? a.paralelo.grado.nombre.slice(0,3)} {a.paralelo.letra}
                     </span>
                   </div>
-                  <div className="mt-2 flex items-center gap-3 text-xs text-gray-400">
+                  <div className="mt-2 flex items-center gap-3 text-xs text-fg-muted">
                     <span>👥 {a.n_estudiantes}</span>
                     <span>📊 {a._count.indicadores} indicadores</span>
                   </div>
@@ -190,9 +191,9 @@ function DocenteHome() {
 function SectionPlaceholder({ title }: { title: string }) {
   return (
     <div className="space-y-4">
-      <h1 className="text-2xl font-bold text-gray-900">{title}</h1>
-      <div className="rounded-xl border-2 border-dashed border-gray-200 bg-white p-12 text-center">
-        <p className="text-gray-400">Módulo en construcción</p>
+      <h1 className="text-2xl font-bold text-fg">{title}</h1>
+      <div className="rounded-xl border-2 border-dashed border-border bg-surface p-12 text-center">
+        <p className="text-fg-muted">Módulo en construcción</p>
       </div>
     </div>
   )
@@ -207,6 +208,7 @@ export default function DocenteDashboard() {
         <Route index                              element={<DocenteHome />} />
         <Route path="asignaciones"              element={<MisMateriasPage />} />
         <Route path="planilla/:asignacion_id"   element={<PlanillaPage />} />
+        <Route path="planilla/:asignacion_id/centralizador" element={<CentralizadorAsignacionPage />} />
         <Route path="inicial/:asignacion_id"    element={<ObservacionesInicialPage />} />
         <Route path="asistencia/:asignacion_id" element={<AsistenciaClasePage />} />
         <Route path="tareas"                    element={<TareasPage />} />

@@ -1,6 +1,7 @@
 import { prisma } from '@edusync/database'
 import { AppError } from '../middlewares/errorHandler'
 import { BoletinesService } from './boletines.service'
+import { Instrumento } from '@edusync/types'
 
 type Escala = 'ED' | 'DA' | 'DO' | 'DP'
 
@@ -11,8 +12,26 @@ function calcEscala(total: number): Escala {
   return 'DP'
 }
 
+/** Indicadores por defecto con los que se siembra cada dimensión la primera vez que se abre la planilla de un trimestre. */
+const INDICADORES_DEFECTO: Record<string, Array<{ nombre: string; instrumento: Instrumento }>> = {
+  SER_DECIDIR: [
+    { nombre: 'Observación de valores', instrumento: Instrumento.OBSERVACION },
+  ],
+  SABER: [
+    { nombre: 'Prueba escrita 1', instrumento: Instrumento.EVALUACION_ESCRITA },
+    { nombre: 'Prueba escrita 2', instrumento: Instrumento.EVALUACION_ESCRITA },
+  ],
+  HACER: [
+    { nombre: 'Cuaderno de trabajo', instrumento: Instrumento.CUADERNO },
+    { nombre: 'Trabajo práctico', instrumento: Instrumento.DEFENSA },
+  ],
+  AUTOEVALUACION: [
+    { nombre: 'Autoevaluación', instrumento: Instrumento.OBSERVACION },
+  ],
+}
+
 /** Calcula notas/promedios/total/escala de un estudiante a partir de sus dimensiones+indicadores y su mapa de notas. */
-function calcularFilaEstudiante(
+export function calcularFilaEstudiante(
   dimensiones: Array<{ id: string; indicadores: Array<{ id: string }> }>,
   notasDeEstudiante: Map<string, number | null>,
 ) {
@@ -93,6 +112,33 @@ export class PlanillaService {
       }),
     ])
 
+    // Auto-siembra: la primera vez que se abre la planilla de un trimestre, cada
+    // dimensión sin indicadores propios recibe su set por defecto (ver INDICADORES_DEFECTO).
+    if (trimestre_id) {
+      const trimestre = asignacion.gestion.trimestres.find(t => t.id === trimestre_id)
+      if (trimestre) {
+        await Promise.all(dimensiones.map(async dim => {
+          if (dim.indicadores.length > 0) return
+          const defaults = INDICADORES_DEFECTO[dim.nombre]
+          if (!defaults) return
+          const creados = await Promise.all(defaults.map((d, orden) =>
+            prisma.indicador.create({
+              data: {
+                asignacion_id,
+                dimension_id:     dim.id,
+                trimestre_id,
+                nombre:           d.nombre,
+                instrumento:      d.instrumento,
+                fecha_aplicacion: trimestre.fecha_inicio,
+                orden,
+              },
+            })
+          ))
+          dim.indicadores = creados
+        }))
+      }
+    }
+
     const indicadorIds  = dimensiones.flatMap(d => d.indicadores.map(i => i.id))
     const estudianteIds = matriculas.map(m => m.estudiante_id)
 
@@ -140,6 +186,111 @@ export class PlanillaService {
         },
       },
       dimensiones,
+      estudiantes,
+    }
+  }
+
+  /** Mini-centralizador de una asignación: total/escala de cada estudiante por trimestre + proyección de aprobación. */
+  async getCentralizadorAsignacion(asignacion_id: string) {
+    const asignacion = await prisma.asignacion.findUnique({
+      where: { id: asignacion_id },
+      include: {
+        docente:  { include: { usuario: { select: { nombre: true, apellido: true, institucion_id: true } } } },
+        materia:  true,
+        paralelo: { include: { grado: { include: { nivel: true } } } },
+        gestion:  { include: { trimestres: { orderBy: { numero: 'asc' as const } } } },
+      },
+    })
+    if (!asignacion) throw new AppError(404, 'Asignación no encontrada', 'NOT_FOUND')
+
+    const institucion_id = asignacion.docente.usuario.institucion_id
+    const trimestres      = asignacion.gestion.trimestres
+
+    const [dimensiones, matriculas] = await Promise.all([
+      prisma.dimension.findMany({
+        where: { institucion_id },
+        include: { indicadores: { where: { asignacion_id } } },
+        orderBy: { orden: 'asc' },
+      }),
+      prisma.matricula.findMany({
+        where: { paralelo_id: asignacion.paralelo_id, gestion_id: asignacion.gestion_id },
+        include: { estudiante: { include: { usuario: { select: { nombre: true, apellido: true } } } } },
+        orderBy: [
+          { estudiante: { usuario: { apellido: 'asc' } } },
+          { estudiante: { usuario: { nombre:   'asc' } } },
+        ],
+      }),
+    ])
+
+    const indicadorIds  = dimensiones.flatMap(d => d.indicadores.map(i => i.id))
+    const estudianteIds = matriculas.map(m => m.estudiante_id)
+    const notas = indicadorIds.length > 0 && estudianteIds.length > 0
+      ? await prisma.notaIndicador.findMany({
+          where: { indicador_id: { in: indicadorIds }, estudiante_id: { in: estudianteIds } },
+        })
+      : []
+
+    const notasMap = new Map<string, Map<string, number | null>>()
+    for (const nota of notas) {
+      if (!notasMap.has(nota.estudiante_id)) notasMap.set(nota.estudiante_id, new Map())
+      notasMap.get(nota.estudiante_id)!.set(nota.indicador_id, nota.puntaje ?? null)
+    }
+
+    const META = 51 * trimestres.length // mínimo aprobado (escala DA) × cantidad de trimestres de la gestión
+
+    const estudiantes = matriculas.map(m => {
+      const est      = m.estudiante
+      const estNotas = notasMap.get(est.id) ?? new Map<string, number | null>()
+
+      const totales: Record<string, number | null> = {}
+      const escalas: Record<string, Escala | null> = {}
+      for (const trim of trimestres) {
+        const dimsTrim = dimensiones.map(d => ({
+          id: d.id,
+          indicadores: d.indicadores.filter(i => i.trimestre_id === trim.id),
+        }))
+        const fila = calcularFilaEstudiante(dimsTrim, estNotas)
+        totales[trim.id] = fila.total
+        escalas[trim.id] = fila.escala
+      }
+
+      const acumulado  = trimestres.reduce((s, t) => s + (totales[t.id] ?? 0), 0)
+      const pendientes = trimestres.filter(t => totales[t.id] == null)
+
+      let observacion: string
+      if (pendientes.length === 0) {
+        observacion = acumulado >= META ? 'Aprobado' : 'No alcanza el mínimo anual'
+      } else {
+        const faltante = Math.max(META - acumulado, 0)
+        if (faltante === 0) {
+          observacion = 'Ya asegura la promoción'
+        } else {
+          const porTrimestre = Math.ceil(faltante / pendientes.length)
+          const nombres = pendientes.map(t => `${t.numero}°`).join(' y ')
+          observacion = `Necesita ${faltante} pts (~${porTrimestre} c/u en ${nombres} trimestre${pendientes.length > 1 ? 's' : ''}) para aprobar`
+        }
+      }
+
+      return {
+        id:       est.id,
+        nombre:   est.usuario.nombre,
+        apellido: est.usuario.apellido,
+        codigo:   est.codigo,
+        totales,
+        escalas,
+        observacion,
+      }
+    })
+
+    return {
+      asignacion: {
+        id:       asignacion.id,
+        materia:  asignacion.materia,
+        paralelo: asignacion.paralelo,
+        gestion:  { id: asignacion.gestion.id, anno: asignacion.gestion.anno },
+      },
+      trimestres: trimestres.map(t => ({ id: t.id, numero: t.numero })),
+      meta: META,
       estudiantes,
     }
   }

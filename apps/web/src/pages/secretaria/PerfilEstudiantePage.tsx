@@ -8,6 +8,7 @@ import { SelectGestion } from '../../components/select/SelectGestion'
 import { SelectTrimestre } from '../../components/select/SelectTrimestre'
 import { useGestionActiva } from '../../hooks/useGestionActiva'
 import { PlanillaMateriaDetalle } from '../../components/planilla/PlanillaMateriaDetalle'
+import { useIsMobile } from '../../hooks/useIsMobile'
 import type { DimensionPlanilla, EstudiantePlanilla } from '../../hooks/usePlanilla'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -42,7 +43,7 @@ function GestionTrimestreSelector({
   onGestion: (v: string) => void; onTrimestre: (v: string) => void
 }) {
   return (
-    <div className="flex flex-wrap gap-4 items-end rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+    <div className="flex flex-wrap gap-4 items-end rounded-xl border border-border bg-surface p-4 shadow-sm">
       <SelectGestion value={gestionId} onChange={v => { onGestion(v); onTrimestre('') }} label="Gestión" />
       <SelectTrimestre value={trimestreId} onChange={onTrimestre} gestionId={gestionId} label="Trimestre" />
     </div>
@@ -80,28 +81,28 @@ function DatosTab({
 
   return (
     <div className="space-y-4">
-      <div className="rounded-xl border border-gray-200 bg-white shadow-sm p-6 space-y-4">
+      <div className="rounded-xl border border-border bg-surface shadow-sm p-6 space-y-4">
         <div className="flex items-start justify-between">
           <div>
-            <p className="text-xl font-bold text-gray-900">{est.usuario.apellido}, {est.usuario.nombre}</p>
-            <p className="text-sm text-gray-500 mt-1">{est.usuario.email}</p>
+            <p className="text-xl font-bold text-fg">{est.usuario.apellido}, {est.usuario.nombre}</p>
+            <p className="text-sm text-fg-muted mt-1">{est.usuario.email}</p>
           </div>
           <div className="text-right space-y-1">
-            <span className="font-mono text-sm bg-gray-100 px-3 py-1 rounded text-gray-700 block">{est.codigo}</span>
+            <span className="font-mono text-sm bg-surface-2 px-3 py-1 rounded text-fg block">{est.codigo}</span>
             {est.usuario.activo
               ? <Badge variant="success">Activo</Badge>
               : <Badge variant="danger">Inactivo</Badge>}
           </div>
         </div>
         {matriculaActiva && (
-          <div className="border-t border-gray-100 pt-4 grid grid-cols-2 gap-4 text-sm">
-            <div><span className="text-gray-500">Nivel:</span>{' '}
+          <div className="border-t border-border pt-4 grid grid-cols-2 gap-4 text-sm">
+            <div><span className="text-fg-muted">Nivel:</span>{' '}
               <span className="font-medium">{matriculaActiva.paralelo.grado.nivel.nombre}</span>
             </div>
-            <div><span className="text-gray-500">Grado y Paralelo:</span>{' '}
+            <div><span className="text-fg-muted">Grado y Paralelo:</span>{' '}
               <span className="font-medium">{matriculaActiva.paralelo.grado.nombre} "{matriculaActiva.paralelo.letra}"</span>
             </div>
-            <div><span className="text-gray-500">Gestión:</span>{' '}
+            <div><span className="text-fg-muted">Gestión:</span>{' '}
               <span className="font-medium">{matriculaActiva.gestion.anno}</span>
             </div>
             {esTTE && (
@@ -118,11 +119,11 @@ function DatosTab({
                     onClick={handleToggleTecnica}
                     disabled={toggleLoading}
                     className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 focus:outline-none ${
-                      matriculaActiva.lleva_tecnica ? 'bg-indigo-600' : 'bg-gray-200'
+                      matriculaActiva.lleva_tecnica ? 'bg-indigo-600' : 'bg-surface-2'
                     } ${toggleLoading ? 'opacity-50' : ''}`}
                     aria-label="Toggle modalidad técnica"
                   >
-                    <span className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform duration-200 ${
+                    <span className={`inline-block h-5 w-5 transform rounded-full bg-surface shadow transition-transform duration-200 ${
                       matriculaActiva.lleva_tecnica ? 'translate-x-5' : 'translate-x-0'
                     }`} />
                   </button>
@@ -133,10 +134,10 @@ function DatosTab({
         )}
       </div>
 
-      <div className="rounded-xl border border-gray-200 bg-white shadow-sm p-6">
-        <h2 className="text-sm font-semibold uppercase tracking-wide text-gray-500 mb-4">Tutores / Padres</h2>
+      <div className="rounded-xl border border-border bg-surface shadow-sm p-6">
+        <h2 className="text-sm font-semibold uppercase tracking-wide text-fg-muted mb-4">Tutores / Padres</h2>
         {est.relaciones_padre.length === 0
-          ? <p className="text-sm text-gray-400 italic">Sin tutores registrados</p>
+          ? <p className="text-sm text-fg-muted italic">Sin tutores registrados</p>
           : <div className="space-y-3">
               {est.relaciones_padre.map((rel, i) => (
                 <div key={i} className="flex items-center gap-4 text-sm">
@@ -144,8 +145,8 @@ function DatosTab({
                     {rel.padre.nombre[0]}
                   </div>
                   <div>
-                    <p className="font-medium text-gray-800">{rel.padre.apellido}, {rel.padre.nombre}</p>
-                    <p className="text-gray-400">{rel.padre.email}</p>
+                    <p className="font-medium text-fg">{rel.padre.apellido}, {rel.padre.nombre}</p>
+                    <p className="text-fg-muted">{rel.padre.email}</p>
                   </div>
                 </div>
               ))}
@@ -153,22 +154,22 @@ function DatosTab({
         }
       </div>
 
-      <div className="rounded-xl border border-gray-200 bg-white shadow-sm p-6">
-        <h2 className="text-sm font-semibold uppercase tracking-wide text-gray-500 mb-4">Historial de matrículas</h2>
+      <div className="rounded-xl border border-border bg-surface shadow-sm p-6">
+        <h2 className="text-sm font-semibold uppercase tracking-wide text-fg-muted mb-4">Historial de matrículas</h2>
         {est.matriculas.length === 0
-          ? <p className="text-sm text-gray-400 italic">Sin matrículas</p>
+          ? <p className="text-sm text-fg-muted italic">Sin matrículas</p>
           : <table className="w-full text-sm">
               <thead>
-                <tr className="text-left text-xs text-gray-400 border-b border-gray-100">
+                <tr className="text-left text-xs text-fg-muted border-b border-border">
                   <th className="pb-2">Gestión</th><th className="pb-2">Grado</th>
                   <th className="pb-2">Paralelo</th><th className="pb-2">Estado</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-50">
+              <tbody className="divide-y divide-border">
                 {est.matriculas.map(m => (
                   <tr key={m.id}>
                     <td className="py-2 font-medium">{m.gestion.anno}</td>
-                    <td className="py-2 text-gray-600">{m.paralelo.grado.nombre}</td>
+                    <td className="py-2 text-fg-muted">{m.paralelo.grado.nombre}</td>
                     <td className="py-2">{m.paralelo.letra}</td>
                     <td className="py-2">{m.gestion.activa
                       ? <Badge variant="success">Activa</Badge>
@@ -201,10 +202,10 @@ interface Boletin {
 }
 
 function escalaColor(e: string) {
-  if (e === 'ED') return 'bg-red-100 text-red-700'
-  if (e === 'DA') return 'bg-orange-100 text-orange-700'
-  if (e === 'DO') return 'bg-green-100 text-green-700'
-  return 'bg-emerald-100 text-emerald-700'
+  if (e === 'ED') return 'bg-rose-100 text-rose-700 dark:bg-rose-950/50 dark:text-rose-400'
+  if (e === 'DA') return 'bg-amber-100 text-amber-700 dark:bg-amber-950/50 dark:text-amber-400'
+  if (e === 'DO') return 'bg-blue-100 text-blue-700 dark:bg-blue-950/50 dark:text-blue-400'
+  return 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-400'
 }
 
 interface MateriaPlanillaStaff {
@@ -221,6 +222,7 @@ interface PlanillaStaffResponse {
 
 function CalificacionesTab({ estudianteId }: { estudianteId: string }) {
   const { id: gestionActivaId, trimestreActual } = useGestionActiva()
+  const isMobile = useIsMobile()
   const [gestionId,    setGestionId]    = useState('')
   const [trimestreId,  setTrimestreId]  = useState('')
   const [boletin,      setBoletin]      = useState<Boletin | null>(null)
@@ -260,86 +262,133 @@ function CalificacionesTab({ estudianteId }: { estudianteId: string }) {
       />
 
       {!trimestreId && (
-        <div className="rounded-xl border border-gray-200 bg-white p-10 text-center text-sm text-gray-400 shadow-sm">
+        <div className="rounded-xl border border-border bg-surface p-10 text-center text-sm text-fg-muted shadow-sm">
           Selecciona una gestión y un trimestre para ver las calificaciones.
         </div>
       )}
 
       {loading && <div className="flex justify-center py-12"><Spinner /></div>}
-      {error   && <div className="rounded-xl bg-red-50 p-4 text-sm text-red-700">{error}</div>}
+      {error   && <div className="rounded-xl bg-red-50 dark:bg-red-950/40 p-4 text-sm text-red-700 dark:text-red-400">{error}</div>}
 
       {boletin && !loading && boletin.tipo === 'REGULAR' && boletin.materias && (
-        <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
-          <div className="px-5 py-3 border-b border-gray-100 flex items-center justify-between">
-            <span className="text-sm font-semibold text-gray-700">Calificaciones por materia</span>
+        isMobile ? (
+          /* ── Tarjetas por materia (móvil) — sin scroll horizontal ── */
+          <div className="space-y-2.5">
             {boletin.promedio_general !== undefined && (
-              <span className={`px-3 py-1 rounded-full text-xs font-bold ${escalaColor(boletin.escala_general ?? '')}`}>
-                Promedio general: {boletin.promedio_general.toFixed(1)} — {boletin.escala_general}
-              </span>
+              <div className="rounded-xl bg-slate-800 dark:bg-slate-900 text-white p-3 flex items-center justify-between">
+                <span className="text-sm font-semibold">Promedio general</span>
+                <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${escalaColor(boletin.escala_general ?? '')}`}>
+                  {boletin.promedio_general.toFixed(1)} — {boletin.escala_general}
+                </span>
+              </div>
             )}
+            {boletin.materias.map((m, i) => {
+              const detalle = planilla.find(p => p.materia.nombre === m.nombre)
+              return (
+                <div key={i} className="rounded-xl border border-border bg-surface p-3 shadow-sm">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <div className="font-semibold text-fg text-sm truncate">{m.nombre}</div>
+                      <div className="text-xs text-fg-muted">{m.campo}</div>
+                    </div>
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      <span className="text-lg font-bold text-fg">{m.total}</span>
+                      <span className={`text-xs font-bold px-1.5 py-0.5 rounded ${escalaColor(m.escala)}`}>{m.escala}</span>
+                    </div>
+                  </div>
+                  <div className="mt-2 grid grid-cols-4 gap-1.5">
+                    {[['Ser', m.ser], ['Saber', m.saber], ['Hacer', m.hacer], ['Auto', m.autoevaluacion]].map(([label, val]) => (
+                      <div key={label} className="rounded-lg bg-surface-2 px-1.5 py-1 text-center">
+                        <div className="text-[10px] text-fg-muted">{label}</div>
+                        <div className="text-sm font-bold text-fg">{val}</div>
+                      </div>
+                    ))}
+                  </div>
+                  {detalle && (
+                    <button
+                      onClick={() => setDetalleAbierto(detalle)}
+                      className="mt-2 w-full rounded-lg border border-border py-1.5 text-xs font-medium text-brand hover:bg-surface-2"
+                    >
+                      Ver registro del profesor
+                    </button>
+                  )}
+                </div>
+              )
+            })}
           </div>
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="bg-gray-50 text-left text-xs font-semibold uppercase tracking-wide text-gray-500 border-b border-gray-100">
-                <th className="px-5 py-3">Campo</th>
-                <th className="px-5 py-3">Materia</th>
-                {boletin.dimensiones?.map(d => (
-                  <th key={d.nombre} className="px-3 py-3 text-center">{d.nombre}<br/><span className="font-normal normal-case">/{d.puntaje_max}</span></th>
-                ))}
-                <th className="px-3 py-3 text-center">Total</th>
-                <th className="px-3 py-3 text-center">Escala</th>
-                <th className="px-3 py-3 text-right">Acciones</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-50">
-              {boletin.materias.map((m, i) => {
-                const detalle = planilla.find(p => p.materia.nombre === m.nombre)
-                return (
-                  <tr key={i} className="hover:bg-gray-50">
-                    <td className="px-5 py-2.5 text-gray-500 text-xs">{m.campo}</td>
-                    <td className="px-5 py-2.5 font-medium text-gray-900">{m.nombre}</td>
-                    <td className="px-3 py-2.5 text-center">{m.ser}</td>
-                    <td className="px-3 py-2.5 text-center">{m.saber}</td>
-                    <td className="px-3 py-2.5 text-center">{m.hacer}</td>
-                    <td className="px-3 py-2.5 text-center">{m.autoevaluacion}</td>
-                    <td className="px-3 py-2.5 text-center font-semibold">{m.total}</td>
-                    <td className="px-3 py-2.5 text-center">
-                      <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${escalaColor(m.escala)}`}>{m.escala}</span>
-                    </td>
-                    <td className="px-3 py-2.5 text-right">
-                      {detalle && (
-                        <button
-                          onClick={() => setDetalleAbierto(detalle)}
-                          className="text-xs font-medium text-indigo-600 hover:text-indigo-800"
-                        >
-                          Ver registro del profesor
-                        </button>
-                      )}
-                    </td>
-                  </tr>
-                )
-              })}
-            </tbody>
-          </table>
-        </div>
+        ) : (
+          <div className="rounded-xl border border-border bg-surface shadow-sm overflow-hidden">
+            <div className="px-5 py-3 border-b border-border flex items-center justify-between">
+              <span className="text-sm font-semibold text-fg">Calificaciones por materia</span>
+              {boletin.promedio_general !== undefined && (
+                <span className={`px-3 py-1 rounded-full text-xs font-bold ${escalaColor(boletin.escala_general ?? '')}`}>
+                  Promedio general: {boletin.promedio_general.toFixed(1)} — {boletin.escala_general}
+                </span>
+              )}
+            </div>
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="bg-surface-2 text-left text-xs font-semibold uppercase tracking-wide text-fg-muted border-b border-border">
+                  <th className="px-5 py-3">Campo</th>
+                  <th className="px-5 py-3">Materia</th>
+                  {boletin.dimensiones?.map(d => (
+                    <th key={d.nombre} className="px-3 py-3 text-center">{d.nombre}<br/><span className="font-normal normal-case">/{d.puntaje_max}</span></th>
+                  ))}
+                  <th className="px-3 py-3 text-center">Total</th>
+                  <th className="px-3 py-3 text-center">Escala</th>
+                  <th className="px-3 py-3 text-right">Acciones</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border">
+                {boletin.materias.map((m, i) => {
+                  const detalle = planilla.find(p => p.materia.nombre === m.nombre)
+                  return (
+                    <tr key={i} className="hover:bg-surface-2/60">
+                      <td className="px-5 py-2.5 text-fg-muted text-xs">{m.campo}</td>
+                      <td className="px-5 py-2.5 font-medium text-fg">{m.nombre}</td>
+                      <td className="px-3 py-2.5 text-center text-fg">{m.ser}</td>
+                      <td className="px-3 py-2.5 text-center text-fg">{m.saber}</td>
+                      <td className="px-3 py-2.5 text-center text-fg">{m.hacer}</td>
+                      <td className="px-3 py-2.5 text-center text-fg">{m.autoevaluacion}</td>
+                      <td className="px-3 py-2.5 text-center font-semibold text-fg">{m.total}</td>
+                      <td className="px-3 py-2.5 text-center">
+                        <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${escalaColor(m.escala)}`}>{m.escala}</span>
+                      </td>
+                      <td className="px-3 py-2.5 text-right">
+                        {detalle && (
+                          <button
+                            onClick={() => setDetalleAbierto(detalle)}
+                            className="text-xs font-medium text-brand hover:text-brand-hover"
+                          >
+                            Ver registro del profesor
+                          </button>
+                        )}
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+        )
       )}
 
       {boletin && !loading && boletin.tipo === 'INICIAL' && boletin.materias_inicial && (
-        <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+        <div className="rounded-xl border border-border bg-surface shadow-sm overflow-hidden">
           <table className="w-full text-sm">
             <thead>
-              <tr className="bg-gray-50 text-left text-xs font-semibold uppercase tracking-wide text-gray-500 border-b border-gray-100">
+              <tr className="bg-surface-2 text-left text-xs font-semibold uppercase tracking-wide text-fg-muted border-b border-border">
                 <th className="px-5 py-3">Área</th>
                 <th className="px-5 py-3">Docente</th>
                 <th className="px-5 py-3">Observación</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-50">
+            <tbody className="divide-y divide-border">
               {boletin.materias_inicial.map((m, i) => (
-                <tr key={i} className="hover:bg-gray-50">
-                  <td className="px-5 py-2.5 font-medium">{m.nombre}</td>
-                  <td className="px-5 py-2.5 text-gray-500">{m.docente}</td>
-                  <td className="px-5 py-2.5 text-gray-600">{m.observacion ?? '—'}</td>
+                <tr key={i} className="hover:bg-surface-2/60">
+                  <td className="px-5 py-2.5 font-medium text-fg">{m.nombre}</td>
+                  <td className="px-5 py-2.5 text-fg-muted">{m.docente}</td>
+                  <td className="px-5 py-2.5 text-fg-muted">{m.observacion ?? '—'}</td>
                 </tr>
               ))}
             </tbody>
@@ -349,19 +398,19 @@ function CalificacionesTab({ estudianteId }: { estudianteId: string }) {
 
       {detalleAbierto && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
-          <div className="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl bg-white p-6 shadow-xl space-y-4">
+          <div className="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl bg-surface p-6 shadow-xl space-y-4">
             <div className="flex items-start justify-between">
               <div>
-                <h2 className="text-lg font-bold text-gray-900">{detalleAbierto.materia.nombre}</h2>
-                <p className="text-sm text-gray-400">{detalleAbierto.materia.campo}</p>
+                <h2 className="text-lg font-bold text-fg">{detalleAbierto.materia.nombre}</h2>
+                <p className="text-sm text-fg-muted">{detalleAbierto.materia.campo}</p>
               </div>
               <button
                 onClick={() => setDetalleAbierto(null)}
-                className="text-gray-400 hover:text-gray-700 text-2xl leading-none"
+                className="text-fg-muted hover:text-fg text-2xl leading-none"
               >×</button>
             </div>
             {detalleAbierto.observacion && (
-              <div className="rounded-lg bg-blue-50 border-l-4 border-blue-400 px-3 py-2 text-sm text-blue-800">
+              <div className="rounded-lg bg-blue-50 dark:bg-blue-950/40 border-l-4 border-blue-400 dark:border-blue-600 px-3 py-2 text-sm text-blue-800 dark:text-blue-300">
                 <span className="font-medium">Observación del docente: </span>{detalleAbierto.observacion}
               </div>
             )}
@@ -415,7 +464,7 @@ function AsistenciaTab({ estudianteId }: { estudianteId: string }) {
       />
 
       {!trimestreId && (
-        <div className="rounded-xl border border-gray-200 bg-white p-10 text-center text-sm text-gray-400 shadow-sm">
+        <div className="rounded-xl border border-border bg-surface p-10 text-center text-sm text-fg-muted shadow-sm">
           Selecciona una gestión y un trimestre para ver la asistencia.
         </div>
       )}
@@ -426,8 +475,8 @@ function AsistenciaTab({ estudianteId }: { estudianteId: string }) {
       {data && !loading && (
         <div className="space-y-4">
           {/* Asistencia diaria */}
-          <div className="rounded-xl border border-gray-200 bg-white shadow-sm p-5">
-            <h3 className="text-sm font-semibold uppercase tracking-wide text-gray-500 mb-4">Asistencia diaria (regente)</h3>
+          <div className="rounded-xl border border-border bg-surface shadow-sm p-5">
+            <h3 className="text-sm font-semibold uppercase tracking-wide text-fg-muted mb-4">Asistencia diaria (regente)</h3>
             {(() => {
               const total = data.diaria.total_asistencias + data.diaria.total_faltas + data.diaria.total_tardanzas
               return (
@@ -438,9 +487,9 @@ function AsistenciaTab({ estudianteId }: { estudianteId: string }) {
                     { label: 'Tardanzas',  val: data.diaria.total_tardanzas,    color: 'text-amber-600' },
                     { label: 'Asistencia', val: pct(data.diaria.total_asistencias, total), color: 'text-blue-600' },
                   ].map(item => (
-                    <div key={item.label} className="rounded-lg bg-gray-50 p-3">
+                    <div key={item.label} className="rounded-lg bg-bg p-3">
                       <p className={`text-2xl font-bold ${item.color}`}>{item.val}</p>
-                      <p className="text-xs text-gray-500 mt-1">{item.label}</p>
+                      <p className="text-xs text-fg-muted mt-1">{item.label}</p>
                     </div>
                   ))}
                 </div>
@@ -450,13 +499,13 @@ function AsistenciaTab({ estudianteId }: { estudianteId: string }) {
 
           {/* Asistencia por clase */}
           {data.por_materia.length > 0 && (
-            <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
-              <div className="px-5 py-3 border-b border-gray-100">
-                <span className="text-sm font-semibold text-gray-700">Asistencia por materia (clases)</span>
+            <div className="rounded-xl border border-border bg-surface shadow-sm overflow-hidden">
+              <div className="px-5 py-3 border-b border-border">
+                <span className="text-sm font-semibold text-fg">Asistencia por materia (clases)</span>
               </div>
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="bg-gray-50 text-left text-xs font-semibold uppercase tracking-wide text-gray-500 border-b border-gray-100">
+                  <tr className="bg-bg text-left text-xs font-semibold uppercase tracking-wide text-fg-muted border-b border-border">
                     <th className="px-5 py-3">Materia</th>
                     <th className="px-3 py-3 text-center">Presentes</th>
                     <th className="px-3 py-3 text-center">Ausentes</th>
@@ -464,18 +513,18 @@ function AsistenciaTab({ estudianteId }: { estudianteId: string }) {
                     <th className="px-3 py-3 text-center">%</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-50">
+                <tbody className="divide-y divide-border">
                   {data.por_materia.map((c, i) => {
                     const tot = c.presentes + c.ausentes + c.tardanzas
                     const p   = pct(c.presentes, tot)
                     return (
-                      <tr key={i} className="hover:bg-gray-50">
+                      <tr key={i} className="hover:bg-surface-2">
                         <td className="px-5 py-2.5 font-medium">{c.materia}</td>
                         <td className="px-3 py-2.5 text-center text-green-600">{c.presentes}</td>
                         <td className="px-3 py-2.5 text-center text-red-600">{c.ausentes}</td>
                         <td className="px-3 py-2.5 text-center text-amber-600">{c.tardanzas}</td>
                         <td className="px-3 py-2.5 text-center font-semibold">
-                          <span className={tot > 0 && c.presentes / tot < 0.7 ? 'text-red-600' : 'text-gray-700'}>{p}</span>
+                          <span className={tot > 0 && c.presentes / tot < 0.7 ? 'text-red-600' : 'text-fg'}>{p}</span>
                         </td>
                       </tr>
                     )
@@ -486,7 +535,7 @@ function AsistenciaTab({ estudianteId }: { estudianteId: string }) {
           )}
 
           {data.por_materia.length === 0 && (
-            <p className="text-sm text-gray-400 italic px-1">Sin registros de asistencia por clase en este trimestre.</p>
+            <p className="text-sm text-fg-muted italic px-1">Sin registros de asistencia por clase en este trimestre.</p>
           )}
         </div>
       )}
@@ -538,21 +587,21 @@ function PensionesTab({ estudianteId }: { estudianteId: string }) {
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         {[
           { label: 'Meses pagados',   val: data.resumen.meses_pagados,   color: 'text-green-600' },
-          { label: 'Meses pendientes', val: data.resumen.meses_pendientes, color: data.resumen.meses_pendientes > 0 ? 'text-red-600' : 'text-gray-600' },
+          { label: 'Meses pendientes', val: data.resumen.meses_pendientes, color: data.resumen.meses_pendientes > 0 ? 'text-red-600' : 'text-fg-muted' },
           { label: 'Total pagado',    val: `Bs ${data.resumen.total_pagado.toFixed(2)}`,    color: 'text-green-600' },
-          { label: 'Total pendiente', val: `Bs ${data.resumen.total_pendiente.toFixed(2)}`, color: data.resumen.total_pendiente > 0 ? 'text-red-600' : 'text-gray-600' },
+          { label: 'Total pendiente', val: `Bs ${data.resumen.total_pendiente.toFixed(2)}`, color: data.resumen.total_pendiente > 0 ? 'text-red-600' : 'text-fg-muted' },
         ].map(item => (
-          <div key={item.label} className="rounded-xl border border-gray-200 bg-white shadow-sm p-4 text-center">
+          <div key={item.label} className="rounded-xl border border-border bg-surface shadow-sm p-4 text-center">
             <p className={`text-xl font-bold ${item.color}`}>{item.val}</p>
-            <p className="text-xs text-gray-500 mt-1">{item.label}</p>
+            <p className="text-xs text-fg-muted mt-1">{item.label}</p>
           </div>
         ))}
       </div>
 
       {/* Detalle */}
-      <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
-        <div className="px-5 py-3 border-b border-gray-100 flex items-center justify-between">
-          <span className="text-sm font-semibold text-gray-700">
+      <div className="rounded-xl border border-border bg-surface shadow-sm overflow-hidden">
+        <div className="px-5 py-3 border-b border-border flex items-center justify-between">
+          <span className="text-sm font-semibold text-fg">
             Pensiones {data.gestion ? `Gestión ${data.gestion.anno}` : ''}
           </span>
           <Badge variant={data.resumen.al_dia ? 'success' : 'danger'}>
@@ -560,11 +609,11 @@ function PensionesTab({ estudianteId }: { estudianteId: string }) {
           </Badge>
         </div>
         {data.meses.length === 0 ? (
-          <p className="px-5 py-8 text-center text-sm text-gray-400">Sin pensiones generadas para esta gestión.</p>
+          <p className="px-5 py-8 text-center text-sm text-fg-muted">Sin pensiones generadas para esta gestión.</p>
         ) : (
           <table className="w-full text-sm">
             <thead>
-              <tr className="bg-gray-50 text-left text-xs font-semibold uppercase tracking-wide text-gray-500 border-b border-gray-100">
+              <tr className="bg-bg text-left text-xs font-semibold uppercase tracking-wide text-fg-muted border-b border-border">
                 <th className="px-5 py-3">Mes</th>
                 <th className="px-5 py-3 text-right">Monto</th>
                 <th className="px-5 py-3 text-center">Estado</th>
@@ -572,21 +621,21 @@ function PensionesTab({ estudianteId }: { estudianteId: string }) {
                 <th className="px-5 py-3 text-center">Mora (días)</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-50">
+            <tbody className="divide-y divide-border">
               {data.meses.map(p => (
-                <tr key={p.id} className="hover:bg-gray-50">
+                <tr key={p.id} className="hover:bg-surface-2">
                   <td className="px-5 py-2.5 font-medium">{p.nombre_mes || MES[(p.mes - 1)] || `Mes ${p.mes}`}</td>
                   <td className="px-5 py-2.5 text-right font-mono">Bs {p.monto.toFixed(2)}</td>
                   <td className="px-5 py-2.5 text-center">
                     <Badge variant={p.pagado ? 'success' : 'danger'}>{p.pagado ? 'Pagado' : 'Pendiente'}</Badge>
                   </td>
-                  <td className="px-5 py-2.5 text-gray-500">
+                  <td className="px-5 py-2.5 text-fg-muted">
                     {p.fecha_pago ? new Date(p.fecha_pago).toLocaleDateString('es-BO') : '—'}
                   </td>
                   <td className="px-5 py-2.5 text-center">
                     {!p.pagado && p.dias_mora > 0
                       ? <span className="text-red-600 font-semibold">{p.dias_mora}</span>
-                      : <span className="text-gray-400">—</span>}
+                      : <span className="text-fg-muted">—</span>}
                   </td>
                 </tr>
               ))}
@@ -656,23 +705,23 @@ export default function PerfilEstudiantePage({
       <div className="flex items-center gap-4">
         <Button variant="ghost" size="sm" onClick={() => navigate(-1)}>← Volver</Button>
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">
+          <h1 className="text-2xl font-bold text-fg">
             {est.usuario.apellido}, {est.usuario.nombre}
           </h1>
-          <p className="text-sm text-gray-400 mt-0.5 font-mono">{est.codigo}</p>
+          <p className="text-sm text-fg-muted mt-0.5 font-mono">{est.codigo}</p>
         </div>
       </div>
 
       {/* Tab bar */}
-      <div className="flex gap-1 rounded-xl bg-gray-100 p-1 w-fit">
+      <div className="flex gap-1 rounded-xl bg-surface-2 p-1 w-fit">
         {TABS.map(t => (
           <button
             key={t.key}
             onClick={() => setTab(t.key as Tab)}
             className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
               tab === t.key
-                ? 'bg-white text-gray-900 shadow-sm'
-                : 'text-gray-500 hover:text-gray-700'
+                ? 'bg-surface text-fg shadow-sm'
+                : 'text-fg-muted hover:text-fg'
             }`}
           >
             {t.label}
