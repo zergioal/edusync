@@ -178,7 +178,7 @@ export default function PensionesPage() {
   return (
     <div className="space-y-5">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">Pensiones escolares</h1>
+        <h1 className="text-2xl font-bold text-fg">Pensiones escolares</h1>
         <div className="flex items-center gap-3">
           <Link to="/dashboard/admin/finanzas/tarifas"
             className="text-sm text-indigo-600 hover:underline font-medium">
@@ -194,7 +194,7 @@ export default function PensionesPage() {
       {/* Barra de búsqueda prominente */}
       <div className="relative">
         <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4">
-          <svg className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <svg className="h-5 w-5 text-fg-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35M17 11A6 6 0 115 11a6 6 0 0112 0z" />
           </svg>
         </div>
@@ -203,12 +203,12 @@ export default function PensionesPage() {
           placeholder="Buscar estudiante por nombre o código…"
           value={buscar}
           onChange={e => setBuscar(e.target.value)}
-          className="w-full rounded-xl border border-gray-300 bg-white pl-11 pr-4 py-3 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          className="w-full rounded-xl border border-border bg-surface pl-11 pr-4 py-3 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-brand focus:border-brand"
         />
         {buscar && (
           <button
             onClick={() => setBuscar('')}
-            className="absolute inset-y-0 right-0 flex items-center pr-4 text-gray-400 hover:text-gray-600"
+            className="absolute inset-y-0 right-0 flex items-center pr-4 text-fg-muted hover:text-fg-muted"
           >
             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -218,28 +218,28 @@ export default function PensionesPage() {
       </div>
 
       {/* Filtros secundarios */}
-      <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-3">
+      <div className="bg-surface rounded-xl border border-border shadow-sm p-3">
         <div className="flex flex-wrap gap-2 items-center">
           <select value={gestionId} onChange={e => setGestionId(e.target.value)}
-            className="border border-gray-300 rounded-lg px-3 py-1.5 text-sm">
+            className="border border-border rounded-lg px-3 py-1.5 text-sm">
             {gestiones.map(g => <option key={g.id} value={g.id}>Gestión {g.anno}</option>)}
           </select>
 
           <select value={mes} onChange={e => setMes(Number(e.target.value))}
-            className="border border-gray-300 rounded-lg px-3 py-1.5 text-sm">
+            className="border border-border rounded-lg px-3 py-1.5 text-sm">
             {MESES.map(m => (
               <option key={m.v} value={m.v}>{m.l}{m.v === mesActual ? ' ★' : ''}</option>
             ))}
           </select>
 
           <select value={nivelId} onChange={e => { setNivelId(e.target.value); setParaleloId('') }}
-            className="border border-gray-300 rounded-lg px-3 py-1.5 text-sm">
+            className="border border-border rounded-lg px-3 py-1.5 text-sm">
             <option value="">Todos los niveles</option>
             {niveles.map(n => <option key={n.id} value={n.id}>{n.nombre}</option>)}
           </select>
 
           <select value={estado} onChange={e => setEstado(e.target.value)}
-            className="border border-gray-300 rounded-lg px-3 py-1.5 text-sm">
+            className="border border-border rounded-lg px-3 py-1.5 text-sm">
             <option value="">Todos</option>
             <option value="pagado">Pagados</option>
             <option value="pendiente">Pendientes</option>
@@ -258,27 +258,27 @@ export default function PensionesPage() {
 
       {/* Botones de paralelo */}
       {paralelos.length > 0 && (
-        <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-4 space-y-3">
+        <div className="bg-surface rounded-xl border border-border shadow-sm p-4 space-y-3">
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-xs font-semibold uppercase tracking-wide text-gray-500 mr-1">
+            <span className="text-xs font-semibold uppercase tracking-wide text-fg-muted mr-1">
               Filtrar por curso:
             </span>
             <button
               onClick={() => setParaleloId('')}
-              className={`rounded-full px-3 py-1 text-xs font-medium transition ${!paraleloId ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
+              className={`rounded-full px-3 py-1 text-xs font-medium transition ${!paraleloId ? 'bg-blue-600 text-white' : 'bg-surface-2 text-fg-muted hover:bg-surface-2'}`}
             >
               Todos
             </button>
             {Object.entries(paralelosPorNivel).map(([nivel, pars]) => (
               <div key={nivel} className="flex items-center gap-1 flex-wrap">
-                <span className="text-xs text-gray-400 px-1">{nivel}:</span>
+                <span className="text-xs text-fg-muted px-1">{nivel}:</span>
                 {pars
                   .sort((a, b) => `${a.grado.nombre}${a.letra}`.localeCompare(`${b.grado.nombre}${b.letra}`))
                   .map(p => (
                     <button
                       key={p.id}
                       onClick={() => setParaleloId(prev => prev === p.id ? '' : p.id)}
-                      className={`rounded-full px-3 py-1 text-xs font-medium transition ${paraleloId === p.id ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
+                      className={`rounded-full px-3 py-1 text-xs font-medium transition ${paraleloId === p.id ? 'bg-blue-600 text-white' : 'bg-surface-2 text-fg-muted hover:bg-surface-2'}`}
                     >
                       {p.grado.nombre} &ldquo;{p.letra}&rdquo;
                     </button>
@@ -292,57 +292,57 @@ export default function PensionesPage() {
 
       {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-4">
-          <p className="text-xs text-gray-500 font-medium uppercase tracking-wide">Total</p>
-          <p className="text-3xl font-bold text-gray-900 mt-1">{total}</p>
-          <p className="text-xs text-gray-400 mt-0.5">en el mes seleccionado</p>
+        <div className="bg-surface rounded-xl border border-border shadow-sm p-4">
+          <p className="text-xs text-fg-muted font-medium uppercase tracking-wide">Total</p>
+          <p className="text-3xl font-bold text-fg mt-1">{total}</p>
+          <p className="text-xs text-fg-muted mt-0.5">en el mes seleccionado</p>
         </div>
-        <div className="bg-white rounded-xl border border-green-200 shadow-sm p-4">
+        <div className="bg-surface rounded-xl border border-green-200 shadow-sm p-4">
           <p className="text-xs text-green-600 font-medium uppercase tracking-wide">Pagados</p>
           <p className="text-3xl font-bold text-green-700 mt-1">{pagados.length}</p>
           <p className="text-xs text-green-500 mt-0.5">Bs. {montoPagado.toFixed(2)}</p>
         </div>
-        <div className="bg-white rounded-xl border border-red-200 shadow-sm p-4">
+        <div className="bg-surface rounded-xl border border-red-200 shadow-sm p-4">
           <p className="text-xs text-red-500 font-medium uppercase tracking-wide">Pendientes</p>
           <p className="text-3xl font-bold text-red-600 mt-1">{pendientes.length}</p>
           <p className="text-xs text-red-400 mt-0.5">Bs. {montoPendiente.toFixed(2)}</p>
         </div>
-        <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-4">
-          <p className="text-xs text-gray-500 font-medium uppercase tracking-wide">% Cobrado</p>
-          <p className="text-3xl font-bold text-gray-900 mt-1">{pctCobro}%</p>
-          <div className="mt-2 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+        <div className="bg-surface rounded-xl border border-border shadow-sm p-4">
+          <p className="text-xs text-fg-muted font-medium uppercase tracking-wide">% Cobrado</p>
+          <p className="text-3xl font-bold text-fg mt-1">{pctCobro}%</p>
+          <div className="mt-2 h-1.5 bg-surface-2 rounded-full overflow-hidden">
             <div className="h-full bg-green-500 rounded-full transition-all duration-500" style={{ width: `${pctCobro}%` }} />
           </div>
         </div>
       </div>
 
       {/* Tabla */}
-      <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+      <div className="bg-surface rounded-xl border border-border shadow-sm overflow-hidden">
         {loading ? (
-          <div className="p-12 text-center text-gray-400 text-sm">Cargando…</div>
+          <div className="p-12 text-center text-fg-muted text-sm">Cargando…</div>
         ) : error ? (
           <div className="p-8 text-center text-red-500 text-sm">{error}</div>
         ) : pensiones.length === 0 ? (
-          <div className="p-12 text-center text-gray-400 text-sm">
+          <div className="p-12 text-center text-fg-muted text-sm">
             No hay pensiones para los filtros seleccionados
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
-              <thead className="bg-gray-50 border-b border-gray-200">
+              <thead className="bg-bg border-b border-border">
                 <tr>
                   {['Código', 'Estudiante', 'Nivel', 'Paralelo', 'Monto', 'Estado', 'Fecha pago', 'Comprobante', 'Mora', 'Acciones'].map(h => (
-                    <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap">
+                    <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-fg-muted uppercase tracking-wide whitespace-nowrap">
                       {h}
                     </th>
                   ))}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody className="divide-y divide-border">
                 {pensiones.map(p => (
-                  <tr key={p.id} className="hover:bg-gray-50 transition-colors">
-                    <td className="px-4 py-3 font-mono text-xs text-gray-500">{p.estudiante.codigo}</td>
-                    <td className="px-4 py-3 font-medium text-gray-900">
+                  <tr key={p.id} className="hover:bg-surface-2 transition-colors">
+                    <td className="px-4 py-3 font-mono text-xs text-fg-muted">{p.estudiante.codigo}</td>
+                    <td className="px-4 py-3 font-medium text-fg">
                       <button
                         onClick={() => setPagoModal(p.estudiante)}
                         className="text-left hover:text-blue-700 hover:underline transition-colors"
@@ -350,13 +350,13 @@ export default function PensionesPage() {
                         {p.estudiante.apellido} {p.estudiante.nombre}
                       </button>
                     </td>
-                    <td className="px-4 py-3 text-gray-600 text-xs">{p.nivel ?? '—'}</td>
-                    <td className="px-4 py-3 text-gray-600">
+                    <td className="px-4 py-3 text-fg-muted text-xs">{p.nivel ?? '—'}</td>
+                    <td className="px-4 py-3 text-fg-muted">
                       {p.estudiante.paralelo
                         ? `${p.estudiante.paralelo.grado} "${p.estudiante.paralelo.letra}"`
                         : '—'}
                     </td>
-                    <td className="px-4 py-3 font-semibold text-gray-900">Bs. {p.monto.toFixed(2)}</td>
+                    <td className="px-4 py-3 font-semibold text-fg">Bs. {p.monto.toFixed(2)}</td>
                     <td className="px-4 py-3">
                       <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
                         p.pagado ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
@@ -364,10 +364,10 @@ export default function PensionesPage() {
                         {p.pagado ? 'Pagado' : 'Pendiente'}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-gray-600">
+                    <td className="px-4 py-3 text-fg-muted">
                       {p.fecha_pago ? new Date(p.fecha_pago).toLocaleDateString('es-BO') : '—'}
                     </td>
-                    <td className="px-4 py-3 text-gray-600 font-mono text-xs">{p.comprobante ?? '—'}</td>
+                    <td className="px-4 py-3 text-fg-muted font-mono text-xs">{p.comprobante ?? '—'}</td>
                     <td className="px-4 py-3">
                       {!p.pagado && p.dias_mora > 0 ? (
                         <span className="text-red-500 text-xs font-medium">{p.dias_mora}d</span>
@@ -423,13 +423,13 @@ export default function PensionesPage() {
       {/* Modal preview / generar mes */}
       {previewOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <div className="w-full max-w-md bg-white rounded-2xl shadow-xl p-6 space-y-4">
-            <h2 className="text-lg font-bold text-gray-900">
+          <div className="w-full max-w-md bg-surface rounded-2xl shadow-xl p-6 space-y-4">
+            <h2 className="text-lg font-bold text-fg">
               Generar pensiones — {mesNombre}
             </h2>
 
             {previewLoading && (
-              <div className="py-8 text-center text-gray-400 text-sm">Calculando…</div>
+              <div className="py-8 text-center text-fg-muted text-sm">Calculando…</div>
             )}
 
             {previewError && (
@@ -459,29 +459,29 @@ export default function PensionesPage() {
                       </div>
                     )}
 
-                    <div className="rounded-xl border border-gray-200 overflow-hidden">
+                    <div className="rounded-xl border border-border overflow-hidden">
                       <table className="w-full text-sm">
-                        <thead className="bg-gray-50">
+                        <thead className="bg-bg">
                           <tr>
-                            <th className="text-left px-4 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide">Nivel</th>
-                            <th className="text-right px-4 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide">Estudiantes</th>
-                            <th className="text-right px-4 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide">Tarifa</th>
-                            <th className="text-right px-4 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide">Total</th>
+                            <th className="text-left px-4 py-2 text-xs font-semibold text-fg-muted uppercase tracking-wide">Nivel</th>
+                            <th className="text-right px-4 py-2 text-xs font-semibold text-fg-muted uppercase tracking-wide">Estudiantes</th>
+                            <th className="text-right px-4 py-2 text-xs font-semibold text-fg-muted uppercase tracking-wide">Tarifa</th>
+                            <th className="text-right px-4 py-2 text-xs font-semibold text-fg-muted uppercase tracking-wide">Total</th>
                           </tr>
                         </thead>
-                        <tbody className="divide-y divide-gray-100">
+                        <tbody className="divide-y divide-border">
                           {Object.entries(previewData.por_nivel).map(([nivel, r]) => (
                             <tr key={nivel}>
-                              <td className="px-4 py-2 font-medium text-gray-900">{nivel}</td>
-                              <td className="px-4 py-2 text-right text-gray-700">{r.cantidad}</td>
-                              <td className="px-4 py-2 text-right text-gray-700">Bs. {r.monto_unitario.toFixed(2)}</td>
-                              <td className="px-4 py-2 text-right font-semibold text-gray-900">Bs. {r.total.toFixed(2)}</td>
+                              <td className="px-4 py-2 font-medium text-fg">{nivel}</td>
+                              <td className="px-4 py-2 text-right text-fg">{r.cantidad}</td>
+                              <td className="px-4 py-2 text-right text-fg">Bs. {r.monto_unitario.toFixed(2)}</td>
+                              <td className="px-4 py-2 text-right font-semibold text-fg">Bs. {r.total.toFixed(2)}</td>
                             </tr>
                           ))}
                         </tbody>
-                        <tfoot className="bg-gray-50 border-t border-gray-200">
+                        <tfoot className="bg-bg border-t border-border">
                           <tr>
-                            <td colSpan={3} className="px-4 py-2 text-sm font-semibold text-gray-700">Total a cobrar</td>
+                            <td colSpan={3} className="px-4 py-2 text-sm font-semibold text-fg">Total a cobrar</td>
                             <td className="px-4 py-2 text-right font-bold text-blue-700">Bs. {previewData.monto_total.toFixed(2)}</td>
                           </tr>
                         </tfoot>
@@ -505,7 +505,7 @@ export default function PensionesPage() {
             <div className="flex gap-3">
               <button
                 onClick={() => { setPreviewOpen(false); setGenMsg(null); setPreviewData(null) }}
-                className="flex-1 border border-gray-300 rounded-xl py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                className="flex-1 border border-border rounded-xl py-2.5 text-sm font-medium text-fg hover:bg-surface-2"
               >
                 {genMsg ? 'Cerrar' : 'Cancelar'}
               </button>

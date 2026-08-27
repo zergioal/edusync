@@ -70,10 +70,10 @@ export function AvatarPickerModal({ userId, onClose, onSaved }: PickerProps) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-      <div className="w-full max-w-sm rounded-2xl bg-white p-5 shadow-xl space-y-4">
+      <div className="w-full max-w-sm rounded-2xl bg-surface p-5 shadow-xl space-y-4">
         <div className="flex items-center justify-between">
-          <h3 className="font-bold text-gray-900">Elige tu avatar</h3>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-xl leading-none">×</button>
+          <h3 className="font-bold text-fg">Elige tu avatar</h3>
+          <button onClick={onClose} className="text-fg-muted hover:text-fg-muted text-xl leading-none">×</button>
         </div>
 
         <div className="grid grid-cols-4 gap-2">
@@ -85,19 +85,19 @@ export function AvatarPickerModal({ userId, onClose, onSaved }: PickerProps) {
               className={`rounded-xl p-1.5 flex flex-col items-center gap-1 transition-all ${
                 selected === a.id
                   ? 'ring-2 ring-indigo-500 ring-offset-1 scale-105 bg-indigo-50'
-                  : 'hover:bg-gray-50'
+                  : 'hover:bg-surface-2'
               }`}
             >
               <div className={`h-11 w-11 ${a.bg} rounded-xl flex items-center justify-center text-xl shadow-sm`}>
                 <span role="img" aria-label={a.label}>{a.emoji}</span>
               </div>
-              <span className="text-[9px] text-gray-500 leading-tight text-center">{a.label}</span>
+              <span className="text-[9px] text-fg-muted leading-tight text-center">{a.label}</span>
             </button>
           ))}
         </div>
 
         <div className="flex justify-end gap-2 pt-1">
-          <button onClick={onClose} className="px-4 py-2 text-sm text-gray-500 hover:text-gray-700 rounded-lg">
+          <button onClick={onClose} className="px-4 py-2 text-sm text-fg-muted hover:text-fg rounded-lg">
             Cancelar
           </button>
           <button

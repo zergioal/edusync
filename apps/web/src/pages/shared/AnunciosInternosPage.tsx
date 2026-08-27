@@ -78,8 +78,8 @@ export default function AnunciosInternosPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Comunicados Internos</h1>
-          <p className="text-sm text-gray-500 mt-0.5">Anuncios y comunicados de la institución</p>
+          <h1 className="text-2xl font-bold text-fg">Comunicados Internos</h1>
+          <p className="text-sm text-fg-muted mt-0.5">Anuncios y comunicados de la institución</p>
         </div>
         {canPublish && (
           <Button onClick={() => setModal(true)}>+ Nuevo comunicado</Button>
@@ -90,7 +90,7 @@ export default function AnunciosInternosPage() {
       {loading ? (
         <div className="flex justify-center py-12"><Spinner /></div>
       ) : anuncios.length === 0 ? (
-        <div className="rounded-xl border border-gray-100 bg-white shadow-sm px-5 py-12 text-center text-sm text-gray-400">
+        <div className="rounded-xl border border-border bg-surface shadow-sm px-5 py-12 text-center text-sm text-fg-muted">
           No hay comunicados publicados
         </div>
       ) : (
@@ -99,8 +99,8 @@ export default function AnunciosInternosPage() {
             <div
               key={a.id}
               onClick={() => setVer(a)}
-              className={`cursor-pointer rounded-xl border bg-white shadow-sm p-5 hover:border-blue-200 transition-colors ${
-                a.destacado ? 'border-amber-300 bg-amber-50' : 'border-gray-200'
+              className={`cursor-pointer rounded-xl border bg-surface shadow-sm p-5 hover:border-blue-200 transition-colors ${
+                a.destacado ? 'border-amber-300 bg-amber-50' : 'border-border'
               }`}
             >
               <div className="flex items-start justify-between gap-4">
@@ -111,10 +111,10 @@ export default function AnunciosInternosPage() {
                         Destacado
                       </span>
                     )}
-                    <h3 className="font-semibold text-gray-900 truncate">{a.titulo}</h3>
+                    <h3 className="font-semibold text-fg truncate">{a.titulo}</h3>
                   </div>
-                  <p className="mt-1 text-sm text-gray-500 line-clamp-2">{a.contenido}</p>
-                  <div className="mt-2 flex items-center gap-3 text-xs text-gray-400">
+                  <p className="mt-1 text-sm text-fg-muted line-clamp-2">{a.contenido}</p>
+                  <div className="mt-2 flex items-center gap-3 text-xs text-fg-muted">
                     <span>{a.autor.apellido}, {a.autor.nombre}</span>
                     <span>·</span>
                     <span>{formatFecha(a.publicado_en)}</span>
@@ -136,13 +136,13 @@ export default function AnunciosInternosPage() {
       >
         {ver && (
           <div className="space-y-4">
-            <div className="flex items-center gap-3 text-sm text-gray-500">
+            <div className="flex items-center gap-3 text-sm text-fg-muted">
               <span>Por: {ver.autor.apellido}, {ver.autor.nombre}</span>
               <span>·</span>
               <span>{formatFecha(ver.publicado_en)}</span>
               <Badge variant="info">{VISIBLE_LABELS[ver.visible_para] ?? ver.visible_para}</Badge>
             </div>
-            <div className="prose prose-sm max-w-none text-gray-700 whitespace-pre-wrap">
+            <div className="prose prose-sm max-w-none text-fg whitespace-pre-wrap">
               {ver.contenido}
             </div>
           </div>
@@ -163,31 +163,31 @@ export default function AnunciosInternosPage() {
       >
         <form id="form-anuncio" onSubmit={handleSubmit} className="space-y-4">
           <div className="flex flex-col gap-1">
-            <label className="text-sm font-medium text-gray-700">Título</label>
+            <label className="text-sm font-medium text-fg">Título</label>
             <input
               type="text"
               value={form.titulo}
               onChange={e => setForm(f => ({ ...f, titulo: e.target.value }))}
               required
-              className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="rounded-lg border border-border px-3 py-2 text-sm focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand"
             />
           </div>
           <div className="flex flex-col gap-1">
-            <label className="text-sm font-medium text-gray-700">Contenido</label>
+            <label className="text-sm font-medium text-fg">Contenido</label>
             <textarea
               value={form.contenido}
               onChange={e => setForm(f => ({ ...f, contenido: e.target.value }))}
               required
               rows={5}
-              className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="rounded-lg border border-border px-3 py-2 text-sm focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand"
             />
           </div>
           <div className="flex flex-col gap-1">
-            <label className="text-sm font-medium text-gray-700">Visible para</label>
+            <label className="text-sm font-medium text-fg">Visible para</label>
             <select
               value={form.visible_para}
               onChange={e => setForm(f => ({ ...f, visible_para: e.target.value }))}
-              className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="rounded-lg border border-border px-3 py-2 text-sm focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand"
             >
               {Object.entries(VISIBLE_LABELS).map(([v, l]) => (
                 <option key={v} value={v}>{l}</option>
@@ -199,9 +199,9 @@ export default function AnunciosInternosPage() {
               type="checkbox"
               checked={form.destacado}
               onChange={e => setForm(f => ({ ...f, destacado: e.target.checked }))}
-              className="h-4 w-4 rounded border-gray-300 text-blue-600"
+              className="h-4 w-4 rounded border-border text-blue-600"
             />
-            <span className="text-sm text-gray-700">Marcar como destacado</span>
+            <span className="text-sm text-fg">Marcar como destacado</span>
           </label>
         </form>
       </Modal>

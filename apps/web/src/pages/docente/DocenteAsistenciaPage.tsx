@@ -16,7 +16,7 @@ const NIVEL_STYLE: Record<string, { border: string; badge: string; title: string
   PRIMARIA:   { border: 'border-sky-200',    badge: 'bg-sky-100 text-sky-700',       title: 'text-sky-800'    },
   SECUNDARIA: { border: 'border-violet-200', badge: 'bg-violet-100 text-violet-700', title: 'text-violet-800' },
 }
-const NIVEL_DEFAULT = { border: 'border-gray-200', badge: 'bg-gray-100 text-gray-600', title: 'text-gray-800' }
+const NIVEL_DEFAULT = { border: 'border-border', badge: 'bg-surface-2 text-fg-muted', title: 'text-fg' }
 
 export default function DocenteAsistenciaPage() {
   const navigate = useNavigate()
@@ -35,8 +35,8 @@ export default function DocenteAsistenciaPage() {
   if (asignaciones.length === 0) {
     return (
       <div className="space-y-4">
-        <h1 className="text-xl font-bold text-gray-900">Asistencia</h1>
-        <div className="rounded-xl border-2 border-dashed border-gray-200 bg-white p-12 text-center text-sm text-gray-400">
+        <h1 className="text-xl font-bold text-fg">Asistencia</h1>
+        <div className="rounded-xl border-2 border-dashed border-border bg-surface p-12 text-center text-sm text-fg-muted">
           No tienes materias asignadas en la gestión activa.
         </div>
       </div>
@@ -53,8 +53,8 @@ export default function DocenteAsistenciaPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-xl font-bold text-gray-900">Asistencia de Clase</h1>
-        <p className="text-sm text-gray-500 mt-0.5">Selecciona la materia para registrar asistencia</p>
+        <h1 className="text-xl font-bold text-fg">Asistencia de Clase</h1>
+        <p className="text-sm text-fg-muted mt-0.5">Selecciona la materia para registrar asistencia</p>
       </div>
 
       {Object.entries(byNivel).map(([nivel, items]) => {
@@ -67,11 +67,11 @@ export default function DocenteAsistenciaPage() {
                 <button
                   key={a.id}
                   onClick={() => navigate(`/dashboard/docente/asistencia/${a.id}`)}
-                  className={`group text-left rounded-xl border-2 bg-white p-4 hover:shadow-md transition-all hover:-translate-y-0.5 ${style.border}`}
+                  className={`group text-left rounded-xl border-2 bg-surface p-4 hover:shadow-md transition-all hover:-translate-y-0.5 ${style.border}`}
                 >
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
-                      <p className="text-[10px] text-gray-400 truncate">{a.materia.campo.nombre}</p>
+                      <p className="text-[10px] text-fg-muted truncate">{a.materia.campo.nombre}</p>
                       <p className={`font-semibold text-sm leading-tight mt-0.5 ${style.title} group-hover:underline`}>
                         {a.materia.nombre}
                       </p>
@@ -81,7 +81,7 @@ export default function DocenteAsistenciaPage() {
                       {a.paralelo.letra}
                     </span>
                   </div>
-                  <div className="mt-3 flex items-center justify-between text-xs text-gray-400">
+                  <div className="mt-3 flex items-center justify-between text-xs text-fg-muted">
                     <span>👥 {a.n_estudiantes} estudiantes</span>
                     <span className="flex items-center gap-1 text-indigo-500 font-medium opacity-0 group-hover:opacity-100 transition-opacity">
                       Pasar lista →

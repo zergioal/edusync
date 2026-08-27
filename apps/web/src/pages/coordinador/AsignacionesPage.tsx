@@ -67,7 +67,7 @@ function ParaleloBloque({
   }, {})
 
   return (
-    <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
+    <div className="rounded-xl border border-border bg-bg p-4">
       <div className="flex items-center gap-3 mb-3">
         <div className="flex-1">
           <SelectParalelo
@@ -81,7 +81,7 @@ function ParaleloBloque({
           <button
             type="button"
             onClick={() => onRemove(block.key)}
-            className="shrink-0 rounded-lg p-1.5 text-gray-400 hover:bg-red-50 hover:text-red-500 transition-colors"
+            className="shrink-0 rounded-lg p-1.5 text-fg-muted hover:bg-red-50 hover:text-red-500 transition-colors"
             title="Quitar bloque"
           >
             <svg className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
@@ -92,10 +92,10 @@ function ParaleloBloque({
       </div>
 
       {!block.paralelo_id && (
-        <p className="text-xs text-gray-400 italic">Seleccionar paralelo para ver materias disponibles.</p>
+        <p className="text-xs text-fg-muted italic">Seleccionar paralelo para ver materias disponibles.</p>
       )}
       {block.paralelo_id && block.loading && (
-        <div className="flex items-center gap-2 text-xs text-gray-400"><Spinner /><span>Cargando…</span></div>
+        <div className="flex items-center gap-2 text-xs text-fg-muted"><Spinner /><span>Cargando…</span></div>
       )}
       {block.paralelo_id && !block.loading && block.disponibles.length === 0 && (
         <p className="text-xs text-amber-600">Sin materias disponibles para este paralelo.</p>
@@ -104,22 +104,22 @@ function ParaleloBloque({
       {block.paralelo_id && !block.loading && block.disponibles.length > 0 && (
         <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-medium uppercase tracking-wide text-gray-500">Materias disponibles</span>
+            <span className="text-xs font-medium uppercase tracking-wide text-fg-muted">Materias disponibles</span>
             <div className="flex gap-2 text-xs">
               <button type="button" onClick={() => block.disponibles.forEach(m => { if (!block.materia_ids.includes(m.id)) onToggleMateria(block.key, m.id) })} className="text-blue-600 hover:text-blue-800">Todas</button>
-              <span className="text-gray-300">·</span>
-              <button type="button" onClick={() => [...block.materia_ids].forEach(id => onToggleMateria(block.key, id))} className="text-gray-500 hover:text-gray-700">Ninguna</button>
+              <span className="text-fg-muted">·</span>
+              <button type="button" onClick={() => [...block.materia_ids].forEach(id => onToggleMateria(block.key, id))} className="text-fg-muted hover:text-fg">Ninguna</button>
             </div>
           </div>
           {Object.entries(byField).map(([campo, mats]) => (
             <div key={campo}>
-              <p className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-gray-400">{campo}</p>
+              <p className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-fg-muted">{campo}</p>
               <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3">
                 {mats.map(m => {
                   const checked = block.materia_ids.includes(m.id)
                   const h = m.carga_horaria[0]?.horas_mes
                   return (
-                    <label key={m.id} className={`flex cursor-pointer items-start gap-2 rounded-lg border px-3 py-2 text-sm transition-colors ${checked ? 'border-blue-400 bg-blue-50 text-blue-800' : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300'}`}>
+                    <label key={m.id} className={`flex cursor-pointer items-start gap-2 rounded-lg border px-3 py-2 text-sm transition-colors ${checked ? 'border-blue-400 bg-blue-50 text-blue-800' : 'border-border bg-surface text-fg hover:border-border'}`}>
                       <input type="checkbox" checked={checked} onChange={() => onToggleMateria(block.key, m.id)} className="mt-0.5 shrink-0" />
                       <span className="leading-tight">
                         {m.nombre}
@@ -329,8 +329,8 @@ export default function AsignacionesPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Asignación de Docentes</h1>
-          <p className="text-sm text-gray-500 mt-0.5">
+          <h1 className="text-2xl font-bold text-fg">Asignación de Docentes</h1>
+          <p className="text-sm text-fg-muted mt-0.5">
             {gestion ? `Gestión ${gestion.anno}` : 'Cargando gestión…'}
           </p>
         </div>
@@ -338,19 +338,19 @@ export default function AsignacionesPage() {
       </div>
 
       {/* Filtros */}
-      <div className="flex flex-wrap gap-3 rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+      <div className="flex flex-wrap gap-3 rounded-xl border border-border bg-surface p-4 shadow-sm">
         <div className="flex flex-col gap-1 flex-1 min-w-[180px]">
-          <label className="text-xs font-medium uppercase tracking-wide text-gray-500">Buscar docente</label>
+          <label className="text-xs font-medium uppercase tracking-wide text-fg-muted">Buscar docente</label>
           <input
             type="text"
             value={searchDoc}
             onChange={e => setSearchDoc(e.target.value)}
             placeholder="Nombre o apellido…"
-            className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="rounded-lg border border-border px-3 py-2 text-sm focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand"
           />
         </div>
         <div className="flex flex-col gap-1 flex-1 min-w-[220px]">
-          <label className="text-xs font-medium uppercase tracking-wide text-gray-500">Filtrar por paralelo</label>
+          <label className="text-xs font-medium uppercase tracking-wide text-fg-muted">Filtrar por paralelo</label>
           <SelectParalelo
             value={filterPar}
             onChange={setFilterPar}
@@ -369,7 +369,7 @@ export default function AsignacionesPage() {
 
       {/* Resumen */}
       {!loading && (
-        <p className="text-sm text-gray-500">
+        <p className="text-sm text-fg-muted">
           {groups.length} docente{groups.length !== 1 ? 's' : ''} · {asignaciones.length} asignación{asignaciones.length !== 1 ? 'es' : ''}
         </p>
       )}
@@ -378,8 +378,8 @@ export default function AsignacionesPage() {
       {loading && <div className="flex justify-center py-16"><Spinner /></div>}
 
       {!loading && groups.length === 0 && (
-        <div className="rounded-xl border-2 border-dashed border-gray-200 bg-white p-12 text-center">
-          <p className="text-gray-400">No hay asignaciones registradas para esta gestión.</p>
+        <div className="rounded-xl border-2 border-dashed border-border bg-surface p-12 text-center">
+          <p className="text-fg-muted">No hay asignaciones registradas para esta gestión.</p>
         </div>
       )}
 
@@ -389,12 +389,12 @@ export default function AsignacionesPage() {
           return (
             <div
               key={g.docente_id}
-              className={`rounded-xl border bg-white shadow-sm overflow-hidden transition-all ${
-                expanded ? 'border-blue-200' : 'border-gray-200'
+              className={`rounded-xl border bg-surface shadow-sm overflow-hidden transition-all ${
+                expanded ? 'border-blue-200' : 'border-border'
               }`}
             >
               {/* Fila del docente */}
-              <div className={`flex items-center gap-4 px-5 py-4 ${expanded ? 'bg-blue-50' : 'hover:bg-gray-50'}`}>
+              <div className={`flex items-center gap-4 px-5 py-4 ${expanded ? 'bg-blue-50' : 'hover:bg-surface-2'}`}>
                 {/* Avatar */}
                 <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-blue-100 font-bold text-blue-700 text-sm">
                   {g.apellido[0]}{g.nombre[0]}
@@ -402,12 +402,12 @@ export default function AsignacionesPage() {
 
                 {/* Info */}
                 <div className="flex-1 min-w-0">
-                  <p className="font-semibold text-gray-900 truncate">
+                  <p className="font-semibold text-fg truncate">
                     {g.apellido}, {g.nombre}
                   </p>
                   <div className="flex flex-wrap items-center gap-1.5 mt-0.5">
                     {g.niveles.map(n => (
-                      <span key={n} className={`rounded-full px-2 py-0.5 text-xs font-medium ${NIVEL_BADGE[n] ?? 'bg-gray-100 text-gray-600'}`}>
+                      <span key={n} className={`rounded-full px-2 py-0.5 text-xs font-medium ${NIVEL_BADGE[n] ?? 'bg-surface-2 text-fg-muted'}`}>
                         {n}
                       </span>
                     ))}
@@ -417,12 +417,12 @@ export default function AsignacionesPage() {
                 {/* Stats */}
                 <div className="hidden sm:flex items-center gap-6 text-center">
                   <div>
-                    <p className="text-lg font-bold text-gray-800">{g.asignaciones.length}</p>
-                    <p className="text-xs text-gray-400">materias</p>
+                    <p className="text-lg font-bold text-fg">{g.asignaciones.length}</p>
+                    <p className="text-xs text-fg-muted">materias</p>
                   </div>
                   <div>
-                    <p className="text-lg font-bold text-gray-800">{g.horas_pedagogicas_total}</p>
-                    <p className="text-xs text-gray-400">h/mes total</p>
+                    <p className="text-lg font-bold text-fg">{g.horas_pedagogicas_total}</p>
+                    <p className="text-xs text-fg-muted">h/mes total</p>
                   </div>
                 </div>
 
@@ -441,7 +441,7 @@ export default function AsignacionesPage() {
                     className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
                       expanded
                         ? 'bg-blue-600 text-white'
-                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                        : 'bg-surface-2 text-fg hover:bg-surface-2'
                     }`}
                   >
                     {expanded ? 'Cerrar' : 'Ver'}
@@ -460,7 +460,7 @@ export default function AsignacionesPage() {
                 <div className="border-t border-blue-100">
                   <table className="w-full text-sm">
                     <thead>
-                      <tr className="bg-gray-50 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
+                      <tr className="bg-bg text-left text-xs font-semibold uppercase tracking-wide text-fg-muted">
                         <th className="px-5 py-2.5">Materia</th>
                         <th className="px-5 py-2.5">Campo / Área</th>
                         <th className="px-5 py-2.5">Nivel</th>
@@ -468,17 +468,17 @@ export default function AsignacionesPage() {
                         <th className="px-5 py-2.5 text-right">Acciones</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-gray-50">
+                    <tbody className="divide-y divide-border">
                       {g.asignaciones.map(a => (
-                        <tr key={a.id} className="hover:bg-gray-50 transition-colors">
-                          <td className="px-5 py-2.5 font-medium text-gray-800">{a.materia.nombre}</td>
-                          <td className="px-5 py-2.5 text-gray-500">{a.materia.campo.nombre}</td>
+                        <tr key={a.id} className="hover:bg-surface-2 transition-colors">
+                          <td className="px-5 py-2.5 font-medium text-fg">{a.materia.nombre}</td>
+                          <td className="px-5 py-2.5 text-fg-muted">{a.materia.campo.nombre}</td>
                           <td className="px-5 py-2.5">
-                            <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${NIVEL_BADGE[a.materia.nivel.nombre] ?? 'bg-gray-100 text-gray-600'}`}>
+                            <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${NIVEL_BADGE[a.materia.nivel.nombre] ?? 'bg-surface-2 text-fg-muted'}`}>
                               {a.materia.nivel.nombre}
                             </span>
                           </td>
-                          <td className="px-5 py-2.5 text-gray-700 font-medium">
+                          <td className="px-5 py-2.5 text-fg font-medium">
                             {a.paralelo.grado.nombre} "{a.paralelo.letra}"
                           </td>
                           <td className="px-5 py-2.5 text-right">
@@ -509,7 +509,7 @@ export default function AsignacionesPage() {
         }
         footer={
           <div className="flex items-center justify-between gap-3">
-            <span className="text-sm text-gray-500">
+            <span className="text-sm text-fg-muted">
               {totalPairs > 0
                 ? `${totalPairs} asignación${totalPairs !== 1 ? 'es' : ''} a crear`
                 : 'Seleccionar paralelo y materias'}
@@ -528,8 +528,8 @@ export default function AsignacionesPage() {
           <div className="mb-5">
             {lockedDocente ? (
               <div>
-                <label className="block mb-1 text-sm font-medium text-gray-700">Docente</label>
-                <div className="rounded-lg border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm text-gray-800">
+                <label className="block mb-1 text-sm font-medium text-fg">Docente</label>
+                <div className="rounded-lg border border-border bg-bg px-3 py-2.5 text-sm text-fg">
                   <span className="font-semibold">{lockedDocente.apellido}, {lockedDocente.nombre}</span>
                 </div>
               </div>
@@ -553,7 +553,7 @@ export default function AsignacionesPage() {
             <button
               type="button"
               onClick={addBlock}
-              className="w-full rounded-xl border-2 border-dashed border-gray-200 py-3 text-sm text-gray-500 hover:border-blue-300 hover:text-blue-600 transition-colors"
+              className="w-full rounded-xl border-2 border-dashed border-border py-3 text-sm text-fg-muted hover:border-blue-300 hover:text-blue-600 transition-colors"
             >
               + Agregar otro paralelo
             </button>

@@ -72,10 +72,10 @@ export default function CentralizadorPage() {
     <div className="space-y-5">
       <div className="flex items-center gap-3">
         <Link to=".." className="text-sm text-blue-600 hover:underline">← Reportes</Link>
-        <h1 className="text-xl font-bold text-gray-900">📊 Centralizador de Notas</h1>
+        <h1 className="text-xl font-bold text-fg">📊 Centralizador de Notas</h1>
       </div>
 
-      <div className="rounded-xl border border-gray-200 bg-white p-5">
+      <div className="rounded-xl border border-border bg-surface p-5">
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-4">
           <SelectGestion   value={gestionId}   onChange={id => { setGestionId(id); setTrimestreId(''); setData(null) }} />
           <SelectTrimestre value={trimestreId} onChange={setTrimestreId} gestionId={gestionId} />
@@ -95,13 +95,13 @@ export default function CentralizadorPage() {
       {error && <div className="rounded-lg bg-red-50 p-3 text-sm text-red-700">{error}</div>}
 
       {data && (
-        <div className="rounded-xl border border-gray-200 bg-white p-5 space-y-4">
+        <div className="rounded-xl border border-border bg-surface p-5 space-y-4">
           <div className="flex items-center justify-between flex-wrap gap-3">
             <div>
-              <div className="font-semibold text-gray-900">
+              <div className="font-semibold text-fg">
                 {data.nivel} – {data.grado} "{data.paralelo}"
               </div>
-              <div className="text-sm text-gray-500">Trimestre {data.trimestre}° · Gestión {data.anno}</div>
+              <div className="text-sm text-fg-muted">Trimestre {data.trimestre}° · Gestión {data.anno}</div>
             </div>
             <div className="flex gap-2">
               <button
@@ -137,28 +137,28 @@ export default function CentralizadorPage() {
               </thead>
               <tbody>
                 {data.estudiantes.map((est, idx) => (
-                  <tr key={est.codigo} className={idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
-                    <td className="border border-gray-200 px-2 py-1 text-center text-gray-500">{idx + 1}</td>
-                    <td className="border border-gray-200 px-3 py-1 font-medium">{est.apellido} {est.nombre}</td>
+                  <tr key={est.codigo} className={idx % 2 === 0 ? 'bg-surface' : 'bg-bg'}>
+                    <td className="border border-border px-2 py-1 text-center text-fg-muted">{idx + 1}</td>
+                    <td className="border border-border px-3 py-1 font-medium">{est.apellido} {est.nombre}</td>
                     {data.materias.map(m => {
                       const total = est.notas[m.id]?.total ?? null
                       return (
-                        <td key={m.id} className={`border border-gray-200 px-1 py-1 text-center ${total !== null && total <= 50 ? 'bg-red-100 text-red-700 font-bold' : ''}`}>
+                        <td key={m.id} className={`border border-border px-1 py-1 text-center ${total !== null && total <= 50 ? 'bg-red-100 text-red-700 font-bold' : ''}`}>
                           {total ?? '—'}
                         </td>
                       )
                     })}
-                    <td className="border border-gray-200 px-2 py-1 text-center font-bold">{est.promedio ?? '—'}</td>
+                    <td className="border border-border px-2 py-1 text-center font-bold">{est.promedio ?? '—'}</td>
                   </tr>
                 ))}
                 {/* Promedio del curso */}
                 <tr className="bg-blue-50 font-bold">
-                  <td className="border border-gray-300 px-2 py-1 text-center">—</td>
-                  <td className="border border-gray-300 px-3 py-1 text-[#1F3864]">Promedio del curso</td>
+                  <td className="border border-border px-2 py-1 text-center">—</td>
+                  <td className="border border-border px-3 py-1 text-[#1F3864]">Promedio del curso</td>
                   {(promediosCurso ?? []).map((p, i) => (
-                    <td key={i} className="border border-gray-300 px-1 py-1 text-center text-[#1F3864]">{p ?? '—'}</td>
+                    <td key={i} className="border border-border px-1 py-1 text-center text-[#1F3864]">{p ?? '—'}</td>
                   ))}
-                  <td className="border border-gray-300 px-2 py-1 text-center text-[#1F3864]">
+                  <td className="border border-border px-2 py-1 text-center text-[#1F3864]">
                     {(() => {
                       const vals = (promediosCurso ?? []).filter((v): v is number => v !== null)
                       return vals.length ? Math.round(vals.reduce((a, b) => a + b, 0) / vals.length) : '—'
@@ -168,7 +168,7 @@ export default function CentralizadorPage() {
               </tbody>
             </table>
           </div>
-          <p className="text-xs text-gray-400">Celdas rojas: nota ≤ 50 (ED). Escala: ED(0-50) DA(51-68) DO(69-84) DP(85-100)</p>
+          <p className="text-xs text-fg-muted">Celdas rojas: nota ≤ 50 (ED). Escala: ED(0-50) DA(51-68) DO(69-84) DP(85-100)</p>
         </div>
       )}
     </div>

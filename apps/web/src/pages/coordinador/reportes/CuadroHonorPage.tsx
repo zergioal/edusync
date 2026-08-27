@@ -68,10 +68,10 @@ export default function CuadroHonorPage() {
     <div className="space-y-5">
       <div className="flex items-center gap-3">
         <Link to=".." className="text-sm text-blue-600 hover:underline">← Reportes</Link>
-        <h1 className="text-xl font-bold text-gray-900">🏆 Cuadro de Honor</h1>
+        <h1 className="text-xl font-bold text-fg">🏆 Cuadro de Honor</h1>
       </div>
 
-      <div className="rounded-xl border border-gray-200 bg-white p-5">
+      <div className="rounded-xl border border-border bg-surface p-5">
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-4">
           <SelectGestion   value={gestionId}   onChange={id => { setGestionId(id); setTrimestreId(''); setData(null) }} />
           <SelectTrimestre value={trimestreId} onChange={setTrimestreId} gestionId={gestionId} />
@@ -91,13 +91,13 @@ export default function CuadroHonorPage() {
       {error && <div className="rounded-lg bg-red-50 p-3 text-sm text-red-700">{error}</div>}
 
       {data && (
-        <div className="rounded-xl border border-gray-200 bg-white p-5 space-y-4">
+        <div className="rounded-xl border border-border bg-surface p-5 space-y-4">
           <div className="flex items-center justify-between flex-wrap gap-3">
             <div>
-              <div className="font-semibold text-gray-900">
+              <div className="font-semibold text-fg">
                 {data.nivel} – {data.grado} "{data.paralelo}"
               </div>
-              <div className="text-sm text-gray-500">
+              <div className="text-sm text-fg-muted">
                 Trimestre {data.trimestre}° · Gestión {data.anno} · {data.estudiantes.length} estudiantes
               </div>
             </div>
@@ -125,9 +125,9 @@ export default function CuadroHonorPage() {
                   <th className="px-3 py-2 text-center">Escala</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody className="divide-y divide-border">
                 {data.estudiantes.map(est => (
-                  <tr key={est.codigo} className={est.posicion <= 3 ? 'bg-amber-50' : 'hover:bg-gray-50'}>
+                  <tr key={est.codigo} className={est.posicion <= 3 ? 'bg-amber-50' : 'hover:bg-surface-2'}>
                     <td className="px-3 py-2 text-center text-base">
                       {est.posicion <= 3 ? MEDAL[est.posicion - 1] : est.posicion}
                     </td>

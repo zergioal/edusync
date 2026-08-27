@@ -19,7 +19,7 @@ export function BloqueoScreen() {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/90 backdrop-blur-sm p-4">
-      <div className="w-full max-w-lg bg-white rounded-2xl shadow-2xl overflow-hidden">
+      <div className="w-full max-w-lg bg-surface rounded-2xl shadow-2xl overflow-hidden">
         {/* Header rojo */}
         <div className="bg-gradient-to-r from-red-600 to-red-700 px-8 py-6 text-white text-center">
           {/* Candado animado */}
@@ -42,7 +42,7 @@ export function BloqueoScreen() {
 
         {/* Cuerpo */}
         <div className="px-8 py-6 space-y-5">
-          <p className="text-gray-700 text-center">
+          <p className="text-fg text-center">
             Para acceder a la información académica de{' '}
             <span className="font-semibold">{user?.nombre} {user?.apellido}</span>,
             es necesario estar al día con el pago de pensiones.
@@ -59,10 +59,10 @@ export function BloqueoScreen() {
           {/* Hijos (si padre con múltiples) */}
           {ef.hijos.length > 1 && (
             <div className="space-y-2">
-              <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Estado por estudiante</p>
+              <p className="text-xs font-semibold uppercase tracking-wide text-fg-muted">Estado por estudiante</p>
               {ef.hijos.map(h => (
                 <div key={h.id} className="flex items-center justify-between rounded-lg border px-3 py-2">
-                  <span className="text-sm text-gray-800">{h.apellido} {h.nombre}</span>
+                  <span className="text-sm text-fg">{h.apellido} {h.nombre}</span>
                   {h.becado ? (
                     <span className="text-xs font-medium text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full">
                       BECADO
@@ -84,11 +84,11 @@ export function BloqueoScreen() {
           {/* QR */}
           {ef.qr_pago_url && (
             <div className="text-center space-y-2">
-              <p className="text-sm font-medium text-gray-700">Paga escaneando el código QR</p>
+              <p className="text-sm font-medium text-fg">Paga escaneando el código QR</p>
               <img
                 src={ef.qr_pago_url}
                 alt="QR de pago"
-                className="mx-auto w-36 h-36 rounded-xl border-2 border-gray-200 object-contain"
+                className="mx-auto w-36 h-36 rounded-xl border-2 border-border object-contain"
                 style={{ animation: 'qrPulse 3s ease-in-out infinite' }}
               />
             </div>
@@ -111,13 +111,13 @@ export function BloqueoScreen() {
             )}
             <button
               onClick={logout}
-              className="text-sm text-gray-400 hover:text-gray-600 transition-colors py-2"
+              className="text-sm text-fg-muted hover:text-fg-muted transition-colors py-2"
             >
               Cerrar sesión
             </button>
           </div>
 
-          <p className="text-xs text-gray-400 text-center">
+          <p className="text-xs text-fg-muted text-center">
             ¿Ya pagaste? Comunícate con la institución para que registren tu pago.
           </p>
         </div>

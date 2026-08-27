@@ -10,7 +10,7 @@ export default function AsistenciaHijoPage() {
 
   if (hijos.length === 0) {
     return (
-      <div className="rounded-xl border-2 border-dashed border-gray-200 p-10 text-center text-sm text-gray-400">
+      <div className="rounded-xl border-2 border-dashed border-border p-10 text-center text-sm text-fg-muted">
         No hay hijos registrados en tu cuenta.
       </div>
     )
@@ -24,12 +24,12 @@ export default function AsistenciaHijoPage() {
     <div className="space-y-5">
       {hijos.length > 1 && (
         <div className="flex items-center gap-2 flex-wrap">
-          <span className="text-sm text-gray-500">Hijo/a:</span>
+          <span className="text-sm text-fg-muted">Hijo/a:</span>
           {hijos.map(h => (
             <button
               key={h.id}
               onClick={() => setHijoId(h.id)}
-              className={`rounded-full px-3 py-1 text-sm font-medium transition ${hijoId === h.id ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
+              className={`rounded-full px-3 py-1 text-sm font-medium transition ${hijoId === h.id ? 'bg-blue-600 text-white' : 'bg-surface-2 text-fg hover:bg-surface-2'}`}
             >
               {h.nombre} {h.apellido}
             </button>

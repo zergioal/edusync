@@ -57,12 +57,12 @@ function CoordinadorHome() {
     <div className="space-y-8">
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">
+          <h1 className="text-2xl font-bold text-fg">
             Bienvenido, {user?.grado_academico ? `${user.grado_academico} ` : ''}{user?.nombre} {user?.apellido}
           </h1>
           <div className="mt-1 flex items-center gap-2">
             <Badge variant="info">{user?.rol ? ROL_LABELS[user.rol] : ''}</Badge>
-            {gestionLabel && <span className="text-sm text-gray-400">{gestionLabel}</span>}
+            {gestionLabel && <span className="text-sm text-fg-muted">{gestionLabel}</span>}
             <button
               onClick={() => setShowEditPerfil(true)}
               className="text-xs font-medium text-indigo-600 hover:text-indigo-800"
@@ -80,7 +80,7 @@ function CoordinadorHome() {
       </div>
 
       <div>
-        <h2 className="mb-4 text-sm font-semibold uppercase tracking-wide text-gray-500">
+        <h2 className="mb-4 text-sm font-semibold uppercase tracking-wide text-fg-muted">
           Resumen académico
         </h2>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">

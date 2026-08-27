@@ -80,7 +80,7 @@ function EstudianteHome() {
     <div className="space-y-6">
 
       {/* Profile card */}
-      <div className="rounded-2xl bg-white border border-gray-200 shadow-sm p-5 flex items-start gap-5">
+      <div className="rounded-2xl bg-surface border border-border shadow-sm p-5 flex items-start gap-5">
         <div className="relative">
           <AvatarDisplay userId={user?.id ?? ''} avatarId={avatarId} size="xl" />
           <button
@@ -91,14 +91,14 @@ function EstudianteHome() {
         </div>
 
         <div className="flex-1 min-w-0">
-          <h1 className="text-2xl font-bold text-gray-900 leading-tight">
+          <h1 className="text-2xl font-bold text-fg leading-tight">
             {user?.nombre} {user?.apellido}
           </h1>
-          <p className="text-sm text-gray-400 mt-0.5 truncate">{user?.email}</p>
+          <p className="text-sm text-fg-muted mt-0.5 truncate">{user?.email}</p>
           <div className="mt-2 flex flex-wrap items-center gap-2">
             <Badge variant="default">Estudiante</Badge>
             {stats?.nivel && (
-              <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${nivelColors[stats.nivel] ?? 'bg-gray-100 text-gray-600'}`}>
+              <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${nivelColors[stats.nivel] ?? 'bg-surface-2 text-fg-muted'}`}>
                 {stats.nivel}
               </span>
             )}
@@ -113,7 +113,7 @@ function EstudianteHome() {
 
       {/* Stats */}
       <div>
-        <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-gray-400">
+        <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-fg-muted">
           Situación académica — trimestre actual
         </h2>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
@@ -140,7 +140,7 @@ function EstudianteHome() {
 
       {/* Quick links */}
       <div>
-        <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-gray-400">Acceso rápido</h2>
+        <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-fg-muted">Acceso rápido</h2>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           {[
             { href: 'notas',      emoji: '📊', label: 'Mis Notas',     color: 'bg-blue-50 hover:bg-blue-100 border-blue-200 text-blue-700'    },
@@ -170,9 +170,9 @@ function EstudianteHome() {
 function SectionPlaceholder({ title }: { title: string }) {
   return (
     <div className="space-y-4">
-      <h1 className="text-2xl font-bold text-gray-900">{title}</h1>
-      <div className="rounded-xl border-2 border-dashed border-gray-200 bg-white p-12 text-center">
-        <p className="text-gray-400">Módulo en construcción</p>
+      <h1 className="text-2xl font-bold text-fg">{title}</h1>
+      <div className="rounded-xl border-2 border-dashed border-border bg-surface p-12 text-center">
+        <p className="text-fg-muted">Módulo en construcción</p>
       </div>
     </div>
   )

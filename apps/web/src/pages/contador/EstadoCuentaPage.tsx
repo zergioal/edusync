@@ -82,29 +82,29 @@ export default function EstadoCuentaPage() {
   return (
     <div className="space-y-6">
       {/* Breadcrumb */}
-      <div className="flex items-center gap-2 text-sm text-gray-500">
-        <Link to="/dashboard/admin/finanzas" className="hover:text-gray-700">Pensiones</Link>
+      <div className="flex items-center gap-2 text-sm text-fg-muted">
+        <Link to="/dashboard/admin/finanzas" className="hover:text-fg">Pensiones</Link>
         <span>/</span>
-        <Link to="/dashboard/admin/finanzas/morosidad" className="hover:text-gray-700">Morosidad</Link>
+        <Link to="/dashboard/admin/finanzas/morosidad" className="hover:text-fg">Morosidad</Link>
         <span>/</span>
-        <span className="text-gray-900 font-medium">Estado de cuenta</span>
+        <span className="text-fg font-medium">Estado de cuenta</span>
       </div>
 
       {/* Encabezado estudiante */}
-      <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
+      <div className="bg-surface rounded-xl border border-border shadow-sm p-6">
         <div className="flex items-start justify-between flex-wrap gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">
+            <h1 className="text-2xl font-bold text-fg">
               {estudiante.apellido} {estudiante.nombre}
             </h1>
-            <p className="text-sm text-gray-500 mt-1">
+            <p className="text-sm text-fg-muted mt-1">
               Código: <span className="font-mono">{estudiante.codigo}</span>
               {estudiante.paralelo && <> · {estudiante.paralelo}</>}
             </p>
           </div>
           <div className="flex items-center gap-3">
             <select value={gestionId} onChange={e => setGestionId(e.target.value)}
-              className="border border-gray-300 rounded-lg px-3 py-2 text-sm">
+              className="border border-border rounded-lg px-3 py-2 text-sm">
               {gestiones.map(g => <option key={g.id} value={g.id}>Gestión {g.anno}</option>)}
             </select>
             <span className={`inline-flex items-center rounded-full px-3 py-1 text-sm font-medium ${
@@ -117,39 +117,39 @@ export default function EstadoCuentaPage() {
       </div>
 
       {/* Tabla de meses */}
-      <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-100">
-          <h2 className="font-semibold text-gray-900">Gestión {gestion.anno}</h2>
+      <div className="bg-surface rounded-xl border border-border shadow-sm overflow-hidden">
+        <div className="px-6 py-4 border-b border-border">
+          <h2 className="font-semibold text-fg">Gestión {gestion.anno}</h2>
         </div>
         {meses.length === 0 ? (
-          <div className="p-12 text-center text-gray-400 text-sm">
+          <div className="p-12 text-center text-fg-muted text-sm">
             No se han generado pensiones para esta gestión
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
-              <thead className="bg-gray-50 border-b border-gray-200">
+              <thead className="bg-bg border-b border-border">
                 <tr>
                   {['Mes', 'Monto', 'Estado', 'Fecha pago', 'Comprobante', 'Mora', 'Acciones'].map(h => (
-                    <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap">
+                    <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-fg-muted uppercase tracking-wide whitespace-nowrap">
                       {h}
                     </th>
                   ))}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody className="divide-y divide-border">
                 {meses.map(m => (
                   <tr key={m.id}
                     className={`transition-colors ${
-                      m.mes === mesActual ? 'bg-yellow-50 hover:bg-yellow-100' : 'hover:bg-gray-50'
+                      m.mes === mesActual ? 'bg-yellow-50 hover:bg-yellow-100' : 'hover:bg-surface-2'
                     }`}>
-                    <td className="px-4 py-3 font-medium text-gray-900">
+                    <td className="px-4 py-3 font-medium text-fg">
                       {m.nombre_mes}
                       {m.mes === mesActual && (
                         <span className="ml-1.5 text-xs bg-yellow-200 text-yellow-800 rounded px-1">actual</span>
                       )}
                     </td>
-                    <td className="px-4 py-3 font-semibold text-gray-900">Bs. {m.monto.toFixed(2)}</td>
+                    <td className="px-4 py-3 font-semibold text-fg">Bs. {m.monto.toFixed(2)}</td>
                     <td className="px-4 py-3">
                       <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
                         m.pagado ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
@@ -157,10 +157,10 @@ export default function EstadoCuentaPage() {
                         {m.pagado ? 'Pagado' : 'Pendiente'}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-gray-600">
+                    <td className="px-4 py-3 text-fg-muted">
                       {m.fecha_pago ? new Date(m.fecha_pago).toLocaleDateString('es-BO') : '—'}
                     </td>
-                    <td className="px-4 py-3 font-mono text-xs text-gray-600">{m.comprobante ?? '—'}</td>
+                    <td className="px-4 py-3 font-mono text-xs text-fg-muted">{m.comprobante ?? '—'}</td>
                     <td className="px-4 py-3">
                       {!m.pagado && m.dias_mora > 0
                         ? <span className="text-red-500 text-xs font-medium">{m.dias_mora}d</span>
@@ -202,10 +202,10 @@ export default function EstadoCuentaPage() {
           <p className="text-xl font-bold text-red-700 mt-1">Bs. {resumen.total_pendiente.toFixed(2)}</p>
           <p className="text-xs text-red-400">{resumen.meses_pendientes} meses</p>
         </div>
-        <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 text-center">
-          <p className="text-xs text-gray-500 font-medium">Meses pagados</p>
-          <p className="text-xl font-bold text-gray-900 mt-1">{resumen.meses_pagados}</p>
-          <p className="text-xs text-gray-400">de {meses.length} generados</p>
+        <div className="bg-bg border border-border rounded-xl p-4 text-center">
+          <p className="text-xs text-fg-muted font-medium">Meses pagados</p>
+          <p className="text-xl font-bold text-fg mt-1">{resumen.meses_pagados}</p>
+          <p className="text-xs text-fg-muted">de {meses.length} generados</p>
         </div>
         <div className={`border rounded-xl p-4 text-center ${resumen.al_dia ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'}`}>
           <p className={`text-xs font-medium ${resumen.al_dia ? 'text-green-600' : 'text-red-500'}`}>Estado mes actual</p>

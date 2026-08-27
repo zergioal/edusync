@@ -38,19 +38,19 @@ export function Modal({ isOpen, onClose, title, children, maxWidth = 'md', foote
 
       {/* Panel */}
       <div
-        className={`relative w-full ${widthMap[maxWidth]} rounded-2xl bg-white shadow-2xl`}
+        className={`relative w-full ${widthMap[maxWidth]} rounded-2xl bg-surface shadow-2xl`}
         role="dialog"
         aria-modal="true"
         aria-labelledby="modal-title"
       >
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-gray-100 px-6 py-4">
-          <h2 id="modal-title" className="text-base font-semibold text-gray-900">
+        <div className="flex items-center justify-between border-b border-border px-6 py-4">
+          <h2 id="modal-title" className="text-base font-semibold text-fg">
             {title}
           </h2>
           <button
             onClick={onClose}
-            className="rounded-lg p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors"
+            className="rounded-lg p-1 text-fg-muted hover:bg-surface-2 hover:text-fg-muted transition-colors"
             aria-label="Cerrar"
           >
             <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
@@ -64,7 +64,7 @@ export function Modal({ isOpen, onClose, title, children, maxWidth = 'md', foote
 
         {/* Footer opcional */}
         {footer && (
-          <div className="border-t border-gray-100 px-6 py-4">{footer}</div>
+          <div className="border-t border-border px-6 py-4">{footer}</div>
         )}
       </div>
     </div>

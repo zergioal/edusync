@@ -82,12 +82,12 @@ function AdminHome() {
     <div className="space-y-8">
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">
+          <h1 className="text-2xl font-bold text-fg">
             Bienvenido, {user?.grado_academico ? `${user.grado_academico} ` : ''}{user?.nombre} {user?.apellido}
           </h1>
           <div className="mt-1 flex items-center gap-2">
             <Badge variant="info">{user?.rol ? ROL_LABELS[user.rol] : ''}</Badge>
-            {gestionLabel && <span className="text-sm text-gray-400">{gestionLabel}</span>}
+            {gestionLabel && <span className="text-sm text-fg-muted">{gestionLabel}</span>}
             <button
               onClick={() => setShowEditPerfil(true)}
               className="text-xs font-medium text-indigo-600 hover:text-indigo-800"
@@ -105,7 +105,7 @@ function AdminHome() {
       </div>
 
       <div>
-        <h2 className="mb-4 text-sm font-semibold uppercase tracking-wide text-gray-500">
+        <h2 className="mb-4 text-sm font-semibold uppercase tracking-wide text-fg-muted">
           Resumen de la institución
         </h2>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
@@ -117,20 +117,20 @@ function AdminHome() {
       </div>
 
       <div>
-        <h2 className="mb-4 text-sm font-semibold uppercase tracking-wide text-gray-500">
+        <h2 className="mb-4 text-sm font-semibold uppercase tracking-wide text-fg-muted">
           Últimos comunicados
         </h2>
-        <div className="rounded-xl border border-gray-100 bg-white divide-y divide-gray-50 shadow-sm overflow-hidden">
+        <div className="rounded-xl border border-border bg-surface divide-y divide-border shadow-sm overflow-hidden">
           {loadingAnuncios ? (
-            <div className="px-5 py-12 text-center text-sm text-gray-400">Cargando…</div>
+            <div className="px-5 py-12 text-center text-sm text-fg-muted">Cargando…</div>
           ) : anuncios.length === 0 ? (
-            <div className="px-5 py-12 text-center text-sm text-gray-400">No hay comunicados recientes</div>
+            <div className="px-5 py-12 text-center text-sm text-fg-muted">No hay comunicados recientes</div>
           ) : (
             anuncios.slice(0, 5).map(a => (
               <div key={a.id} className="flex items-center gap-4 px-5 py-3.5">
                 <span className={`h-2 w-2 rounded-full flex-shrink-0 ${a.destacado ? 'bg-amber-400' : 'bg-blue-400'}`} />
-                <p className="flex-1 text-sm text-gray-700 truncate">{a.titulo}</p>
-                <span className="text-xs text-gray-400 whitespace-nowrap">{fmt(a.publicado_en)}</span>
+                <p className="flex-1 text-sm text-fg truncate">{a.titulo}</p>
+                <span className="text-xs text-fg-muted whitespace-nowrap">{fmt(a.publicado_en)}</span>
               </div>
             ))
           )}
@@ -147,9 +147,9 @@ function AdminHome() {
 function SectionPlaceholder({ title }: { title: string }) {
   return (
     <div className="space-y-4">
-      <h1 className="text-2xl font-bold text-gray-900">{title}</h1>
-      <div className="rounded-xl border-2 border-dashed border-gray-200 bg-white p-12 text-center">
-        <p className="text-gray-400">Módulo en construcción</p>
+      <h1 className="text-2xl font-bold text-fg">{title}</h1>
+      <div className="rounded-xl border-2 border-dashed border-border bg-surface p-12 text-center">
+        <p className="text-fg-muted">Módulo en construcción</p>
       </div>
     </div>
   )

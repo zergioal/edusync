@@ -77,10 +77,10 @@ function NuevoDocenteModal({ onClose, onSaved }: { onClose: () => void; onSaved:
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-      <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl space-y-4">
+      <div className="w-full max-w-md rounded-2xl bg-surface p-6 shadow-xl space-y-4">
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-bold text-gray-900">Registrar docente</h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-xl leading-none">×</button>
+          <h2 className="text-lg font-bold text-fg">Registrar docente</h2>
+          <button onClick={onClose} className="text-fg-muted hover:text-fg-muted text-xl leading-none">×</button>
         </div>
 
         {error && <div className="rounded-lg bg-red-50 p-3 text-sm text-red-700">{error}</div>}
@@ -88,22 +88,22 @@ function NuevoDocenteModal({ onClose, onSaved }: { onClose: () => void; onSaved:
         <form onSubmit={submit} className="space-y-3">
           <div className="grid grid-cols-2 gap-3">
             <label className="flex flex-col gap-1">
-              <span className="text-xs font-medium text-gray-600 uppercase tracking-wide">Apellidos</span>
+              <span className="text-xs font-medium text-fg-muted uppercase tracking-wide">Apellidos</span>
               <input required value={form.apellido} onChange={set('apellido')}
-                className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                className="rounded-lg border border-border px-3 py-2 text-sm focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand" />
             </label>
             <label className="flex flex-col gap-1">
-              <span className="text-xs font-medium text-gray-600 uppercase tracking-wide">Nombres</span>
+              <span className="text-xs font-medium text-fg-muted uppercase tracking-wide">Nombres</span>
               <input required value={form.nombre} onChange={set('nombre')}
-                className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                className="rounded-lg border border-border px-3 py-2 text-sm focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand" />
             </label>
           </div>
           <label className="flex flex-col gap-1">
-            <span className="text-xs font-medium text-gray-600 uppercase tracking-wide">Correo electrónico</span>
+            <span className="text-xs font-medium text-fg-muted uppercase tracking-wide">Correo electrónico</span>
             <input required type="email" value={form.email} onChange={set('email')}
-              className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+              className="rounded-lg border border-border px-3 py-2 text-sm focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand" />
           </label>
-          <p className="text-xs text-gray-400">Contraseña temporal: <code className="font-mono">Docente2026#</code></p>
+          <p className="text-xs text-fg-muted">Contraseña temporal: <code className="font-mono">Docente2026#</code></p>
           <div className="flex justify-end gap-2 pt-2">
             <Button type="button" variant="ghost" onClick={onClose} disabled={saving}>Cancelar</Button>
             <Button type="submit" loading={saving}>Crear docente</Button>
@@ -159,16 +159,16 @@ function DocentePerfilModal({ docenteId, onClose, onSaved }: {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-      <div className="w-full max-w-xl rounded-2xl bg-white shadow-xl flex flex-col max-h-[90vh]">
+      <div className="w-full max-w-xl rounded-2xl bg-surface shadow-xl flex flex-col max-h-[90vh]">
 
         {/* Header */}
-        <div className="flex items-start justify-between px-6 pt-5 pb-3 border-b border-gray-100">
+        <div className="flex items-start justify-between px-6 pt-5 pb-3 border-b border-border">
           <div>
-            <p className="text-xs font-medium text-gray-400 uppercase tracking-wide">Perfil docente</p>
-            <h2 className="text-lg font-bold text-gray-900">{nombre}</h2>
-            {doc && <p className="text-sm text-gray-400 mt-0.5">{doc.usuario.email}</p>}
+            <p className="text-xs font-medium text-fg-muted uppercase tracking-wide">Perfil docente</p>
+            <h2 className="text-lg font-bold text-fg">{nombre}</h2>
+            {doc && <p className="text-sm text-fg-muted mt-0.5">{doc.usuario.email}</p>}
           </div>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-xl leading-none mt-0.5">×</button>
+          <button onClick={onClose} className="text-fg-muted hover:text-fg-muted text-xl leading-none mt-0.5">×</button>
         </div>
 
         {/* Tabs */}
@@ -176,7 +176,7 @@ function DocentePerfilModal({ docenteId, onClose, onSaved }: {
           {(['datos', 'asignaciones'] as PerfilTab[]).map(t => (
             <button key={t} onClick={() => setTab(t)}
               className={`px-4 py-2 rounded-t-lg text-sm font-medium capitalize transition-all border-b-2 ${
-                tab === t ? 'border-blue-600 text-blue-700 bg-blue-50' : 'border-transparent text-gray-500 hover:text-gray-700'
+                tab === t ? 'border-blue-600 text-blue-700 bg-blue-50' : 'border-transparent text-fg-muted hover:text-fg'
               }`}
             >
               {t === 'datos' ? 'Datos' : `Asignaciones${doc ? ` (${doc.asignaciones.length})` : ''}`}
@@ -195,7 +195,7 @@ function DocentePerfilModal({ docenteId, onClose, onSaved }: {
         </div>
 
         {/* Footer: delete */}
-        <div className="border-t border-gray-100 px-6 py-3 flex justify-end">
+        <div className="border-t border-border px-6 py-3 flex justify-end">
           <button
             onClick={handleDelete}
             disabled={deleting}
@@ -239,21 +239,21 @@ function DatosTab({ doc, onSaved }: { doc: DocenteDetalle; onSaved: () => void }
       {error && <div className="rounded-lg bg-red-50 p-3 text-sm text-red-700">{error}</div>}
       <div className="grid grid-cols-2 gap-3">
         <label className="flex flex-col gap-1">
-          <span className="text-xs font-medium text-gray-600 uppercase tracking-wide">Apellidos</span>
+          <span className="text-xs font-medium text-fg-muted uppercase tracking-wide">Apellidos</span>
           <input required value={form.apellido} onChange={set('apellido')}
-            className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+            className="rounded-lg border border-border px-3 py-2 text-sm focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand" />
         </label>
         <label className="flex flex-col gap-1">
-          <span className="text-xs font-medium text-gray-600 uppercase tracking-wide">Nombres</span>
+          <span className="text-xs font-medium text-fg-muted uppercase tracking-wide">Nombres</span>
           <input required value={form.nombre} onChange={set('nombre')}
-            className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+            className="rounded-lg border border-border px-3 py-2 text-sm focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand" />
         </label>
       </div>
       <label className="flex flex-col gap-1">
-        <span className="text-xs font-medium text-gray-600 uppercase tracking-wide">Correo electrónico</span>
+        <span className="text-xs font-medium text-fg-muted uppercase tracking-wide">Correo electrónico</span>
         <input required type="email" value={form.email} onChange={set('email')}
-          className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500" />
-        <p className="text-xs text-gray-400">El correo se actualizará también en la cuenta de acceso.</p>
+          className="rounded-lg border border-border px-3 py-2 text-sm focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand" />
+        <p className="text-xs text-fg-muted">El correo se actualizará también en la cuenta de acceso.</p>
       </label>
       <div className="flex justify-end">
         <Button type="submit" loading={saving}>Guardar cambios</Button>
@@ -318,29 +318,29 @@ function AsignacionesTab({ doc, onChanged }: { doc: DocenteDetalle; onChanged: (
     <div className="space-y-5">
       {/* Lista actual */}
       {doc.asignaciones.length === 0
-        ? <p className="text-sm text-gray-400 italic">Sin asignaciones registradas.</p>
+        ? <p className="text-sm text-fg-muted italic">Sin asignaciones registradas.</p>
         : (
-          <div className="rounded-xl border border-gray-200 overflow-hidden">
+          <div className="rounded-xl border border-border overflow-hidden">
             <table className="w-full text-sm">
               <thead>
-                <tr className="bg-gray-50 text-left text-xs font-semibold uppercase tracking-wide text-gray-500 border-b border-gray-100">
+                <tr className="bg-bg text-left text-xs font-semibold uppercase tracking-wide text-fg-muted border-b border-border">
                   <th className="px-4 py-2.5">Materia</th>
                   <th className="px-4 py-2.5">Paralelo</th>
                   <th className="px-4 py-2.5">Gestión</th>
                   <th className="px-3 py-2.5"></th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-50">
+              <tbody className="divide-y divide-border">
                 {doc.asignaciones.map(a => (
-                  <tr key={a.id} className="hover:bg-gray-50">
+                  <tr key={a.id} className="hover:bg-surface-2">
                     <td className="px-4 py-2.5">
-                      <p className="font-medium text-gray-800">{a.materia.nombre}</p>
-                      <p className="text-xs text-gray-400">{a.materia.campo.nombre}</p>
+                      <p className="font-medium text-fg">{a.materia.nombre}</p>
+                      <p className="text-xs text-fg-muted">{a.materia.campo.nombre}</p>
                     </td>
-                    <td className="px-4 py-2.5 text-gray-600">
+                    <td className="px-4 py-2.5 text-fg-muted">
                       {a.paralelo?.grado?.nivel?.nombre} · {a.paralelo?.grado?.nombre} "{a.paralelo?.letra}"
                     </td>
-                    <td className="px-4 py-2.5 text-gray-600">{a.gestion.anno}</td>
+                    <td className="px-4 py-2.5 text-fg-muted">{a.gestion.anno}</td>
                     <td className="px-3 py-2.5 text-right">
                       <button
                         onClick={() => removeAsig(a.id)}
@@ -426,21 +426,21 @@ export default function DocentesPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Docentes</h1>
-          <p className="text-sm text-gray-500 mt-0.5">Registro y gestión del cuerpo docente</p>
+          <h1 className="text-2xl font-bold text-fg">Docentes</h1>
+          <p className="text-sm text-fg-muted mt-0.5">Registro y gestión del cuerpo docente</p>
         </div>
         <Button onClick={() => setModal('new')}>+ Registrar docente</Button>
       </div>
 
       {/* Buscador */}
-      <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+      <div className="rounded-xl border border-border bg-surface p-4 shadow-sm">
         <form onSubmit={e => { e.preventDefault(); setBuscar(buscarInput) }} className="flex gap-2 items-end">
           <div className="flex flex-col gap-1 flex-1">
-            <label className="text-xs font-medium uppercase tracking-wide text-gray-500">Buscar</label>
+            <label className="text-xs font-medium uppercase tracking-wide text-fg-muted">Buscar</label>
             <input
               type="text" value={buscarInput} onChange={e => setBuscarInput(e.target.value)}
               placeholder="Nombre, apellido o correo…"
-              className="rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="rounded-lg border border-border px-3 py-2 text-sm shadow-sm focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand"
             />
           </div>
           <Button type="submit" variant="secondary" size="sm">Buscar</Button>
@@ -450,16 +450,16 @@ export default function DocentesPage() {
             </Button>
           )}
         </form>
-        <p className="text-sm text-gray-500 mt-2">
+        <p className="text-sm text-fg-muted mt-2">
           {!loading && `${docentes.length} docente${docentes.length !== 1 ? 's' : ''}`}
         </p>
       </div>
 
       {/* Tabla */}
-      <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-x-auto">
+      <div className="rounded-xl border border-border bg-surface shadow-sm overflow-x-auto">
         <table className="w-full min-w-[700px] text-sm">
           <thead>
-            <tr className="border-b border-gray-100 bg-slate-50 text-left text-xs font-semibold uppercase tracking-wide text-gray-400">
+            <tr className="border-b border-border bg-slate-50 text-left text-xs font-semibold uppercase tracking-wide text-fg-muted">
               <th className="px-4 py-3 text-center w-10">N°</th>
               <th className="px-4 py-3">Apellidos y Nombres</th>
               <th className="px-4 py-3">Correo</th>
@@ -469,13 +469,13 @@ export default function DocentesPage() {
               <th className="px-4 py-3 text-right">Acciones</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-50">
+          <tbody className="divide-y divide-border">
             {loading && (
               <tr><td colSpan={7} className="py-12 text-center"><Spinner /></td></tr>
             )}
             {!loading && docentes.length === 0 && (
               <tr>
-                <td colSpan={7} className="py-12 text-center text-gray-400">No hay docentes registrados.</td>
+                <td colSpan={7} className="py-12 text-center text-fg-muted">No hay docentes registrados.</td>
               </tr>
             )}
             {docentes.map((doc, idx) => {
@@ -489,13 +489,13 @@ export default function DocentesPage() {
               ))]
               return (
                 <tr key={doc.id} className="hover:bg-slate-50/60 transition-colors align-top">
-                  <td className="px-4 py-3 text-center text-xs font-mono text-gray-400 select-none">
+                  <td className="px-4 py-3 text-center text-xs font-mono text-fg-muted select-none">
                     {idx + 1}
                   </td>
-                  <td className="px-4 py-3 font-medium text-gray-900 whitespace-nowrap">
+                  <td className="px-4 py-3 font-medium text-fg whitespace-nowrap">
                     {doc.usuario.apellido}, {doc.usuario.nombre}
                   </td>
-                  <td className="px-4 py-3 text-gray-400 text-xs">{doc.usuario.email}</td>
+                  <td className="px-4 py-3 text-fg-muted text-xs">{doc.usuario.email}</td>
                   <td className="px-4 py-3">
                     <div className="flex flex-wrap gap-1">
                       {materias.slice(0, 2).map(m => (
@@ -504,13 +504,13 @@ export default function DocentesPage() {
                       {materias.length > 2 && (
                         <span className="inline-block rounded-md bg-slate-100 px-2 py-0.5 text-xs text-slate-400">+{materias.length - 2} más</span>
                       )}
-                      {materias.length === 0 && <span className="text-xs text-gray-300 italic">Sin materias</span>}
+                      {materias.length === 0 && <span className="text-xs text-fg-muted italic">Sin materias</span>}
                     </div>
                   </td>
                   <td className="px-4 py-3 text-center">
                     {horasMes > 0
                       ? <span className="inline-flex items-center rounded-full bg-indigo-50 px-2.5 py-0.5 text-xs font-semibold text-indigo-600">{horasMes} h</span>
-                      : <span className="text-gray-300">—</span>
+                      : <span className="text-fg-muted">—</span>
                     }
                   </td>
                   <td className="px-4 py-3">
@@ -521,7 +521,7 @@ export default function DocentesPage() {
                       {cursos.length > 3 && (
                         <span className="inline-block rounded-md bg-indigo-50 px-2 py-0.5 text-xs text-indigo-400">+{cursos.length - 3}</span>
                       )}
-                      {cursos.length === 0 && <span className="text-xs text-gray-300 italic">—</span>}
+                      {cursos.length === 0 && <span className="text-xs text-fg-muted italic">—</span>}
                     </div>
                   </td>
                   <td className="px-4 py-3 text-right">

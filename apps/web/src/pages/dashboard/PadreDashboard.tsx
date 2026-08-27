@@ -48,17 +48,17 @@ function PadreHome() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">
+        <h1 className="text-2xl font-bold text-fg">
           Bienvenido, {user?.nombre} {user?.apellido}
         </h1>
         <div className="mt-1 flex items-center gap-2">
           <Badge variant="warning">Padre/Tutor</Badge>
-          {gestionLabel && <span className="text-sm text-gray-400">{gestionLabel}</span>}
+          {gestionLabel && <span className="text-sm text-fg-muted">{gestionLabel}</span>}
         </div>
       </div>
 
       <div>
-        <h2 className="mb-4 text-sm font-semibold uppercase tracking-wide text-gray-500">
+        <h2 className="mb-4 text-sm font-semibold uppercase tracking-wide text-fg-muted">
           Resumen familiar
         </h2>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
@@ -79,14 +79,14 @@ function PadreHome() {
       </div>
 
       <div>
-        <h2 className="mb-4 text-sm font-semibold uppercase tracking-wide text-gray-500">
+        <h2 className="mb-4 text-sm font-semibold uppercase tracking-wide text-fg-muted">
           Últimos comunicados
         </h2>
-        <div className="rounded-xl border border-gray-100 bg-white shadow-sm divide-y divide-gray-50 overflow-hidden">
+        <div className="rounded-xl border border-border bg-surface shadow-sm divide-y divide-border overflow-hidden">
           {loadingAnuncios ? (
-            <div className="px-5 py-12 text-center text-sm text-gray-400">Cargando…</div>
+            <div className="px-5 py-12 text-center text-sm text-fg-muted">Cargando…</div>
           ) : anuncios.length === 0 ? (
-            <div className="px-5 py-12 text-center text-sm text-gray-400">
+            <div className="px-5 py-12 text-center text-sm text-fg-muted">
               No hay comunicados recientes
             </div>
           ) : (
@@ -94,16 +94,16 @@ function PadreHome() {
               <button
                 key={a.id}
                 onClick={() => navigate('/dashboard/padre/anuncios')}
-                className="w-full text-left px-5 py-3 hover:bg-gray-50 transition-colors"
+                className="w-full text-left px-5 py-3 hover:bg-surface-2 transition-colors"
               >
                 <div className="flex items-center justify-between gap-3">
-                  <p className="text-sm font-medium text-gray-900 truncate">
+                  <p className="text-sm font-medium text-fg truncate">
                     {a.destacado && <span className="mr-1.5 text-amber-500">★</span>}
                     {a.titulo}
                   </p>
-                  <span className="flex-shrink-0 text-xs text-gray-400">{fmt(a.publicado_en)}</span>
+                  <span className="flex-shrink-0 text-xs text-fg-muted">{fmt(a.publicado_en)}</span>
                 </div>
-                <p className="mt-0.5 truncate text-xs text-gray-400">{a.contenido}</p>
+                <p className="mt-0.5 truncate text-xs text-fg-muted">{a.contenido}</p>
               </button>
             ))
           )}
@@ -111,22 +111,22 @@ function PadreHome() {
       </div>
 
       <div>
-        <h2 className="mb-4 text-sm font-semibold uppercase tracking-wide text-gray-500">
+        <h2 className="mb-4 text-sm font-semibold uppercase tracking-wide text-fg-muted">
           Estado de pensiones
         </h2>
         {hijos.length === 0 ? (
-          <div className="rounded-xl border border-gray-100 bg-white shadow-sm px-5 py-12 text-center text-sm text-gray-400">
+          <div className="rounded-xl border border-border bg-surface shadow-sm px-5 py-12 text-center text-sm text-fg-muted">
             No hay hijos registrados en tu cuenta.
           </div>
         ) : (
-          <div className="rounded-xl border border-gray-100 bg-white shadow-sm divide-y divide-gray-50 overflow-hidden">
+          <div className="rounded-xl border border-border bg-surface shadow-sm divide-y divide-border overflow-hidden">
             {hijos.map(h => (
               <button
                 key={h.id}
                 onClick={() => navigate(`/dashboard/padre/hijo/${h.id}`)}
-                className="w-full flex items-center justify-between px-5 py-3 hover:bg-gray-50 transition-colors"
+                className="w-full flex items-center justify-between px-5 py-3 hover:bg-surface-2 transition-colors"
               >
-                <span className="text-sm font-medium text-gray-800">{h.apellido}, {h.nombre}</span>
+                <span className="text-sm font-medium text-fg">{h.apellido}, {h.nombre}</span>
                 {h.becado
                   ? <Badge variant="info">Becado</Badge>
                   : h.bloqueado

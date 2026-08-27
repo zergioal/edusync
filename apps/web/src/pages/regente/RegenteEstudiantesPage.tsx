@@ -39,21 +39,21 @@ export default function RegenteEstudiantesPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Estudiantes</h1>
-        <p className="text-sm text-gray-500 mt-0.5">Selecciona un paralelo para ver sus estudiantes</p>
+        <h1 className="text-2xl font-bold text-fg">Estudiantes</h1>
+        <p className="text-sm text-fg-muted mt-0.5">Selecciona un paralelo para ver sus estudiantes</p>
       </div>
 
       {/* Selector de paralelo */}
-      <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+      <div className="rounded-xl border border-border bg-surface p-4 shadow-sm">
         {loadingP ? (
           <Spinner />
         ) : (
           <div className="flex flex-col gap-1">
-            <label className="text-xs font-medium uppercase tracking-wide text-gray-500">Paralelo</label>
+            <label className="text-xs font-medium uppercase tracking-wide text-fg-muted">Paralelo</label>
             <select
               value={paraleloId}
               onChange={e => setParaleloId(e.target.value)}
-              className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 w-72"
+              className="rounded-lg border border-border px-3 py-2 text-sm focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand w-72"
             >
               <option value="">— Seleccionar paralelo —</option>
               {paralelos.map(p => (
@@ -66,34 +66,34 @@ export default function RegenteEstudiantesPage() {
 
       {/* Tabla de estudiantes */}
       {paraleloId && (
-        <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+        <div className="rounded-xl border border-border bg-surface shadow-sm overflow-hidden">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-gray-100 bg-gray-50 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
+              <tr className="border-b border-border bg-bg text-left text-xs font-semibold uppercase tracking-wide text-fg-muted">
                 <th className="px-5 py-3">Código</th>
                 <th className="px-5 py-3">Apellidos y Nombres</th>
                 <th className="px-5 py-3 text-right">Acciones</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-50">
+            <tbody className="divide-y divide-border">
               {loadingE && (
                 <tr><td colSpan={3} className="py-12 text-center"><Spinner /></td></tr>
               )}
               {!loadingE && estudiantes.length === 0 && (
                 <tr>
-                  <td colSpan={3} className="py-12 text-center text-gray-400">
+                  <td colSpan={3} className="py-12 text-center text-fg-muted">
                     No hay estudiantes matriculados en este paralelo.
                   </td>
                 </tr>
               )}
               {estudiantes.map(est => (
-                <tr key={est.id} className="hover:bg-gray-50 transition-colors">
+                <tr key={est.id} className="hover:bg-surface-2 transition-colors">
                   <td className="px-5 py-3">
-                    <span className="font-mono text-xs bg-gray-100 px-2 py-1 rounded text-gray-700">
+                    <span className="font-mono text-xs bg-surface-2 px-2 py-1 rounded text-fg">
                       {est.codigo}
                     </span>
                   </td>
-                  <td className="px-5 py-3 font-medium text-gray-900">
+                  <td className="px-5 py-3 font-medium text-fg">
                     {est.usuario.apellido}, {est.usuario.nombre}
                   </td>
                   <td className="px-5 py-3 text-right">

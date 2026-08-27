@@ -48,15 +48,15 @@ export default function MisMateriasPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Mis Materias</h1>
-        <p className="mt-0.5 text-sm text-gray-500">
+        <h1 className="text-2xl font-bold text-fg">Mis Materias</h1>
+        <p className="mt-0.5 text-sm text-fg-muted">
           {asignaciones.length} asignación{asignaciones.length !== 1 ? 'es' : ''} activa{asignaciones.length !== 1 ? 's' : ''}
         </p>
       </div>
 
       {asignaciones.length === 0 && (
-        <div className="rounded-xl border-2 border-dashed border-gray-200 bg-white p-12 text-center">
-          <p className="text-gray-400">No tienes materias asignadas en este trimestre.</p>
+        <div className="rounded-xl border-2 border-dashed border-border bg-surface p-12 text-center">
+          <p className="text-fg-muted">No tienes materias asignadas en este trimestre.</p>
         </div>
       )}
 
@@ -68,7 +68,7 @@ export default function MisMateriasPage() {
           return (
             <div
               key={a.id}
-              className="flex flex-col rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden hover:shadow-md transition-shadow"
+              className="flex flex-col rounded-xl border border-border bg-surface shadow-sm overflow-hidden hover:shadow-md transition-shadow"
             >
               {/* Franja superior con color del nivel */}
               <div className={`${bgColor} px-5 py-3 flex items-center justify-between`}>
@@ -81,10 +81,10 @@ export default function MisMateriasPage() {
               {/* Contenido */}
               <div className="flex flex-1 flex-col gap-3 p-5">
                 <div>
-                  <p className="text-xs font-medium uppercase tracking-wide text-gray-400">
+                  <p className="text-xs font-medium uppercase tracking-wide text-fg-muted">
                     {a.materia.campo.nombre}
                   </p>
-                  <h2 className="mt-0.5 text-lg font-bold text-gray-900 leading-tight">
+                  <h2 className="mt-0.5 text-lg font-bold text-fg leading-tight">
                     {a.materia.nombre}
                   </h2>
                 </div>
@@ -93,20 +93,20 @@ export default function MisMateriasPage() {
                   <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-blue-100 font-bold text-blue-700 text-sm">
                     {a.paralelo.letra}
                   </span>
-                  <span className="text-sm text-gray-700">
+                  <span className="text-sm text-fg">
                     {a.paralelo.grado.nombre}
                   </span>
                 </div>
 
                 {/* Stats */}
-                <div className="mt-auto flex gap-4 border-t border-gray-100 pt-3">
+                <div className="mt-auto flex gap-4 border-t border-border pt-3">
                   <div className="text-center">
-                    <p className="text-xl font-bold text-gray-800">{a.n_estudiantes}</p>
-                    <p className="text-xs text-gray-400">estudiantes</p>
+                    <p className="text-xl font-bold text-fg">{a.n_estudiantes}</p>
+                    <p className="text-xs text-fg-muted">estudiantes</p>
                   </div>
                   <div className="text-center">
-                    <p className="text-xl font-bold text-gray-800">{a._count.indicadores}</p>
-                    <p className="text-xs text-gray-400">indicadores</p>
+                    <p className="text-xl font-bold text-fg">{a._count.indicadores}</p>
+                    <p className="text-xs text-fg-muted">indicadores</p>
                   </div>
                 </div>
 

@@ -77,13 +77,13 @@ export default function ReporteAsistenciaPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Reporte de Asistencia</h1>
-          <p className="text-sm text-gray-500 mt-0.5">Resumen por paralelo y período</p>
+          <h1 className="text-2xl font-bold text-fg">Reporte de Asistencia</h1>
+          <p className="text-sm text-fg-muted mt-0.5">Resumen por paralelo y período</p>
         </div>
         {filas.length > 0 && (
           <button
             onClick={exportarCSV}
-            className="flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+            className="flex items-center gap-2 rounded-lg border border-border bg-surface px-4 py-2 text-sm font-medium text-fg hover:bg-surface-2"
           >
             Exportar CSV
           </button>
@@ -91,27 +91,27 @@ export default function ReporteAsistenciaPage() {
       </div>
 
       {/* Filtros */}
-      <div className="flex flex-wrap gap-4 rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+      <div className="flex flex-wrap gap-4 rounded-xl border border-border bg-surface p-4 shadow-sm">
         <div className="flex flex-col gap-1">
-          <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Paralelo</label>
+          <label className="text-xs font-medium text-fg-muted uppercase tracking-wide">Paralelo</label>
           <select
             value={paraleloId}
             onChange={e => setParaleloId(e.target.value)}
-            className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="rounded-lg border border-border px-3 py-2 text-sm focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand"
           >
             <option value="">— Seleccionar —</option>
             {paralelos.map(p => <option key={p.id} value={p.id}>{p.nombre} ({p.nivel})</option>)}
           </select>
         </div>
         <div className="flex flex-col gap-1">
-          <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Desde</label>
+          <label className="text-xs font-medium text-fg-muted uppercase tracking-wide">Desde</label>
           <input type="date" value={fechaIni} onChange={e => setFechaIni(e.target.value)}
-            className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+            className="rounded-lg border border-border px-3 py-2 text-sm focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand" />
         </div>
         <div className="flex flex-col gap-1">
-          <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Hasta</label>
+          <label className="text-xs font-medium text-fg-muted uppercase tracking-wide">Hasta</label>
           <input type="date" value={fechaFin} onChange={e => setFechaFin(e.target.value)}
-            className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+            className="rounded-lg border border-border px-3 py-2 text-sm focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand" />
         </div>
         <div className="flex items-end">
           <button
@@ -125,17 +125,17 @@ export default function ReporteAsistenciaPage() {
       </div>
 
       {/* Tabla */}
-      <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+      <div className="rounded-xl border border-border bg-surface shadow-sm overflow-hidden">
         {loading ? (
           <div className="flex justify-center py-12"><Spinner /></div>
         ) : filas.length === 0 ? (
-          <div className="py-12 text-center text-sm text-gray-400">
+          <div className="py-12 text-center text-sm text-fg-muted">
             Selecciona un paralelo y un período para ver el reporte
           </div>
         ) : (
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-gray-100 bg-gray-50 text-xs font-semibold uppercase tracking-wide text-gray-500">
+              <tr className="border-b border-border bg-bg text-xs font-semibold uppercase tracking-wide text-fg-muted">
                 <th className="px-5 py-3 text-left">Estudiante</th>
                 <th className="px-5 py-3 text-center">Presentes</th>
                 <th className="px-5 py-3 text-center">Ausencias</th>
@@ -144,19 +144,19 @@ export default function ReporteAsistenciaPage() {
                 <th className="px-5 py-3 text-center">% Asistencia</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-50">
+            <tbody className="divide-y divide-border">
               {filas.map(f => {
                 const pct = f.porcentaje_asistencia
                 return (
-                  <tr key={f.estudiante_id} className="hover:bg-gray-50 transition-colors">
-                    <td className="px-5 py-3 font-medium text-gray-900">{f.apellido}, {f.nombre}</td>
+                  <tr key={f.estudiante_id} className="hover:bg-surface-2 transition-colors">
+                    <td className="px-5 py-3 font-medium text-fg">{f.apellido}, {f.nombre}</td>
                     <td className="px-5 py-3 text-center text-green-700 font-semibold">{f.presentes}</td>
                     <td className="px-5 py-3 text-center text-red-600 font-semibold">{f.ausentes}</td>
                     <td className="px-5 py-3 text-center text-amber-600 font-semibold">{f.tardanzas}</td>
-                    <td className="px-5 py-3 text-center text-gray-600">{f.total}</td>
+                    <td className="px-5 py-3 text-center text-fg-muted">{f.total}</td>
                     <td className="px-5 py-3 text-center">
                       {pct === null ? (
-                        <span className="text-gray-400">N/A</span>
+                        <span className="text-fg-muted">N/A</span>
                       ) : (
                         <Badge variant={pct >= 85 ? 'success' : pct >= 70 ? 'warning' : 'danger'}>
                           {pct}%
@@ -172,7 +172,7 @@ export default function ReporteAsistenciaPage() {
       </div>
 
       {filas.length > 0 && (
-        <p className="text-xs text-gray-400 text-center">
+        <p className="text-xs text-fg-muted text-center">
           Alerta: porcentaje &lt; 85% se marca en amarillo · &lt; 70% en rojo
         </p>
       )}

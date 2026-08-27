@@ -9,10 +9,10 @@ export default function MisHijosPage() {
 
   return (
     <div className="space-y-5">
-      <h1 className="text-2xl font-bold text-gray-900">Mis Hijos</h1>
+      <h1 className="text-2xl font-bold text-fg">Mis Hijos</h1>
 
       {hijos.length === 0 ? (
-        <div className="rounded-xl border-2 border-dashed border-gray-200 bg-white p-10 text-center text-sm text-gray-400">
+        <div className="rounded-xl border-2 border-dashed border-border bg-surface p-10 text-center text-sm text-fg-muted">
           No hay hijos registrados en tu cuenta.
         </div>
       ) : (
@@ -21,14 +21,14 @@ export default function MisHijosPage() {
             <div
               key={h.id}
               onClick={() => navigate(`/dashboard/padre/hijo/${h.id}`)}
-              className="cursor-pointer rounded-xl border border-gray-200 bg-white p-5 shadow-sm hover:border-blue-300 transition"
+              className="cursor-pointer rounded-xl border border-border bg-surface p-5 shadow-sm hover:border-blue-300 transition"
             >
               <div className="flex items-center gap-3">
                 <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-full bg-blue-100 text-blue-700 font-bold">
                   {h.nombre[0]}{h.apellido[0]}
                 </div>
                 <div className="min-w-0">
-                  <p className="font-semibold text-gray-900 truncate">{h.apellido}, {h.nombre}</p>
+                  <p className="font-semibold text-fg truncate">{h.apellido}, {h.nombre}</p>
                   {h.becado
                     ? <Badge variant="info">Becado</Badge>
                     : h.bloqueado

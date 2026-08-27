@@ -45,7 +45,7 @@ export default function HomePage() {
     : null
 
   return (
-    <div className="min-h-screen bg-white font-sans">
+    <div className="min-h-screen bg-surface font-sans">
       {/* ── Navbar ─────────────────────────────────────────────────── */}
       <nav className="sticky top-0 z-40 bg-[#1F3864] shadow-lg">
         <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
@@ -106,7 +106,7 @@ export default function HomePage() {
       <section id="pago" className="py-20 bg-gradient-to-b from-white to-blue-50">
         <div className="max-w-4xl mx-auto px-4 text-center">
           <h2 className="text-3xl font-black text-[#1F3864] mb-2">Paga tu pensión fácilmente</h2>
-          <p className="text-gray-500 mb-12">Desde cualquier app de banca móvil</p>
+          <p className="text-fg-muted mb-12">Desde cualquier app de banca móvil</p>
 
           <div className="grid md:grid-cols-2 gap-10 items-center">
             {/* QR */}
@@ -115,15 +115,15 @@ export default function HomePage() {
                 <div className="relative inline-block">
                   <div className={`absolute inset-0 rounded-2xl bg-blue-400 transition-all duration-1000 ${qrPulse ? 'opacity-30 scale-105' : 'opacity-0 scale-100'}`} />
                   <img src={config.qr_url} alt="QR de pago"
-                    className="relative w-52 h-52 rounded-2xl border-4 border-[#C9A84C] shadow-xl object-contain bg-white p-2"
+                    className="relative w-52 h-52 rounded-2xl border-4 border-[#C9A84C] shadow-xl object-contain bg-surface p-2"
                   />
                 </div>
               ) : (
-                <div className="w-52 h-52 rounded-2xl border-4 border-dashed border-gray-300 flex items-center justify-center text-gray-400 text-sm">
+                <div className="w-52 h-52 rounded-2xl border-4 border-dashed border-border flex items-center justify-center text-fg-muted text-sm">
                   QR no configurado
                 </div>
               )}
-              <p className="mt-4 text-sm text-gray-500">Escanea para pagar por QR</p>
+              <p className="mt-4 text-sm text-fg-muted">Escanea para pagar por QR</p>
               {whatsappUrl && (
                 <a href={whatsappUrl} target="_blank" rel="noopener noreferrer"
                   className="mt-4 flex items-center gap-2 bg-green-500 hover:bg-green-600 text-white font-semibold px-6 py-3 rounded-xl transition-colors shadow-md">
@@ -148,7 +148,7 @@ export default function HomePage() {
                   </div>
                   <div>
                     <p className="font-bold text-[#1F3864]">{s.title}</p>
-                    <p className="text-sm text-gray-500 mt-0.5">{s.desc}</p>
+                    <p className="text-sm text-fg-muted mt-0.5">{s.desc}</p>
                   </div>
                 </div>
               ))}
@@ -158,12 +158,12 @@ export default function HomePage() {
       </section>
 
       {/* ── Galería preview ─────────────────────────────────────────── */}
-      <section id="galeria" className="py-20 bg-white">
+      <section id="galeria" className="py-20 bg-surface">
         <div className="max-w-6xl mx-auto px-4">
           <div className="flex items-end justify-between mb-8">
             <div>
               <h2 className="text-3xl font-black text-[#1F3864]">Galería</h2>
-              <p className="text-gray-500 mt-1">Momentos de nuestra institución</p>
+              <p className="text-fg-muted mt-1">Momentos de nuestra institución</p>
             </div>
             <Link to="/galeria" className="text-[#C9A84C] hover:text-yellow-600 font-semibold text-sm transition-colors">
               Ver toda la galería →
@@ -173,13 +173,13 @@ export default function HomePage() {
           {galeria.length === 0 ? (
             <div className="grid grid-cols-3 gap-4">
               {Array.from({ length: 6 }).map((_, i) => (
-                <div key={i} className="aspect-square bg-gray-100 rounded-xl animate-pulse" />
+                <div key={i} className="aspect-square bg-surface-2 rounded-xl animate-pulse" />
               ))}
             </div>
           ) : (
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
               {galeria.map(item => (
-                <div key={item.id} className="group aspect-square bg-gray-100 rounded-xl overflow-hidden relative">
+                <div key={item.id} className="group aspect-square bg-surface-2 rounded-xl overflow-hidden relative">
                   {item.tipo === 'FOTO' ? (
                     <img src={item.url} alt={item.descripcion ?? ''} loading="lazy"
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
@@ -209,7 +209,7 @@ export default function HomePage() {
           <div className="flex items-end justify-between mb-8">
             <div>
               <h2 className="text-3xl font-black text-[#1F3864]">Anuncios</h2>
-              <p className="text-gray-500 mt-1">Últimas noticias de la institución</p>
+              <p className="text-fg-muted mt-1">Últimas noticias de la institución</p>
             </div>
             <Link to="/anuncios" className="text-[#C9A84C] hover:text-yellow-600 font-semibold text-sm transition-colors">
               Ver todos →
@@ -219,16 +219,16 @@ export default function HomePage() {
           <div className="grid md:grid-cols-3 gap-6">
             {anuncios.length === 0
               ? Array.from({ length: 3 }).map((_, i) => (
-                  <div key={i} className="bg-white rounded-xl p-5 shadow-sm animate-pulse h-36" />
+                  <div key={i} className="bg-surface rounded-xl p-5 shadow-sm animate-pulse h-36" />
                 ))
               : anuncios.map(a => (
                   <Link key={a.id} to={`/anuncios#${a.id}`}
-                    className="bg-white rounded-xl p-5 shadow-sm hover:shadow-md transition-shadow group">
+                    className="bg-surface rounded-xl p-5 shadow-sm hover:shadow-md transition-shadow group">
                     <p className="text-xs text-[#C9A84C] font-semibold mb-2">
                       {new Date(a.publicado_en).toLocaleDateString('es-BO', { day: 'numeric', month: 'long', year: 'numeric' })}
                     </p>
                     <h3 className="font-bold text-[#1F3864] group-hover:text-blue-700 transition-colors leading-snug">{a.titulo}</h3>
-                    <p className="text-sm text-gray-500 mt-2 line-clamp-2">{a.contenido}</p>
+                    <p className="text-sm text-fg-muted mt-2 line-clamp-2">{a.contenido}</p>
                   </Link>
                 ))
             }

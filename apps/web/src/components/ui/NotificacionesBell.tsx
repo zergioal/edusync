@@ -25,7 +25,7 @@ const TIPO_COLOR: Record<string, string> = {
   ANUNCIO:           'bg-blue-100 text-blue-700',
   TAREA:             'bg-purple-100 text-purple-700',
   TRIMESTRE_CERRADO: 'bg-red-100 text-red-700',
-  GENERAL:           'bg-gray-100 text-gray-700',
+  GENERAL:           'bg-surface-2 text-fg',
 }
 
 export function NotificacionesBell() {
@@ -98,10 +98,10 @@ export function NotificacionesBell() {
     <div ref={ref} className="relative">
       <button
         onClick={() => setOpen(o => !o)}
-        className="relative flex h-9 w-9 items-center justify-center rounded-lg hover:bg-gray-100 transition-colors"
+        className="relative flex h-9 w-9 items-center justify-center rounded-lg hover:bg-surface-2 transition-colors"
         aria-label="Notificaciones"
       >
-        <svg className="h-5 w-5 text-gray-600" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+        <svg className="h-5 w-5 text-fg-muted" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
         </svg>
         {noLeidas > 0 && (
@@ -112,10 +112,10 @@ export function NotificacionesBell() {
       </button>
 
       {open && (
-        <div className="absolute right-0 top-11 z-50 w-80 rounded-xl border border-gray-200 bg-white shadow-xl overflow-hidden">
+        <div className="absolute right-0 top-11 z-50 w-80 rounded-xl border border-border bg-surface shadow-xl overflow-hidden">
           {/* Header */}
-          <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
-            <h3 className="text-sm font-semibold text-gray-900">Notificaciones</h3>
+          <div className="flex items-center justify-between px-4 py-3 border-b border-border">
+            <h3 className="text-sm font-semibold text-fg">Notificaciones</h3>
             {noLeidas > 0 && (
               <button onClick={marcarTodas} className="text-xs text-blue-600 hover:underline">
                 Marcar todas leídas
@@ -124,26 +124,26 @@ export function NotificacionesBell() {
           </div>
 
           {/* Lista */}
-          <div className="max-h-96 overflow-y-auto divide-y divide-gray-50">
+          <div className="max-h-96 overflow-y-auto divide-y divide-border">
             {notifs.length === 0 ? (
-              <div className="px-4 py-8 text-center text-sm text-gray-400">Sin notificaciones</div>
+              <div className="px-4 py-8 text-center text-sm text-fg-muted">Sin notificaciones</div>
             ) : (
               notifs.map(n => (
                 <div
                   key={n.id}
                   onClick={() => handleClick(n)}
-                  className={`px-4 py-3 cursor-pointer hover:bg-gray-50 transition-colors ${!n.leida ? 'bg-blue-50' : ''}`}
+                  className={`px-4 py-3 cursor-pointer hover:bg-surface-2 transition-colors ${!n.leida ? 'bg-blue-50' : ''}`}
                 >
                   <div className="flex items-start gap-3">
                     <span className={`mt-0.5 inline-flex flex-shrink-0 items-center rounded-full px-1.5 py-0.5 text-xs font-medium ${TIPO_COLOR[n.tipo] ?? TIPO_COLOR['GENERAL']}`}>
                       {n.tipo.charAt(0)}
                     </span>
                     <div className="flex-1 min-w-0">
-                      <p className={`text-sm ${!n.leida ? 'font-semibold text-gray-900' : 'text-gray-700'}`}>
+                      <p className={`text-sm ${!n.leida ? 'font-semibold text-fg' : 'text-fg'}`}>
                         {n.titulo}
                       </p>
-                      <p className="text-xs text-gray-500 mt-0.5 truncate">{n.cuerpo}</p>
-                      <p className="text-xs text-gray-400 mt-1">{fmt(n.creada_en)}</p>
+                      <p className="text-xs text-fg-muted mt-0.5 truncate">{n.cuerpo}</p>
+                      <p className="text-xs text-fg-muted mt-1">{fmt(n.creada_en)}</p>
                     </div>
                     {!n.leida && <span className="h-2 w-2 flex-shrink-0 rounded-full bg-blue-500 mt-1.5" />}
                   </div>

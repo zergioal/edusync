@@ -95,26 +95,26 @@ export default function TarifasPage() {
       {/* Header */}
       <div className="flex items-center gap-3">
         <Link to="/dashboard/admin/finanzas"
-          className="text-gray-400 hover:text-gray-700 transition-colors text-sm">
+          className="text-fg-muted hover:text-fg transition-colors text-sm">
           ← Pensiones
         </Link>
-        <h1 className="text-2xl font-bold text-gray-900">Tarifas de Pensión</h1>
+        <h1 className="text-2xl font-bold text-fg">Tarifas de Pensión</h1>
       </div>
 
       {/* Selector gestión */}
-      <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-4">
-        <label className="block text-sm font-medium text-gray-700 mb-1.5">Gestión</label>
+      <div className="bg-surface rounded-xl border border-border shadow-sm p-4">
+        <label className="block text-sm font-medium text-fg mb-1.5">Gestión</label>
         <select
           value={gestionId}
           onChange={e => setGestionId(e.target.value)}
-          className="border border-gray-300 rounded-lg px-3 py-2 text-sm"
+          className="border border-border rounded-lg px-3 py-2 text-sm"
         >
           {gestiones.map(g => <option key={g.id} value={g.id}>Gestión {g.anno}</option>)}
         </select>
       </div>
 
       {loading ? (
-        <div className="p-8 text-center text-gray-400 text-sm">Cargando…</div>
+        <div className="p-8 text-center text-fg-muted text-sm">Cargando…</div>
       ) : (
         <>
           {/* Banner sugeridas */}
@@ -151,27 +151,27 @@ export default function TarifasPage() {
           )}
 
           {/* Formulario */}
-          <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-            <div className="px-5 py-4 border-b border-gray-100">
-              <h2 className="text-sm font-semibold text-gray-700">Monto mensual por nivel</h2>
-              <p className="text-xs text-gray-400 mt-0.5">El monto se congela al generar las pensiones del mes (RN-13)</p>
+          <div className="bg-surface rounded-xl border border-border shadow-sm overflow-hidden">
+            <div className="px-5 py-4 border-b border-border">
+              <h2 className="text-sm font-semibold text-fg">Monto mensual por nivel</h2>
+              <p className="text-xs text-fg-muted mt-0.5">El monto se congela al generar las pensiones del mes (RN-13)</p>
             </div>
 
-            <div className="divide-y divide-gray-50">
+            <div className="divide-y divide-border">
               {niveles.map(nivel => {
                 const tarifa = data?.tarifas.find(t => t.nivel_id === nivel.id)
                 return (
                   <div key={nivel.id} className="flex items-center justify-between px-5 py-4">
                     <div>
-                      <p className="text-sm font-medium text-gray-900">{nivel.nombre}</p>
+                      <p className="text-sm font-medium text-fg">{nivel.nombre}</p>
                       {tarifa?.estudiantes_count !== undefined && (
-                        <p className="text-xs text-gray-400 mt-0.5">
+                        <p className="text-xs text-fg-muted mt-0.5">
                           {tarifa.estudiantes_count} estudiante{tarifa.estudiantes_count !== 1 ? 's' : ''} matriculado{tarifa.estudiantes_count !== 1 ? 's' : ''}
                         </p>
                       )}
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className="text-sm text-gray-500">Bs.</span>
+                      <span className="text-sm text-fg-muted">Bs.</span>
                       <input
                         type="number"
                         min="0"
@@ -179,7 +179,7 @@ export default function TarifasPage() {
                         value={montos[nivel.id] ?? ''}
                         onChange={e => setMontos(prev => ({ ...prev, [nivel.id]: e.target.value }))}
                         placeholder="0.00"
-                        className="w-28 border border-gray-300 rounded-lg px-3 py-2 text-sm text-right font-mono focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-28 border border-border rounded-lg px-3 py-2 text-sm text-right font-mono focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand"
                       />
                     </div>
                   </div>
@@ -189,7 +189,7 @@ export default function TarifasPage() {
 
             {/* Stats becados */}
             {data && !data.sugeridas && data.becados_count !== undefined && data.becados_count > 0 && (
-              <div className="border-t border-gray-100 px-5 py-3 bg-amber-50 flex items-center gap-2">
+              <div className="border-t border-border px-5 py-3 bg-amber-50 flex items-center gap-2">
                 <span className="inline-flex items-center rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-medium text-amber-700">BECA</span>
                 <p className="text-sm text-amber-700">
                   {data.becados_count} estudiante{data.becados_count !== 1 ? 's' : ''} becado{data.becados_count !== 1 ? 's' : ''} — exento{data.becados_count !== 1 ? 's' : ''} del pago de pensiones
@@ -197,7 +197,7 @@ export default function TarifasPage() {
               </div>
             )}
 
-            <div className="border-t border-gray-100 px-5 py-4 flex items-center justify-between">
+            <div className="border-t border-border px-5 py-4 flex items-center justify-between">
               {msg ? (
                 <span className={`text-sm font-medium ${msg.type === 'ok' ? 'text-green-600' : 'text-red-600'}`}>
                   {msg.text}

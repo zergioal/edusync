@@ -140,8 +140,8 @@ export default function ObservacionesInicialPage() {
           >
             ← Mis Materias
           </button>
-          <h1 className="text-2xl font-bold text-gray-900">Observaciones — Nivel Inicial</h1>
-          <p className="mt-0.5 text-sm text-gray-500">
+          <h1 className="text-2xl font-bold text-fg">Observaciones — Nivel Inicial</h1>
+          <p className="mt-0.5 text-sm text-fg-muted">
             {asignacion.materia.campo.nombre} · {asignacion.materia.nombre} ·{' '}
             {asignacion.paralelo.grado.nombre} "{asignacion.paralelo.letra}" · Gestión {asignacion.gestion.anno}
           </p>
@@ -170,7 +170,7 @@ export default function ObservacionesInicialPage() {
             className={`rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
               trimestreId === t.id
                 ? 'bg-amber-500 text-white shadow-sm'
-                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                : 'bg-surface-2 text-fg-muted hover:bg-surface-2'
             }`}
           >
             {t.numero}° Trimestre
@@ -189,8 +189,8 @@ export default function ObservacionesInicialPage() {
       {loadingObs && <div className="flex justify-center py-8"><Spinner /></div>}
 
       {!loadingObs && entries.length === 0 && (
-        <div className="rounded-xl border-2 border-dashed border-gray-200 bg-white p-12 text-center">
-          <p className="text-gray-400">
+        <div className="rounded-xl border-2 border-dashed border-border bg-surface p-12 text-center">
+          <p className="text-fg-muted">
             No hay estudiantes matriculados en este paralelo para esta gestión.
           </p>
         </div>
@@ -207,8 +207,8 @@ export default function ObservacionesInicialPage() {
             return (
               <div
                 key={estudiante_id}
-                className={`rounded-xl border bg-white p-5 shadow-sm transition-colors ${
-                  changed ? 'border-amber-300' : 'border-gray-200'
+                className={`rounded-xl border bg-surface p-5 shadow-sm transition-colors ${
+                  changed ? 'border-amber-300' : 'border-border'
                 }`}
               >
                 <div className="flex items-center gap-3 mb-3">
@@ -216,10 +216,10 @@ export default function ObservacionesInicialPage() {
                     {i + 1}
                   </span>
                   <div>
-                    <p className="font-semibold text-gray-900">
+                    <p className="font-semibold text-fg">
                       {estudiante.apellido}, {estudiante.nombre}
                     </p>
-                    <p className="text-xs text-gray-400">Cód. {estudiante.codigo}</p>
+                    <p className="text-xs text-fg-muted">Cód. {estudiante.codigo}</p>
                   </div>
                   {changed && (
                     <span className="ml-auto text-xs text-amber-600 font-medium">Sin guardar</span>
@@ -230,7 +230,7 @@ export default function ObservacionesInicialPage() {
                   onChange={e => setDrafts(prev => ({ ...prev, [estudiante_id]: e.target.value }))}
                   rows={4}
                   placeholder="Registrar observación cualitativa del estudiante…"
-                  className="w-full resize-none rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-800 placeholder-gray-400 focus:border-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-300"
+                  className="w-full resize-none rounded-lg border border-border px-3 py-2 text-sm text-fg placeholder-fg-muted focus:border-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-300"
                 />
               </div>
             )

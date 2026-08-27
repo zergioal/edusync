@@ -89,7 +89,7 @@ function DirectorHome() {
     <div className="space-y-6">
 
       {/* Profile card */}
-      <div className="rounded-2xl bg-white border border-gray-200 shadow-sm p-5 flex items-start gap-5">
+      <div className="rounded-2xl bg-surface border border-border shadow-sm p-5 flex items-start gap-5">
         <div className="relative">
           <AvatarDisplay userId={user?.id ?? ''} avatarId={avatarId} size="xl" />
           <button
@@ -100,14 +100,14 @@ function DirectorHome() {
         </div>
 
         <div className="flex-1 min-w-0">
-          <h1 className="text-2xl font-bold text-gray-900 leading-tight">
+          <h1 className="text-2xl font-bold text-fg leading-tight">
             {user?.grado_academico ? `${user.grado_academico} ` : ''}{user?.nombre} {user?.apellido}
           </h1>
-          <p className="text-sm text-gray-400 mt-0.5 truncate">{user?.email}</p>
+          <p className="text-sm text-fg-muted mt-0.5 truncate">{user?.email}</p>
           <div className="mt-2 flex flex-wrap items-center gap-2">
             <Badge variant="success">{rolLabel}</Badge>
             {gestionLabel && (
-              <span className="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">{gestionLabel}</span>
+              <span className="text-xs text-fg-muted bg-surface-2 px-2 py-0.5 rounded-full">{gestionLabel}</span>
             )}
             <button
               onClick={() => setShowEditPerfil(true)}
@@ -128,7 +128,7 @@ function DirectorHome() {
 
       {/* KPI Cards */}
       <div>
-        <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-gray-400">Resumen institucional</h2>
+        <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-fg-muted">Resumen institucional</h2>
         <div className="grid grid-cols-2 gap-4 xl:grid-cols-4">
           <StatCard
             label="Paralelos"
@@ -159,10 +159,10 @@ function DirectorHome() {
 
       {/* Gestiones y trimestres */}
       <div>
-        <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-gray-400">Estado de gestiones</h2>
+        <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-fg-muted">Estado de gestiones</h2>
         <div className="space-y-3">
           {!loadingStats && gestiones.length === 0 ? (
-            <div className="rounded-xl border border-gray-100 bg-white py-8 text-center text-sm text-gray-400 shadow-sm">
+            <div className="rounded-xl border border-border bg-surface py-8 text-center text-sm text-fg-muted shadow-sm">
               No hay gestiones registradas
             </div>
           ) : loadingStats ? (
@@ -172,12 +172,12 @@ function DirectorHome() {
             const total    = g.trimestres.length
             const todosC   = total > 0 && cerrados === total
             return (
-              <div key={g.id} className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+              <div key={g.id} className="rounded-xl border border-border bg-surface p-5 shadow-sm">
                 <div className="flex items-center justify-between flex-wrap gap-2">
                   <div className="flex items-center gap-3">
-                    <h3 className="font-semibold text-gray-900">Gestión {g.anno}</h3>
+                    <h3 className="font-semibold text-fg">Gestión {g.anno}</h3>
                     <Badge variant={g.activa ? 'success' : 'info'}>{g.activa ? 'Activa' : 'Inactiva'}</Badge>
-                    <span className="text-sm text-gray-500">{cerrados}/{total} trimestres cerrados</span>
+                    <span className="text-sm text-fg-muted">{cerrados}/{total} trimestres cerrados</span>
                   </div>
                   {g.activa && todosC && (
                     <Button variant="danger" size="sm" loading={cerrando === g.id} onClick={() => cerrarGestion(g.id)}>

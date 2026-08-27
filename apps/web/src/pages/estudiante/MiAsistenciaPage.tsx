@@ -73,12 +73,12 @@ function TablaMes({ year, month, diasMap }: {
   }
 
   return (
-    <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white shadow-sm">
+    <div className="overflow-x-auto rounded-xl border border-border bg-surface shadow-sm">
       <table className="text-sm border-collapse" style={{ minWidth: `${schoolDays.length * 36 + 180}px` }}>
         <thead>
-          <tr className="bg-slate-50 border-b border-gray-200">
+          <tr className="bg-slate-50 border-b border-border">
             {/* Nombre columna */}
-            <th className="px-4 py-2 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide w-36 border-r border-gray-200">
+            <th className="px-4 py-2 text-left text-xs font-semibold text-fg-muted uppercase tracking-wide w-36 border-r border-border">
               Día
             </th>
             {/* Columnas de fechas */}
@@ -88,14 +88,14 @@ function TablaMes({ year, month, diasMap }: {
               return (
                 <th
                   key={d}
-                  className={`w-9 border-r border-gray-100 ${isSat ? 'bg-slate-100' : ''}`}
+                  className={`w-9 border-r border-border ${isSat ? 'bg-slate-100' : ''}`}
                 >
                   <div
                     style={{ writingMode: 'vertical-lr', transform: 'rotate(180deg)' }}
-                    className="py-1.5 px-1 text-[11px] font-medium text-gray-500 flex flex-col items-center gap-0 mx-auto w-fit"
+                    className="py-1.5 px-1 text-[11px] font-medium text-fg-muted flex flex-col items-center gap-0 mx-auto w-fit"
                   >
-                    <span className="font-bold text-gray-700">{d}</span>
-                    <span className="text-gray-400">{DIA_ABREV[dow]}</span>
+                    <span className="font-bold text-fg">{d}</span>
+                    <span className="text-fg-muted">{DIA_ABREV[dow]}</span>
                   </div>
                 </th>
               )
@@ -107,7 +107,7 @@ function TablaMes({ year, month, diasMap }: {
               { key: 'F', label: 'Faltas', cls: 'text-red-700     bg-red-50',     val: falta     },
               { key: 'L', label: 'Licen.', cls: 'text-blue-700    bg-blue-50',    val: licencia  },
             ] as const).map(col => (
-              <th key={col.key} className={`text-center px-2 py-2 text-xs font-bold border-l border-gray-200 ${col.cls}`}>
+              <th key={col.key} className={`text-center px-2 py-2 text-xs font-bold border-l border-border ${col.cls}`}>
                 {col.label}
               </th>
             ))}
@@ -115,7 +115,7 @@ function TablaMes({ year, month, diasMap }: {
         </thead>
         <tbody>
           <tr className="hover:bg-slate-50/50">
-            <td className="px-4 py-2 font-medium text-gray-700 border-r border-gray-200 text-sm whitespace-nowrap">
+            <td className="px-4 py-2 font-medium text-fg border-r border-border text-sm whitespace-nowrap">
               {MESES_NOMBRES[month]}
             </td>
             {schoolDays.map(d => {
@@ -127,7 +127,7 @@ function TablaMes({ year, month, diasMap }: {
               return (
                 <td
                   key={d}
-                  className={`w-9 h-9 text-center border-r border-gray-100 relative
+                  className={`w-9 h-9 text-center border-r border-border relative
                     ${isSat ? 'bg-slate-50' : ''}
                     ${isToday ? 'ring-1 ring-inset ring-indigo-400' : ''}
                   `}
@@ -144,10 +144,10 @@ function TablaMes({ year, month, diasMap }: {
               )
             })}
             {/* Totales */}
-            <td className="text-center px-2 font-bold text-emerald-700 bg-emerald-50 border-l border-gray-200">{present}</td>
-            <td className="text-center px-2 font-bold text-amber-700   bg-amber-50  border-l border-gray-100">{tardanza}</td>
-            <td className="text-center px-2 font-bold text-red-700     bg-red-50    border-l border-gray-100">{falta}</td>
-            <td className="text-center px-2 font-bold text-blue-700    bg-blue-50   border-l border-gray-100">{licencia}</td>
+            <td className="text-center px-2 font-bold text-emerald-700 bg-emerald-50 border-l border-border">{present}</td>
+            <td className="text-center px-2 font-bold text-amber-700   bg-amber-50  border-l border-border">{tardanza}</td>
+            <td className="text-center px-2 font-bold text-red-700     bg-red-50    border-l border-border">{falta}</td>
+            <td className="text-center px-2 font-bold text-blue-700    bg-blue-50   border-l border-border">{licencia}</td>
           </tr>
         </tbody>
       </table>
@@ -218,15 +218,15 @@ export default function MiAsistenciaPage({ estudianteId }: Props) {
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
-          <h1 className="text-xl font-bold text-gray-900">
+          <h1 className="text-xl font-bold text-fg">
             {estudianteId ? 'Asistencia' : 'Mi Asistencia'}
           </h1>
-          <p className="text-sm text-gray-400 mt-0.5">Registro mensual de lunes a sábado</p>
+          <p className="text-sm text-fg-muted mt-0.5">Registro mensual de lunes a sábado</p>
         </div>
 
         {/* Selector de trimestre */}
         {trimestres.length > 0 && (
-          <div className="flex rounded-lg border border-gray-200 overflow-hidden shadow-sm">
+          <div className="flex rounded-lg border border-border overflow-hidden shadow-sm">
             {trimestres.map(t => (
               <button
                 key={t.id}
@@ -234,7 +234,7 @@ export default function MiAsistenciaPage({ estudianteId }: Props) {
                 className={`px-4 py-1.5 text-sm font-medium transition ${
                   trimestreId === t.id
                     ? 'bg-indigo-600 text-white'
-                    : 'bg-white text-gray-600 hover:bg-gray-50'
+                    : 'bg-surface text-fg-muted hover:bg-surface-2'
                 }`}
               >
                 T{t.numero}
@@ -244,7 +244,7 @@ export default function MiAsistenciaPage({ estudianteId }: Props) {
         )}
       </div>
 
-      {loading && <div className="py-10 text-center text-sm text-gray-400">Cargando…</div>}
+      {loading && <div className="py-10 text-center text-sm text-fg-muted">Cargando…</div>}
       {error   && <div className="rounded-lg bg-orange-50 border border-orange-200 p-3 text-sm text-orange-700">{error}</div>}
 
       {data && (
@@ -266,8 +266,8 @@ export default function MiAsistenciaPage({ estudianteId }: Props) {
           </div>
 
           {/* Leyenda */}
-          <div className="flex items-center flex-wrap gap-3 text-xs text-gray-500">
-            <span className="font-medium text-gray-600">Leyenda:</span>
+          <div className="flex items-center flex-wrap gap-3 text-xs text-fg-muted">
+            <span className="font-medium text-fg-muted">Leyenda:</span>
             {Object.entries(ESTADO_CFG).map(([, cfg]) => (
               <div key={cfg.label} className="flex items-center gap-1.5">
                 <span className={`inline-flex w-5 h-5 items-center justify-center rounded-full text-[10px] font-bold ${cfg.bg} ${cfg.text}`}>
@@ -277,7 +277,7 @@ export default function MiAsistenciaPage({ estudianteId }: Props) {
               </div>
             ))}
             <div className="flex items-center gap-1.5">
-              <span className="inline-flex w-5 h-5 items-center justify-center rounded-full text-[10px] text-gray-300 border border-gray-200">·</span>
+              <span className="inline-flex w-5 h-5 items-center justify-center rounded-full text-[10px] text-fg-muted border border-border">·</span>
               <span>Sin registro</span>
             </div>
           </div>
@@ -295,7 +295,7 @@ export default function MiAsistenciaPage({ estudianteId }: Props) {
                     className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
                       selectedMonth === mesKey
                         ? 'bg-indigo-600 text-white shadow-sm'
-                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                        : 'bg-surface-2 text-fg-muted hover:bg-surface-2'
                     }`}
                   >
                     {label}
@@ -314,23 +314,23 @@ export default function MiAsistenciaPage({ estudianteId }: Props) {
               <TablaMes key={selectedMonth} year={year} month={month} diasMap={diasMap} />
             )
           })() : meses.length === 0 ? (
-            <div className="rounded-xl border-2 border-dashed border-gray-200 p-10 text-center text-sm text-gray-400">
+            <div className="rounded-xl border-2 border-dashed border-border p-10 text-center text-sm text-fg-muted">
               No hay registros de asistencia para este trimestre.
             </div>
           ) : null}
 
           {/* Asistencia por materia */}
           <div className="space-y-2">
-            <h2 className="text-sm font-semibold uppercase tracking-wide text-gray-500">Asistencia por materia</h2>
+            <h2 className="text-sm font-semibold uppercase tracking-wide text-fg-muted">Asistencia por materia</h2>
             {data.por_materia.length === 0 ? (
-              <div className="rounded-xl border-2 border-dashed border-gray-200 p-6 text-center text-sm text-gray-400">
+              <div className="rounded-xl border-2 border-dashed border-border p-6 text-center text-sm text-fg-muted">
                 Sin registros de asistencia por materia en este trimestre.
               </div>
             ) : (
-              <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+              <div className="rounded-xl border border-border bg-surface shadow-sm overflow-hidden">
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="border-b border-gray-100 bg-gray-50 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
+                    <tr className="border-b border-border bg-bg text-left text-xs font-semibold uppercase tracking-wide text-fg-muted">
                       <th className="px-4 py-2">Materia</th>
                       <th className="px-3 py-2 text-center">Presentes</th>
                       <th className="px-3 py-2 text-center">Ausentes</th>
@@ -338,10 +338,10 @@ export default function MiAsistenciaPage({ estudianteId }: Props) {
                       <th className="px-3 py-2 text-right">Acciones</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-50">
+                  <tbody className="divide-y divide-border">
                     {data.por_materia.map(m => (
-                      <tr key={m.asignacion_id} className="hover:bg-gray-50">
-                        <td className="px-4 py-2.5 font-medium text-gray-900">{m.materia}</td>
+                      <tr key={m.asignacion_id} className="hover:bg-surface-2">
+                        <td className="px-4 py-2.5 font-medium text-fg">{m.materia}</td>
                         <td className="px-3 py-2.5 text-center text-emerald-700">{m.presentes}</td>
                         <td className="px-3 py-2.5 text-center text-red-700">{m.ausentes}</td>
                         <td className="px-3 py-2.5 text-center text-amber-700">{m.tardanzas}</td>

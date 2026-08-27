@@ -78,10 +78,10 @@ export default function MorosidadPage() {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <Link to="/dashboard/admin/finanzas"
-            className="text-gray-400 hover:text-gray-700 transition-colors">
+            className="text-fg-muted hover:text-fg transition-colors">
             ← Pensiones
           </Link>
-          <h1 className="text-2xl font-bold text-gray-900">Reporte de Morosidad</h1>
+          <h1 className="text-2xl font-bold text-fg">Reporte de Morosidad</h1>
         </div>
         <button onClick={exportCSV}
           className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium px-4 py-2 rounded-xl transition-colors">
@@ -93,15 +93,15 @@ export default function MorosidadPage() {
       </div>
 
       {/* Filtros */}
-      <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-4">
+      <div className="bg-surface rounded-xl border border-border shadow-sm p-4">
         <div className="flex flex-wrap gap-3">
           <select value={gestionId} onChange={e => setGestionId(e.target.value)}
-            className="border border-gray-300 rounded-lg px-3 py-2 text-sm">
+            className="border border-border rounded-lg px-3 py-2 text-sm">
             {gestiones.map(g => <option key={g.id} value={g.id}>Gestión {g.anno}</option>)}
           </select>
 
           <select value={paraleloId} onChange={e => setParaleloId(e.target.value)}
-            className="border border-gray-300 rounded-lg px-3 py-2 text-sm">
+            className="border border-border rounded-lg px-3 py-2 text-sm">
             <option value="">Todos los paralelos</option>
             {paralelos.map(p => (
               <option key={p.id} value={p.id}>{p.grado.nombre} "{p.letra}"</option>
@@ -109,7 +109,7 @@ export default function MorosidadPage() {
           </select>
 
           <select value={minMeses} onChange={e => setMinMeses(Number(e.target.value))}
-            className="border border-gray-300 rounded-lg px-3 py-2 text-sm">
+            className="border border-border rounded-lg px-3 py-2 text-sm">
             <option value={1}>1+ meses de mora</option>
             <option value={2}>2+ meses de mora</option>
             <option value={3}>3+ meses de mora</option>
@@ -132,39 +132,39 @@ export default function MorosidadPage() {
       </div>
 
       {/* Tabla */}
-      <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+      <div className="bg-surface rounded-xl border border-border shadow-sm overflow-hidden">
         {loading ? (
-          <div className="p-12 text-center text-gray-400 text-sm">Cargando…</div>
+          <div className="p-12 text-center text-fg-muted text-sm">Cargando…</div>
         ) : error ? (
           <div className="p-8 text-center text-red-500 text-sm">{error}</div>
         ) : filtrados.length === 0 ? (
-          <div className="p-12 text-center text-gray-400 text-sm">
+          <div className="p-12 text-center text-fg-muted text-sm">
             Sin estudiantes morosos con los filtros seleccionados
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
-              <thead className="bg-gray-50 border-b border-gray-200">
+              <thead className="bg-bg border-b border-border">
                 <tr>
                   {['Estudiante', 'Nivel', 'Paralelo', 'Bs./mes', 'Meses de mora', 'Monto total', 'Último pago', 'Acciones'].map(h => (
-                    <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap">
+                    <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-fg-muted uppercase tracking-wide whitespace-nowrap">
                       {h}
                     </th>
                   ))}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody className="divide-y divide-border">
                 {filtrados.map(m => (
-                  <tr key={m.estudiante.id} className="hover:bg-gray-50 transition-colors">
+                  <tr key={m.estudiante.id} className="hover:bg-surface-2 transition-colors">
                     <td className="px-4 py-3">
-                      <p className="font-medium text-gray-900">{m.estudiante.apellido} {m.estudiante.nombre}</p>
-                      <p className="text-xs text-gray-400 font-mono">{m.estudiante.codigo}</p>
+                      <p className="font-medium text-fg">{m.estudiante.apellido} {m.estudiante.nombre}</p>
+                      <p className="text-xs text-fg-muted font-mono">{m.estudiante.codigo}</p>
                     </td>
-                    <td className="px-4 py-3 text-xs text-gray-600">{m.nivel ?? '—'}</td>
-                    <td className="px-4 py-3 text-gray-600">
+                    <td className="px-4 py-3 text-xs text-fg-muted">{m.nivel ?? '—'}</td>
+                    <td className="px-4 py-3 text-fg-muted">
                       {m.paralelo ? `${m.paralelo.grado} "${m.paralelo.letra}"` : '—'}
                     </td>
-                    <td className="px-4 py-3 text-gray-700 font-mono text-xs">Bs. {m.monto_mensual.toFixed(2)}</td>
+                    <td className="px-4 py-3 text-fg font-mono text-xs">Bs. {m.monto_mensual.toFixed(2)}</td>
                     <td className="px-4 py-3">
                       <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-bold ${
                         m.meses_pendientes >= 3 ? 'bg-red-100 text-red-700' :
@@ -177,7 +177,7 @@ export default function MorosidadPage() {
                     <td className="px-4 py-3 font-semibold text-red-600">
                       Bs. {m.monto_total_pendiente.toFixed(2)}
                     </td>
-                    <td className="px-4 py-3 text-gray-600">
+                    <td className="px-4 py-3 text-fg-muted">
                       {m.ultimo_pago ? new Date(m.ultimo_pago).toLocaleDateString('es-BO') : 'Nunca'}
                     </td>
                     <td className="px-4 py-3">

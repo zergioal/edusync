@@ -217,24 +217,24 @@ export default function AsistenciaClasePage() {
           >
             ← Cambiar materia
           </button>
-          <h1 className="text-xl font-bold text-gray-900">Asistencia de Clase</h1>
-          <p className="text-sm text-gray-500 mt-0.5">{titulo}</p>
+          <h1 className="text-xl font-bold text-fg">Asistencia de Clase</h1>
+          <p className="text-sm text-fg-muted mt-0.5">{titulo}</p>
         </div>
 
         <div className="flex items-center gap-2 flex-wrap">
           {/* Month nav */}
-          <div className="flex items-center gap-1 rounded-lg border border-gray-200 bg-white shadow-sm overflow-hidden">
+          <div className="flex items-center gap-1 rounded-lg border border-border bg-surface shadow-sm overflow-hidden">
             <button
               onClick={() => navMes(-1)}
-              className="px-3 py-2 text-gray-500 hover:bg-gray-50 transition-colors text-lg leading-none"
+              className="px-3 py-2 text-fg-muted hover:bg-surface-2 transition-colors text-lg leading-none"
             >‹</button>
-            <span className="px-3 py-2 text-sm font-semibold text-gray-700 min-w-[130px] text-center">
+            <span className="px-3 py-2 text-sm font-semibold text-fg min-w-[130px] text-center">
               {mesLabel(mes)}
             </span>
             <button
               onClick={() => navMes(1)}
               disabled={mes >= mesStr(new Date())}
-              className="px-3 py-2 text-gray-500 hover:bg-gray-50 disabled:opacity-30 transition-colors text-lg leading-none"
+              className="px-3 py-2 text-fg-muted hover:bg-surface-2 disabled:opacity-30 transition-colors text-lg leading-none"
             >›</button>
           </div>
 
@@ -252,8 +252,8 @@ export default function AsistenciaClasePage() {
       </div>
 
       {/* Legend */}
-      <div className="flex items-center gap-4 text-xs text-gray-500 flex-wrap">
-        <span className="font-medium text-gray-600">Leyenda:</span>
+      <div className="flex items-center gap-4 text-xs text-fg-muted flex-wrap">
+        <span className="font-medium text-fg-muted">Leyenda:</span>
         {(Object.entries(ESTADO_CFG) as [Estado, typeof ESTADO_CFG[Estado]][]).map(([, cfg]) => (
           <div key={cfg.label} className="flex items-center gap-1">
             <span className={`inline-flex w-5 h-5 rounded items-center justify-center text-[10px] font-bold ${cfg.bg} ${cfg.text}`}>
@@ -262,26 +262,26 @@ export default function AsistenciaClasePage() {
             <span>{cfg.title}</span>
           </div>
         ))}
-        <span className="text-gray-400">· = Sin registro · Clic para cambiar</span>
+        <span className="text-fg-muted">· = Sin registro · Clic para cambiar</span>
       </div>
 
       {/* Table */}
       {loadingData
         ? <div className="flex justify-center py-16"><Spinner /></div>
         : estudiantes.length === 0
-          ? <div className="rounded-xl border-2 border-dashed border-gray-200 bg-white p-10 text-center text-sm text-gray-400">
+          ? <div className="rounded-xl border-2 border-dashed border-border bg-surface p-10 text-center text-sm text-fg-muted">
               No hay estudiantes matriculados en este paralelo.
             </div>
           : (
-            <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white shadow-sm">
+            <div className="overflow-x-auto rounded-xl border border-border bg-surface shadow-sm">
               <table
                 className="text-xs border-collapse"
                 style={{ minWidth: `${240 + schoolDays.length * 34 + 140}px` }}
               >
                 <thead>
                   {/* Date row */}
-                  <tr className="bg-slate-50 border-b border-gray-200">
-                    <th className="sticky left-0 z-10 bg-slate-50 px-4 py-2 text-left text-xs font-semibold text-gray-500 border-r border-gray-200 w-48 min-w-[12rem]">
+                  <tr className="bg-slate-50 border-b border-border">
+                    <th className="sticky left-0 z-10 bg-slate-50 px-4 py-2 text-left text-xs font-semibold text-fg-muted border-r border-border w-48 min-w-[12rem]">
                       Estudiante
                     </th>
 
@@ -296,14 +296,14 @@ export default function AsistenciaClasePage() {
                       return (
                         <th
                           key={fecha}
-                          className={`w-8 border-r border-gray-100 relative ${isSat ? 'bg-slate-100' : ''} ${isDirty ? 'bg-amber-50' : ''}`}
+                          className={`w-8 border-r border-border relative ${isSat ? 'bg-slate-100' : ''} ${isDirty ? 'bg-amber-50' : ''}`}
                         >
                           <div
                             className="py-1 px-0.5 flex flex-col items-center gap-0 mx-auto"
                             style={{ writingMode: 'vertical-lr', transform: 'rotate(180deg)' }}
                           >
-                            <span className={`font-bold ${isFut ? 'text-gray-300' : 'text-gray-700'}`}>{d}</span>
-                            <span className={`${isFut ? 'text-gray-200' : 'text-gray-400'}`}>{DIA_ABREV[dow]}</span>
+                            <span className={`font-bold ${isFut ? 'text-fg-muted' : 'text-fg'}`}>{d}</span>
+                            <span className={`${isFut ? 'text-gray-200' : 'text-fg-muted'}`}>{DIA_ABREV[dow]}</span>
                           </div>
                           {isSav && (
                             <div className="absolute inset-0 bg-amber-100/70 flex items-center justify-center">
@@ -315,21 +315,21 @@ export default function AsistenciaClasePage() {
                     })}
 
                     {/* Totals headers */}
-                    <th className="border-l border-gray-200 bg-emerald-50 text-emerald-700 px-2 py-2 text-center">P</th>
-                    <th className="border-l border-gray-100 bg-red-50    text-red-700    px-2 py-2 text-center">F</th>
-                    <th className="border-l border-gray-100 bg-amber-50  text-amber-700  px-2 py-2 text-center">A</th>
-                    <th className="border-l border-gray-100 bg-blue-50   text-blue-700   px-2 py-2 text-center">L</th>
+                    <th className="border-l border-border bg-emerald-50 text-emerald-700 px-2 py-2 text-center">P</th>
+                    <th className="border-l border-border bg-red-50    text-red-700    px-2 py-2 text-center">F</th>
+                    <th className="border-l border-border bg-amber-50  text-amber-700  px-2 py-2 text-center">A</th>
+                    <th className="border-l border-border bg-blue-50   text-blue-700   px-2 py-2 text-center">L</th>
                   </tr>
 
                   {/* "Mark all" row */}
-                  <tr className="border-b border-gray-200 bg-gray-50/50">
-                    <td className="sticky left-0 z-10 bg-gray-50 px-4 py-1 text-[10px] text-gray-400 font-medium border-r border-gray-200">
+                  <tr className="border-b border-border bg-bg/50">
+                    <td className="sticky left-0 z-10 bg-bg px-4 py-1 text-[10px] text-fg-muted font-medium border-r border-border">
                       Marcar columna →
                     </td>
                     {schoolDays.map(fecha => {
                       const isFut = fecha > today
                       return (
-                        <td key={fecha} className="border-r border-gray-100 text-center">
+                        <td key={fecha} className="border-r border-border text-center">
                           {!isFut && (
                             <div className="flex flex-col gap-px items-center py-0.5">
                               {ESTADOS_COLUMNA.map(e => (
@@ -345,7 +345,7 @@ export default function AsistenciaClasePage() {
                         </td>
                       )
                     })}
-                    <td colSpan={4} className="border-l border-gray-200" />
+                    <td colSpan={4} className="border-l border-border" />
                   </tr>
                 </thead>
 
@@ -355,11 +355,11 @@ export default function AsistenciaClasePage() {
                     return (
                       <tr
                         key={est.estudiante_id}
-                        className={`border-b border-gray-100 hover:bg-blue-50/30 transition-colors ${idx % 2 === 0 ? '' : 'bg-slate-50/30'}`}
+                        className={`border-b border-border hover:bg-blue-50/30 transition-colors ${idx % 2 === 0 ? '' : 'bg-slate-50/30'}`}
                       >
                         {/* Name (sticky) */}
-                        <td className={`sticky left-0 z-10 px-4 py-2 font-medium text-gray-800 border-r border-gray-200 whitespace-nowrap ${idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/80'}`}>
-                          <span className="text-gray-400 mr-1.5 text-[10px]">{idx + 1}.</span>
+                        <td className={`sticky left-0 z-10 px-4 py-2 font-medium text-fg border-r border-border whitespace-nowrap ${idx % 2 === 0 ? 'bg-surface' : 'bg-slate-50/80'}`}>
+                          <span className="text-fg-muted mr-1.5 text-[10px]">{idx + 1}.</span>
                           {est.apellido}, {est.nombre}
                         </td>
 
@@ -373,7 +373,7 @@ export default function AsistenciaClasePage() {
                           return (
                             <td
                               key={fecha}
-                              className={`w-8 h-9 text-center border-r border-gray-100 ${isSat ? 'bg-slate-100/50' : ''}`}
+                              className={`w-8 h-9 text-center border-r border-border ${isSat ? 'bg-slate-100/50' : ''}`}
                             >
                               {isFut ? (
                                 <span className="text-gray-200 text-xs">·</span>
@@ -384,7 +384,7 @@ export default function AsistenciaClasePage() {
                                   className={`w-7 h-7 rounded font-bold transition-all hover:scale-110 active:scale-95 ${
                                     cfg
                                       ? `${cfg.bg} ${cfg.text}`
-                                      : 'text-gray-300 hover:bg-gray-100 hover:text-gray-500'
+                                      : 'text-fg-muted hover:bg-surface-2 hover:text-fg-muted'
                                   }`}
                                 >
                                   {cfg ? cfg.label : '·'}
@@ -395,10 +395,10 @@ export default function AsistenciaClasePage() {
                         })}
 
                         {/* Totals P / F / A / L */}
-                        <td className="text-center px-2 font-bold text-emerald-700 bg-emerald-50/60 border-l border-gray-200">{totals.p}</td>
-                        <td className="text-center px-2 font-bold text-red-700     bg-red-50/60    border-l border-gray-100">{totals.f}</td>
-                        <td className="text-center px-2 font-bold text-amber-700   bg-amber-50/60  border-l border-gray-100">{totals.t}</td>
-                        <td className="text-center px-2 font-bold text-blue-700    bg-blue-50/60   border-l border-gray-100">{totals.l}</td>
+                        <td className="text-center px-2 font-bold text-emerald-700 bg-emerald-50/60 border-l border-border">{totals.p}</td>
+                        <td className="text-center px-2 font-bold text-red-700     bg-red-50/60    border-l border-border">{totals.f}</td>
+                        <td className="text-center px-2 font-bold text-amber-700   bg-amber-50/60  border-l border-border">{totals.t}</td>
+                        <td className="text-center px-2 font-bold text-blue-700    bg-blue-50/60   border-l border-border">{totals.l}</td>
                       </tr>
                     )
                   })}

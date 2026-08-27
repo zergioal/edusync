@@ -62,15 +62,15 @@ function InstModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-      <div className="w-full max-w-md rounded-2xl bg-white shadow-xl">
-        <div className="flex items-center justify-between border-b border-gray-100 px-6 py-4">
-          <h2 className="text-base font-semibold text-gray-900">
+      <div className="w-full max-w-md rounded-2xl bg-surface shadow-xl">
+        <div className="flex items-center justify-between border-b border-border px-6 py-4">
+          <h2 className="text-base font-semibold text-fg">
             {inst ? 'Editar institución' : 'Nueva institución'}
           </h2>
           <button
             type="button"
             onClick={onClose}
-            className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
+            className="rounded-lg p-1.5 text-fg-muted hover:bg-surface-2 hover:text-fg-muted"
           >
             ✕
           </button>
@@ -78,7 +78,7 @@ function InstModal({
 
         <form onSubmit={submit} className="space-y-4 px-6 py-5">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-fg mb-1">
               Nombre <span className="text-red-500">*</span>
             </label>
             <input
@@ -86,12 +86,12 @@ function InstModal({
               value={form.nombre}
               onChange={e => set('nombre', e.target.value)}
               placeholder="Unidad Educativa Ejemplo"
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full rounded-lg border border-border px-3 py-2 text-sm focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-fg mb-1">
               Subdominio <span className="text-red-500">*</span>
             </label>
             <div className="flex items-center gap-1">
@@ -100,21 +100,21 @@ function InstModal({
                 value={form.subdominio}
                 onChange={e => set('subdominio', e.target.value.replace(/[^a-z0-9-]/g, ''))}
                 placeholder="ue-ejemplo"
-                className="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="flex-1 rounded-lg border border-border px-3 py-2 text-sm focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand"
               />
-              <span className="text-sm text-gray-400">.edusync.com.bo</span>
+              <span className="text-sm text-fg-muted">.edusync.com.bo</span>
             </div>
-            <p className="mt-1 text-xs text-gray-400">Solo minúsculas, números y guiones.</p>
+            <p className="mt-1 text-xs text-fg-muted">Solo minúsculas, números y guiones.</p>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Logo URL (opcional)</label>
+            <label className="block text-sm font-medium text-fg mb-1">Logo URL (opcional)</label>
             <input
               type="url"
               value={form.logo_url}
               onChange={e => set('logo_url', e.target.value)}
               placeholder="https://..."
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full rounded-lg border border-border px-3 py-2 text-sm focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand"
             />
           </div>
 
@@ -172,8 +172,8 @@ export default function InstitucionesPage() {
     <div className="space-y-6 pb-12">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Instituciones</h1>
-          <p className="text-sm text-gray-500 mt-0.5">Gestión multi-tenant de unidades educativas</p>
+          <h1 className="text-2xl font-bold text-fg">Instituciones</h1>
+          <p className="text-sm text-fg-muted mt-0.5">Gestión multi-tenant de unidades educativas</p>
         </div>
         <Button onClick={() => setModal('new')}>+ Nueva institución</Button>
       </div>
@@ -181,8 +181,8 @@ export default function InstitucionesPage() {
       {loading ? (
         <div className="flex justify-center py-16"><Spinner /></div>
       ) : insts.length === 0 ? (
-        <div className="rounded-xl border-2 border-dashed border-gray-200 bg-white py-16 text-center">
-          <p className="text-gray-400">No hay instituciones registradas.</p>
+        <div className="rounded-xl border-2 border-dashed border-border bg-surface py-16 text-center">
+          <p className="text-fg-muted">No hay instituciones registradas.</p>
           <button
             type="button"
             onClick={() => setModal('new')}
@@ -192,19 +192,19 @@ export default function InstitucionesPage() {
           </button>
         </div>
       ) : (
-        <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+        <div className="rounded-xl border border-border bg-surface shadow-sm overflow-hidden">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-gray-100 bg-gray-50">
-                <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">Nombre</th>
-                <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">Subdominio</th>
-                <th className="px-5 py-3 text-center text-xs font-semibold uppercase tracking-wide text-gray-500">Estado</th>
-                <th className="px-5 py-3 text-right text-xs font-semibold uppercase tracking-wide text-gray-500">Acciones</th>
+              <tr className="border-b border-border bg-bg">
+                <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-fg-muted">Nombre</th>
+                <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-fg-muted">Subdominio</th>
+                <th className="px-5 py-3 text-center text-xs font-semibold uppercase tracking-wide text-fg-muted">Estado</th>
+                <th className="px-5 py-3 text-right text-xs font-semibold uppercase tracking-wide text-fg-muted">Acciones</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-50">
+            <tbody className="divide-y divide-border">
               {insts.map(inst => (
-                <tr key={inst.id} className="hover:bg-gray-50">
+                <tr key={inst.id} className="hover:bg-surface-2">
                   <td className="px-5 py-3.5">
                     <div className="flex items-center gap-3">
                       {inst.logo_url ? (
@@ -214,10 +214,10 @@ export default function InstitucionesPage() {
                           {inst.nombre.charAt(0).toUpperCase()}
                         </div>
                       )}
-                      <span className="font-medium text-gray-900">{inst.nombre}</span>
+                      <span className="font-medium text-fg">{inst.nombre}</span>
                     </div>
                   </td>
-                  <td className="px-5 py-3.5 text-gray-500 font-mono text-xs">
+                  <td className="px-5 py-3.5 text-fg-muted font-mono text-xs">
                     {inst.subdominio}.edusync.com.bo
                   </td>
                   <td className="px-5 py-3.5 text-center">

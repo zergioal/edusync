@@ -218,18 +218,18 @@ export function NuevoEstudianteModal({ isOpen, onClose, onSuccess }: Props) {
                     ? "bg-green-500 text-white"
                     : i === step
                       ? "bg-blue-600 text-white"
-                      : "bg-gray-200 text-gray-500"
+                      : "bg-surface-2 text-fg-muted"
                 }`}
               >
                 {i < step ? "✓" : i + 1}
               </div>
               <span
-                className={`text-xs ${i === step ? "font-semibold text-gray-800" : "text-gray-400"}`}
+                className={`text-xs ${i === step ? "font-semibold text-fg" : "text-fg-muted"}`}
               >
                 {label}
               </span>
               {i < STEP_LABELS.length - 1 && (
-                <div className="flex-1 h-px bg-gray-200" />
+                <div className="flex-1 h-px bg-surface-2" />
               )}
             </div>
           ))}
@@ -247,7 +247,7 @@ export function NuevoEstudianteModal({ isOpen, onClose, onSuccess }: Props) {
         <div className="space-y-4">
           <div className="grid grid-cols-2 gap-3">
             <div className="flex flex-col gap-1">
-              <label className="text-sm font-medium text-gray-700">
+              <label className="text-sm font-medium text-fg">
                 Apellido Paterno *
               </label>
               <input
@@ -256,11 +256,11 @@ export function NuevoEstudianteModal({ isOpen, onClose, onSuccess }: Props) {
                 onChange={(e) => setApellidoPaterno(e.target.value)}
                 required
                 placeholder="Ej: García"
-                className="rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="rounded-lg border border-border px-3 py-2 text-sm shadow-sm focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand"
               />
             </div>
             <div className="flex flex-col gap-1">
-              <label className="text-sm font-medium text-gray-700">
+              <label className="text-sm font-medium text-fg">
                 Apellido Materno
               </label>
               <input
@@ -268,12 +268,12 @@ export function NuevoEstudianteModal({ isOpen, onClose, onSuccess }: Props) {
                 value={apellidoMaterno}
                 onChange={(e) => setApellidoMaterno(e.target.value)}
                 placeholder="Ej: Mamani"
-                className="rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="rounded-lg border border-border px-3 py-2 text-sm shadow-sm focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand"
               />
             </div>
           </div>
           <div className="flex flex-col gap-1">
-            <label className="text-sm font-medium text-gray-700">
+            <label className="text-sm font-medium text-fg">
               Nombres *
             </label>
             <input
@@ -282,22 +282,22 @@ export function NuevoEstudianteModal({ isOpen, onClose, onSuccess }: Props) {
               onChange={(e) => setNombre(e.target.value)}
               required
               placeholder="Ej: Pedro Juan"
-              className="rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="rounded-lg border border-border px-3 py-2 text-sm shadow-sm focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand"
             />
           </div>
           <div className="flex flex-col gap-1">
-            <label className="text-sm font-medium text-gray-700">
+            <label className="text-sm font-medium text-fg">
               Fecha de nacimiento
             </label>
             <input
               type="date"
               value={fechaNacimiento}
               onChange={(e) => setFechaNacimiento(e.target.value)}
-              className="rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="rounded-lg border border-border px-3 py-2 text-sm shadow-sm focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand"
             />
           </div>
           <div className="flex flex-col gap-1">
-            <label className="text-sm font-medium text-gray-700">
+            <label className="text-sm font-medium text-fg">
               Correo institucional *
             </label>
             <input
@@ -306,28 +306,28 @@ export function NuevoEstudianteModal({ isOpen, onClose, onSuccess }: Props) {
               onChange={(e) => setEmail(e.target.value)}
               required
               placeholder="estudiante@uepioxii.edu.bo"
-              className="rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="rounded-lg border border-border px-3 py-2 text-sm shadow-sm focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand"
             />
           </div>
 
-          <div className="border-t border-gray-100 pt-3 space-y-3">
+          <div className="border-t border-border pt-3 space-y-3">
             <label className="flex items-center gap-2.5 cursor-pointer">
               <input
                 type="checkbox"
                 checked={becado}
                 onChange={(e) => setBecado(e.target.checked)}
-                className="rounded border-gray-300 text-amber-500 focus:ring-amber-500 h-4 w-4"
+                className="rounded border-border text-amber-500 focus:ring-amber-500 h-4 w-4"
               />
-              <span className="text-sm font-medium text-gray-700">
+              <span className="text-sm font-medium text-fg">
                 Estudiante becado{" "}
-                <span className="text-xs font-normal text-gray-400">
+                <span className="text-xs font-normal text-fg-muted">
                   (exento del pago de pensiones)
                 </span>
               </span>
             </label>
             {becado && (
               <div className="flex flex-col gap-1 pl-6">
-                <label className="text-sm font-medium text-gray-700">
+                <label className="text-sm font-medium text-fg">
                   Motivo de la beca
                 </label>
                 <input
@@ -335,7 +335,7 @@ export function NuevoEstudianteModal({ isOpen, onClose, onSuccess }: Props) {
                   value={motivoBeca}
                   onChange={(e) => setMotivoBeca(e.target.value)}
                   placeholder="Ej: Beca por rendimiento académico"
-                  className="rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                  className="rounded-lg border border-border px-3 py-2 text-sm shadow-sm focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-500"
                 />
               </div>
             )}
@@ -366,15 +366,15 @@ export function NuevoEstudianteModal({ isOpen, onClose, onSuccess }: Props) {
                 type="checkbox"
                 checked={crearCuentaTutor}
                 onChange={(e) => setCrearCuentaTutor(e.target.checked)}
-                className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                className="rounded border-border text-blue-600 focus:ring-brand"
               />
-              <span className="text-sm text-gray-700">
+              <span className="text-sm text-fg">
                 Crear cuenta de acceso para el tutor 1
               </span>
             </label>
           )}
 
-          <div className="border-t border-gray-100 pt-4">
+          <div className="border-t border-border pt-4">
             <TutorField
               label="Tutor / Padre 2 (opcional)"
               nombre={tutor2Nombre}
@@ -451,20 +451,20 @@ export function NuevoEstudianteModal({ isOpen, onClose, onSuccess }: Props) {
       {step === 3 && credentials && (
         <div className="space-y-4 text-center py-4">
           <div className="text-5xl">🎉</div>
-          <h3 className="text-lg font-bold text-gray-900">
+          <h3 className="text-lg font-bold text-fg">
             Estudiante registrado exitosamente
           </h3>
           <div className="rounded-xl bg-green-50 border border-green-200 p-5 text-left space-y-2">
             <p className="text-sm font-semibold text-green-800">
               Credenciales generadas:
             </p>
-            <div className="bg-white rounded-lg px-4 py-3 font-mono text-sm space-y-1 border border-green-100">
+            <div className="bg-surface rounded-lg px-4 py-3 font-mono text-sm space-y-1 border border-green-100">
               <p>
-                <span className="text-gray-500">Email:</span>{" "}
+                <span className="text-fg-muted">Email:</span>{" "}
                 {credentials.email}
               </p>
               <p>
-                <span className="text-gray-500">Contraseña:</span>{" "}
+                <span className="text-fg-muted">Contraseña:</span>{" "}
                 {credentials.password}
               </p>
             </div>

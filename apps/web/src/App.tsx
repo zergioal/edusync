@@ -24,7 +24,7 @@ const AnunciosPage   = lazy(() => import('./pages/public/AnunciosPage'))
 
 function PageLoader() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-50">
+    <div className="flex min-h-screen items-center justify-center bg-bg">
       <Spinner />
     </div>
   )

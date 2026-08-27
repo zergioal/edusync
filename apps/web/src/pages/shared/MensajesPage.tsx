@@ -138,21 +138,21 @@ export default function MensajesPage() {
     <div className="space-y-4">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">Mensajes</h1>
+        <h1 className="text-2xl font-bold text-fg">Mensajes</h1>
         <Button onClick={() => setCompose(true)}>Nuevo mensaje</Button>
       </div>
 
       <div className="flex gap-4 h-[calc(100vh-14rem)]">
         {/* Panel izquierdo: lista */}
-        <div className="w-72 flex-shrink-0 flex flex-col rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+        <div className="w-72 flex-shrink-0 flex flex-col rounded-xl border border-border bg-surface shadow-sm overflow-hidden">
           {/* Tabs */}
-          <div className="flex border-b border-gray-100">
+          <div className="flex border-b border-border">
             {(['recibidos', 'enviados'] as const).map(t => (
               <button
                 key={t}
                 onClick={() => setTab(t)}
                 className={`flex-1 py-3 text-sm font-medium transition-colors ${
-                  tab === t ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-500 hover:text-gray-700'
+                  tab === t ? 'text-blue-600 border-b-2 border-blue-600' : 'text-fg-muted hover:text-fg'
                 }`}
               >
                 {t === 'recibidos' ? 'Recibidos' : 'Enviados'}
@@ -168,33 +168,33 @@ export default function MensajesPage() {
           {loading ? (
             <div className="flex flex-1 items-center justify-center"><Spinner /></div>
           ) : lista.length === 0 ? (
-            <div className="flex flex-1 items-center justify-center text-sm text-gray-400">
+            <div className="flex flex-1 items-center justify-center text-sm text-fg-muted">
               Sin mensajes
             </div>
           ) : (
-            <div className="flex-1 overflow-y-auto divide-y divide-gray-50">
+            <div className="flex-1 overflow-y-auto divide-y divide-border">
               {lista.map(m => (
                 <button
                   key={m.id}
                   onClick={() => abrirMensaje(m)}
-                  className={`w-full text-left px-4 py-3 hover:bg-gray-50 transition-colors ${
+                  className={`w-full text-left px-4 py-3 hover:bg-surface-2 transition-colors ${
                     selected?.id === m.id ? 'bg-blue-50' : ''
                   }`}
                 >
                   <div className="flex items-start justify-between gap-2">
-                    <p className={`text-sm truncate ${!m.leido && tab === 'recibidos' ? 'font-semibold text-gray-900' : 'font-medium text-gray-700'}`}>
+                    <p className={`text-sm truncate ${!m.leido && tab === 'recibidos' ? 'font-semibold text-fg' : 'font-medium text-fg'}`}>
                       {m.asunto}
                     </p>
                     {!m.leido && tab === 'recibidos' && (
                       <span className="h-2 w-2 flex-shrink-0 rounded-full bg-blue-500 mt-1.5" />
                     )}
                   </div>
-                  <p className="text-xs text-gray-400 mt-0.5 truncate">
+                  <p className="text-xs text-fg-muted mt-0.5 truncate">
                     {tab === 'recibidos'
                       ? `De: ${m.remitente?.apellido}, ${m.remitente?.nombre}`
                       : `Para: ${m.destinatario?.apellido}, ${m.destinatario?.nombre}`}
                   </p>
-                  <p className="text-xs text-gray-400 mt-0.5">{fmt(m.enviado_en)}</p>
+                  <p className="text-xs text-fg-muted mt-0.5">{fmt(m.enviado_en)}</p>
                 </button>
               ))}
             </div>
@@ -202,23 +202,23 @@ export default function MensajesPage() {
         </div>
 
         {/* Panel derecho: detalle */}
-        <div className="flex-1 rounded-xl border border-gray-200 bg-white shadow-sm overflow-y-auto p-6">
+        <div className="flex-1 rounded-xl border border-border bg-surface shadow-sm overflow-y-auto p-6">
           {selected ? (
             <div className="space-y-4">
-              <h2 className="text-xl font-semibold text-gray-900">{selected.asunto}</h2>
-              <div className="flex items-center gap-4 text-sm text-gray-500 pb-4 border-b border-gray-100">
+              <h2 className="text-xl font-semibold text-fg">{selected.asunto}</h2>
+              <div className="flex items-center gap-4 text-sm text-fg-muted pb-4 border-b border-border">
                 {selected.remitente && (
-                  <span>De: <span className="font-medium text-gray-700">{selected.remitente.apellido}, {selected.remitente.nombre}</span></span>
+                  <span>De: <span className="font-medium text-fg">{selected.remitente.apellido}, {selected.remitente.nombre}</span></span>
                 )}
                 {selected.destinatario && (
-                  <span>Para: <span className="font-medium text-gray-700">{selected.destinatario.apellido}, {selected.destinatario.nombre}</span></span>
+                  <span>Para: <span className="font-medium text-fg">{selected.destinatario.apellido}, {selected.destinatario.nombre}</span></span>
                 )}
                 <span>{fmt(selected.enviado_en)}</span>
               </div>
-              <div className="whitespace-pre-wrap text-sm text-gray-700">{selected.cuerpo}</div>
+              <div className="whitespace-pre-wrap text-sm text-fg">{selected.cuerpo}</div>
             </div>
           ) : (
-            <div className="flex h-full items-center justify-center text-sm text-gray-400">
+            <div className="flex h-full items-center justify-center text-sm text-fg-muted">
               Selecciona un mensaje para leerlo
             </div>
           )}
@@ -239,7 +239,7 @@ export default function MensajesPage() {
       >
         <form id="form-mensaje" onSubmit={enviar} className="space-y-4">
           <div className="flex flex-col gap-1" ref={destWrapRef}>
-            <label className="text-sm font-medium text-gray-700">Para</label>
+            <label className="text-sm font-medium text-fg">Para</label>
             {destinatario ? (
               <div className="flex items-center justify-between rounded-lg border-2 border-blue-200 bg-blue-50 px-3 py-2">
                 <div>
@@ -264,10 +264,10 @@ export default function MensajesPage() {
                   required
                   placeholder="Escribe un nombre o apellido para buscar…"
                   autoComplete="off"
-                  className="rounded-lg border border-gray-300 px-3 py-2 text-sm w-full focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="rounded-lg border border-border px-3 py-2 text-sm w-full focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand"
                 />
                 {destOpen && destSuggestions.length > 0 && (
-                  <div className="absolute z-50 mt-1 w-full max-h-64 overflow-y-auto bg-white rounded-xl border border-gray-200 shadow-lg">
+                  <div className="absolute z-50 mt-1 w-full max-h-64 overflow-y-auto bg-surface rounded-xl border border-border shadow-lg">
                     {destSuggestions.map(u => (
                       <button
                         key={u.id}
@@ -276,8 +276,8 @@ export default function MensajesPage() {
                         onClick={() => { setDestinatario(u); setDestQuery(''); setDestSuggestions([]); setDestOpen(false) }}
                         className="w-full text-left px-3 py-2.5 hover:bg-blue-50 transition-colors border-b border-gray-50 last:border-0"
                       >
-                        <p className="text-sm font-medium text-gray-900">{u.apellido}, {u.nombre}</p>
-                        <p className="text-xs text-gray-400">{ROL_LABELS[u.rol]} · {u.email}</p>
+                        <p className="text-sm font-medium text-fg">{u.apellido}, {u.nombre}</p>
+                        <p className="text-xs text-fg-muted">{ROL_LABELS[u.rol]} · {u.email}</p>
                       </button>
                     ))}
                   </div>
@@ -286,23 +286,23 @@ export default function MensajesPage() {
             )}
           </div>
           <div className="flex flex-col gap-1">
-            <label className="text-sm font-medium text-gray-700">Asunto</label>
+            <label className="text-sm font-medium text-fg">Asunto</label>
             <input
               type="text"
               value={form.asunto}
               onChange={e => setForm(f => ({ ...f, asunto: e.target.value }))}
               required
-              className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="rounded-lg border border-border px-3 py-2 text-sm focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand"
             />
           </div>
           <div className="flex flex-col gap-1">
-            <label className="text-sm font-medium text-gray-700">Mensaje</label>
+            <label className="text-sm font-medium text-fg">Mensaje</label>
             <textarea
               value={form.cuerpo}
               onChange={e => setForm(f => ({ ...f, cuerpo: e.target.value }))}
               required
               rows={5}
-              className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="rounded-lg border border-border px-3 py-2 text-sm focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand"
             />
           </div>
         </form>

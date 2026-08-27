@@ -79,14 +79,14 @@ export default function MisCalificacionesPage({ estudianteId }: Props) {
   return (
     <div className="space-y-5">
       <div className="flex items-center justify-between flex-wrap gap-3">
-        <h1 className="text-xl font-bold text-gray-900">Mis Calificaciones</h1>
+        <h1 className="text-xl font-bold text-fg">Mis Calificaciones</h1>
         {trimestres.length > 0 && (
-          <div className="flex rounded-lg border border-gray-200 overflow-hidden">
+          <div className="flex rounded-lg border border-border overflow-hidden">
             {trimestres.map(t => (
               <button
                 key={t.id}
                 onClick={() => { setTrimestreId(t.id); setMateriaAbierta(null) }}
-                className={`px-4 py-1.5 text-sm font-medium transition ${trimestreId === t.id ? 'bg-blue-600 text-white' : 'bg-white text-gray-600 hover:bg-gray-50'}`}
+                className={`px-4 py-1.5 text-sm font-medium transition ${trimestreId === t.id ? 'bg-blue-600 text-white' : 'bg-surface text-fg-muted hover:bg-surface-2'}`}
               >
                 T{t.numero}
               </button>
@@ -96,7 +96,7 @@ export default function MisCalificacionesPage({ estudianteId }: Props) {
       </div>
 
       {loading && (
-        <div className="rounded-xl border border-gray-100 bg-white p-10 text-center text-sm text-gray-400">
+        <div className="rounded-xl border border-border bg-surface p-10 text-center text-sm text-fg-muted">
           Cargando calificaciones…
         </div>
       )}
@@ -112,7 +112,7 @@ export default function MisCalificacionesPage({ estudianteId }: Props) {
       {/* REGULAR: tarjetas por materia → detalle tipo planilla */}
       {!loading && data?.tipo === 'REGULAR' && !materiaSeleccionada && (
         data.materias.length === 0 ? (
-          <div className="rounded-xl border-2 border-dashed border-gray-200 bg-white p-10 text-center text-sm text-gray-400">
+          <div className="rounded-xl border-2 border-dashed border-border bg-surface p-10 text-center text-sm text-fg-muted">
             Las calificaciones de este trimestre aún no están disponibles.
           </div>
         ) : (
@@ -120,18 +120,18 @@ export default function MisCalificacionesPage({ estudianteId }: Props) {
             {data.materias.map(m => (
               <div
                 key={m.asignacion_id}
-                className="rounded-xl border border-gray-200 bg-white p-4 cursor-pointer hover:border-blue-300 transition"
+                className="rounded-xl border border-border bg-surface p-4 cursor-pointer hover:border-blue-300 transition"
                 onClick={() => setMateriaAbierta(m.asignacion_id)}
               >
                 <div className="flex items-start justify-between">
                   <div>
-                    <div className="font-semibold text-gray-900 text-sm">{m.materia.nombre}</div>
-                    <div className="text-xs text-gray-400">{m.materia.campo}</div>
+                    <div className="font-semibold text-fg text-sm">{m.materia.nombre}</div>
+                    <div className="text-xs text-fg-muted">{m.materia.campo}</div>
                   </div>
                   {m.estudiante?.escala && <EscalaBadge e={m.estudiante.escala} />}
                 </div>
                 <div className="mt-3 flex items-center justify-between">
-                  <span className="text-2xl font-bold text-gray-900">{m.estudiante?.total ?? '—'}</span>
+                  <span className="text-2xl font-bold text-fg">{m.estudiante?.total ?? '—'}</span>
                   <span className="text-xs text-blue-600 font-medium">Ver planilla →</span>
                 </div>
               </div>
@@ -150,8 +150,8 @@ export default function MisCalificacionesPage({ estudianteId }: Props) {
             ← Volver a materias
           </button>
           <div>
-            <h2 className="text-lg font-bold text-gray-900">{materiaSeleccionada.materia.nombre}</h2>
-            <p className="text-sm text-gray-400">{materiaSeleccionada.materia.campo}</p>
+            <h2 className="text-lg font-bold text-fg">{materiaSeleccionada.materia.nombre}</h2>
+            <p className="text-sm text-fg-muted">{materiaSeleccionada.materia.campo}</p>
           </div>
           {materiaSeleccionada.observacion && (
             <div className="rounded-lg bg-blue-50 border-l-4 border-blue-400 px-3 py-2 text-sm text-blue-800">
@@ -172,20 +172,20 @@ export default function MisCalificacionesPage({ estudianteId }: Props) {
             Nivel Inicial — Evaluación cualitativa. Se muestran observaciones descriptivas del proceso de desarrollo.
           </div>
           {data.materias_inicial.length === 0 ? (
-            <div className="rounded-xl border-2 border-dashed border-gray-200 bg-white p-10 text-center text-sm text-gray-400">
+            <div className="rounded-xl border-2 border-dashed border-border bg-surface p-10 text-center text-sm text-fg-muted">
               Las observaciones de este trimestre aún no están disponibles.
             </div>
           ) : (
             data.materias_inicial.map(m => (
-              <div key={m.nombre} className="rounded-xl border border-gray-200 bg-white p-4">
-                <div className="font-semibold text-gray-900">{m.nombre}</div>
-                <div className="text-xs text-gray-400 mb-3">Doc. {m.docente}</div>
+              <div key={m.nombre} className="rounded-xl border border-border bg-surface p-4">
+                <div className="font-semibold text-fg">{m.nombre}</div>
+                <div className="text-xs text-fg-muted mb-3">Doc. {m.docente}</div>
                 {m.observacion ? (
                   <div className="rounded-lg bg-blue-50 border-l-4 border-blue-400 px-3 py-2 text-sm text-blue-800">
                     {m.observacion}
                   </div>
                 ) : (
-                  <div className="text-sm text-gray-400 italic">Sin observación registrada.</div>
+                  <div className="text-sm text-fg-muted italic">Sin observación registrada.</div>
                 )}
               </div>
             ))

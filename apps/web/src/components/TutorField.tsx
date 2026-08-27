@@ -72,18 +72,18 @@ export function TutorField({
     setTel('')
   }
 
-  const inputCls = 'rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500'
+  const inputCls = 'rounded-lg border border-border px-3 py-2 text-sm shadow-sm focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand'
 
   return (
     <div className="space-y-3">
-      <h3 className="text-sm font-semibold text-gray-700">{label}</h3>
+      <h3 className="text-sm font-semibold text-fg">{label}</h3>
 
       {/* Nombre con autocomplete */}
       <div className="flex flex-col gap-1" ref={wrapRef}>
-        <label className="text-sm font-medium text-gray-700">
+        <label className="text-sm font-medium text-fg">
           Apellidos y Nombres {required ? '*' : ''}
           {!existing && (
-            <span className="ml-1 text-xs font-normal text-gray-400">— escribe para buscar existentes</span>
+            <span className="ml-1 text-xs font-normal text-fg-muted">— escribe para buscar existentes</span>
           )}
         </label>
 
@@ -115,8 +115,8 @@ export function TutorField({
               autoComplete="off"
             />
             {open && suggestions.length > 0 && (
-              <div className="absolute z-50 mt-1 w-full bg-white rounded-xl border border-gray-200 shadow-lg overflow-hidden">
-                <p className="px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wide text-gray-400 border-b border-gray-100">
+              <div className="absolute z-50 mt-1 w-full bg-surface rounded-xl border border-border shadow-lg overflow-hidden">
+                <p className="px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wide text-fg-muted border-b border-border">
                   Padres / tutores existentes
                 </p>
                 {suggestions.map(t => (
@@ -127,8 +127,8 @@ export function TutorField({
                     onClick={() => select(t)}
                     className="w-full text-left px-3 py-2.5 hover:bg-blue-50 transition-colors border-b border-gray-50 last:border-0"
                   >
-                    <p className="text-sm font-medium text-gray-900">{t.apellido}, {t.nombre}</p>
-                    <p className="text-xs text-gray-400">{t.email}</p>
+                    <p className="text-sm font-medium text-fg">{t.apellido}, {t.nombre}</p>
+                    <p className="text-xs text-fg-muted">{t.email}</p>
                   </button>
                 ))}
               </div>
@@ -140,7 +140,7 @@ export function TutorField({
       {/* Teléfono — siempre visible, pero readonly si existe */}
       {!existing && (
         <div className="flex flex-col gap-1">
-          <label className="text-sm font-medium text-gray-700">Teléfono {required ? '*' : ''}</label>
+          <label className="text-sm font-medium text-fg">Teléfono {required ? '*' : ''}</label>
           <input type="tel" value={tel} onChange={e => setTel(e.target.value)} required={required}
             placeholder="7XXXXXXX"
             className={`${inputCls} w-48`} />
@@ -150,7 +150,7 @@ export function TutorField({
       {/* Email — oculto si ya está pre-llenado y es existente */}
       {!existing && (
         <div className="flex flex-col gap-1">
-          <label className="text-sm font-medium text-gray-700">Correo electrónico</label>
+          <label className="text-sm font-medium text-fg">Correo electrónico</label>
           <input type="email" value={email} onChange={e => setEmail(e.target.value)}
             placeholder="padre@ejemplo.com"
             className={inputCls} />

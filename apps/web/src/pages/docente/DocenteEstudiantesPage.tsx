@@ -45,21 +45,21 @@ export default function DocenteEstudiantesPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Mis Estudiantes</h1>
-        <p className="text-sm text-gray-500 mt-0.5">Selecciona una materia asignada para ver sus estudiantes</p>
+        <h1 className="text-2xl font-bold text-fg">Mis Estudiantes</h1>
+        <p className="text-sm text-fg-muted mt-0.5">Selecciona una materia asignada para ver sus estudiantes</p>
       </div>
 
       {/* Selector de asignación */}
-      <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+      <div className="rounded-xl border border-border bg-surface p-4 shadow-sm">
         {loadingA ? (
           <Spinner />
         ) : (
           <div className="flex flex-col gap-1">
-            <label className="text-xs font-medium uppercase tracking-wide text-gray-500">Materia / Paralelo</label>
+            <label className="text-xs font-medium uppercase tracking-wide text-fg-muted">Materia / Paralelo</label>
             <select
               value={asignacionId}
               onChange={e => setAsignacionId(e.target.value)}
-              className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 w-96"
+              className="rounded-lg border border-border px-3 py-2 text-sm focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand w-96"
             >
               <option value="">— Seleccionar asignación —</option>
               {asignaciones.map(a => (
@@ -74,9 +74,9 @@ export default function DocenteEstudiantesPage() {
 
       {/* Tabla de estudiantes */}
       {asignacionId && (
-        <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+        <div className="rounded-xl border border-border bg-surface shadow-sm overflow-hidden">
           {asignacion && (
-            <div className="px-5 py-3 border-b border-gray-100 bg-gray-50 text-sm text-gray-600">
+            <div className="px-5 py-3 border-b border-border bg-bg text-sm text-fg-muted">
               <span className="font-semibold">{asignacion.materia.nombre}</span>
               {' — '}
               {asignacion.paralelo.grado.nivel.nombre} · {asignacion.paralelo.grado.nombre} "{asignacion.paralelo.letra}"
@@ -84,36 +84,36 @@ export default function DocenteEstudiantesPage() {
           )}
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-gray-100 bg-white text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
+              <tr className="border-b border-border bg-surface text-left text-xs font-semibold uppercase tracking-wide text-fg-muted">
                 <th className="px-5 py-3">Código</th>
                 <th className="px-5 py-3">Apellidos y Nombres</th>
                 <th className="px-5 py-3 text-right">Acciones</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-50">
+            <tbody className="divide-y divide-border">
               {loadingE && (
                 <tr><td colSpan={3} className="py-12 text-center"><Spinner /></td></tr>
               )}
               {!loadingE && estudiantes.length === 0 && (
                 <tr>
-                  <td colSpan={3} className="py-12 text-center text-gray-400">
+                  <td colSpan={3} className="py-12 text-center text-fg-muted">
                     No hay estudiantes matriculados en este paralelo.
                   </td>
                 </tr>
               )}
               {estudiantes.map(est => (
-                <tr key={est.id} className="hover:bg-gray-50 transition-colors">
+                <tr key={est.id} className="hover:bg-surface-2 transition-colors">
                   <td className="px-5 py-3">
-                    <span className="font-mono text-xs bg-gray-100 px-2 py-1 rounded text-gray-700">
+                    <span className="font-mono text-xs bg-surface-2 px-2 py-1 rounded text-fg">
                       {est.codigo}
                     </span>
                   </td>
-                  <td className="px-5 py-3 font-medium text-gray-900">
+                  <td className="px-5 py-3 font-medium text-fg">
                     {est.usuario.apellido}, {est.usuario.nombre}
                   </td>
                   <td className="px-5 py-3 text-right space-x-2">
                     <Button variant="ghost" size="sm"
-                      className="text-gray-600 hover:text-gray-800"
+                      className="text-fg-muted hover:text-fg"
                       onClick={() => navigate(`/dashboard/docente/estudiante/${est.id}?tab=datos`)}>
                       Ver datos
                     </Button>

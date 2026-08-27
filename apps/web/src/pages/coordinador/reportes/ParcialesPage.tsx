@@ -42,10 +42,10 @@ export default function ParcialesPage() {
     <div className="space-y-5">
       <div className="flex items-center gap-3">
         <Link to=".." className="text-sm text-blue-600 hover:underline">← Reportes</Link>
-        <h1 className="text-xl font-bold text-gray-900">📋 Estado de Parciales</h1>
+        <h1 className="text-xl font-bold text-fg">📋 Estado de Parciales</h1>
       </div>
 
-      <div className="rounded-xl border border-gray-200 bg-white p-5">
+      <div className="rounded-xl border border-border bg-surface p-5">
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-4">
           <SelectGestion   value={gestionId}   onChange={id => { setGestionId(id); setTrimestreId('') }} />
           <SelectTrimestre value={trimestreId} onChange={setTrimestreId} gestionId={gestionId} />
@@ -79,33 +79,33 @@ export default function ParcialesPage() {
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             {data.map((row, i) => (
-              <div key={i} className="rounded-xl border border-gray-200 bg-white p-4 space-y-3">
+              <div key={i} className="rounded-xl border border-border bg-surface p-4 space-y-3">
                 <div className="flex items-start justify-between">
                   <div>
-                    <div className="font-semibold text-gray-900">
+                    <div className="font-semibold text-fg">
                       {row.docente.apellido} {row.docente.nombre}
                     </div>
-                    <div className="text-sm text-gray-500">{row.materia.nombre}</div>
+                    <div className="text-sm text-fg-muted">{row.materia.nombre}</div>
                   </div>
                   <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${row.todos_entregados ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'}`}>
                     {row.todos_entregados ? '✓ Completo' : `Faltan ${row.parciales.filter(p => !p.entregado).length}`}
                   </span>
                 </div>
                 {row.parciales.length === 0 ? (
-                  <p className="text-sm text-gray-400">Sin parciales en este trimestre.</p>
+                  <p className="text-sm text-fg-muted">Sin parciales en este trimestre.</p>
                 ) : (
-                  <div className="divide-y divide-gray-100">
+                  <div className="divide-y divide-border">
                     {row.parciales.map((p, j) => (
                       <div key={j} className="flex items-center justify-between py-1.5 text-sm">
                         <div>
                           <span className="font-medium">{p.indicador.nombre}</span>
-                          <span className="ml-2 text-xs text-gray-400">
+                          <span className="ml-2 text-xs text-fg-muted">
                             {new Date(p.indicador.fecha_aplicacion).toLocaleDateString('es-BO')}
                           </span>
                         </div>
                         <div className="flex items-center gap-2">
                           {p.estudiantes_sin_nota > 0 && (
-                            <span className="text-xs text-gray-400">{p.estudiantes_sin_nota} sin nota</span>
+                            <span className="text-xs text-fg-muted">{p.estudiantes_sin_nota} sin nota</span>
                           )}
                           <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${p.entregado ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-600'}`}>
                             {p.entregado ? 'Entregado' : 'Pendiente'}

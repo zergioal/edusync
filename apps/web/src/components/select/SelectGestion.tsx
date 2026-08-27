@@ -32,13 +32,13 @@ export function SelectGestion({
 
   return (
     <div className="flex flex-col gap-1">
-      {label && <label className="text-sm font-medium text-gray-700">{label}{required && ' *'}</label>}
+      {label && <label className="text-sm font-medium text-fg">{label}{required && ' *'}</label>}
       <select
         value={value}
         onChange={e => onChange(e.target.value)}
         required={required}
         disabled={disabled}
-        className="rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-50 disabled:text-gray-400"
+        className="rounded-lg border border-border px-3 py-2 text-sm shadow-sm focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand disabled:bg-bg disabled:text-fg-muted"
       >
         <option value="">{placeholder}</option>
         {options.map(g => (

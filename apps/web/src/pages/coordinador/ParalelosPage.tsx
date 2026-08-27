@@ -115,17 +115,17 @@ export default function ParalelosPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Cursos y Paralelos</h1>
-          <p className="text-sm text-gray-500 mt-0.5">Gestión de paralelos{gestionLabel ? ` — ${gestionLabel}` : ''}</p>
+          <h1 className="text-2xl font-bold text-fg">Cursos y Paralelos</h1>
+          <p className="text-sm text-fg-muted mt-0.5">Gestión de paralelos{gestionLabel ? ` — ${gestionLabel}` : ''}</p>
         </div>
         <Button onClick={openCreate}>+ Nuevo paralelo</Button>
       </div>
 
       {/* Tabla */}
-      <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+      <div className="rounded-xl border border-border bg-surface shadow-sm overflow-hidden">
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-gray-100 bg-gray-50 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
+            <tr className="border-b border-border bg-bg text-left text-xs font-semibold uppercase tracking-wide text-fg-muted">
               <th className="px-5 py-3">Nivel</th>
               <th className="px-5 py-3">Grado</th>
               <th className="px-5 py-3">Paralelo</th>
@@ -134,19 +134,19 @@ export default function ParalelosPage() {
               <th className="px-5 py-3 text-right">Acciones</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-50">
+          <tbody className="divide-y divide-border">
             {loading && (
               <tr><td colSpan={6} className="py-12 text-center"><Spinner /></td></tr>
             )}
             {!loading && paralelos.length === 0 && (
               <tr>
-                <td colSpan={6} className="py-12 text-center text-gray-400">
+                <td colSpan={6} className="py-12 text-center text-fg-muted">
                   No hay paralelos registrados. Crea el primero.
                 </td>
               </tr>
             )}
             {paralelos.map(p => (
-              <tr key={p.id} className="hover:bg-gray-50 transition-colors">
+              <tr key={p.id} className="hover:bg-surface-2 transition-colors">
                 <td className="px-5 py-3">
                   <Badge variant={
                     p.grado.nivel.nombre === 'INICIAL'   ? 'warning' :
@@ -155,19 +155,19 @@ export default function ParalelosPage() {
                     {p.grado.nivel.nombre}
                   </Badge>
                 </td>
-                <td className="px-5 py-3 font-medium text-gray-900">{p.grado.nombre}</td>
+                <td className="px-5 py-3 font-medium text-fg">{p.grado.nombre}</td>
                 <td className="px-5 py-3">
                   <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-blue-100 font-bold text-blue-700">
                     {p.letra}
                   </span>
                 </td>
-                <td className="px-5 py-3 text-gray-600">
+                <td className="px-5 py-3 text-fg-muted">
                   {p.asesor
                     ? `${p.asesor.usuario.apellido}, ${p.asesor.usuario.nombre}`
-                    : <span className="italic text-gray-400">Sin asignar</span>}
+                    : <span className="italic text-fg-muted">Sin asignar</span>}
                 </td>
                 <td className="px-5 py-3 text-center">
-                  <span className="font-semibold text-gray-700">{p._count.matriculas}</span>
+                  <span className="font-semibold text-fg">{p._count.matriculas}</span>
                 </td>
                 <td className="px-5 py-3 text-right">
                   <div className="flex items-center justify-end gap-2">
@@ -218,7 +218,7 @@ export default function ParalelosPage() {
             required
           />
           <div className="flex flex-col gap-1">
-            <label className="text-sm font-medium text-gray-700">Letra del paralelo</label>
+            <label className="text-sm font-medium text-fg">Letra del paralelo</label>
             <input
               type="text"
               maxLength={1}
@@ -226,7 +226,7 @@ export default function ParalelosPage() {
               onChange={e => setForm(f => ({ ...f, letra: e.target.value.toUpperCase() }))}
               placeholder="A"
               required
-              className="w-20 rounded-lg border border-gray-300 px-3 py-2 text-sm uppercase shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-20 rounded-lg border border-border px-3 py-2 text-sm uppercase shadow-sm focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand"
             />
           </div>
           <SelectDocente

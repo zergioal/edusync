@@ -37,7 +37,7 @@ export default function GaleriaPage() {
   const visibles = filtro === 'TODOS' ? items : items.filter(i => i.tipo === filtro)
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-bg">
       {/* Navbar */}
       <nav className="sticky top-0 z-40 bg-[#1F3864] shadow-lg">
         <div className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between">
@@ -53,7 +53,7 @@ export default function GaleriaPage() {
         <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
           <div>
             <h1 className="text-3xl font-black text-[#1F3864]">Galería institucional</h1>
-            <p className="text-gray-500 text-sm mt-1">{items.length} elementos</p>
+            <p className="text-fg-muted text-sm mt-1">{items.length} elementos</p>
           </div>
           <div className="flex gap-2">
             {(['TODOS', 'FOTO', 'VIDEO'] as const).map(f => (
@@ -61,7 +61,7 @@ export default function GaleriaPage() {
                 className={`px-4 py-2 rounded-xl text-sm font-medium transition-colors ${
                   filtro === f
                     ? 'bg-[#1F3864] text-white'
-                    : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
+                    : 'bg-surface border border-border text-fg hover:bg-surface-2'
                 }`}>
                 {f === 'TODOS' ? 'Todos' : f === 'FOTO' ? 'Fotos' : 'Videos'}
               </button>
@@ -72,16 +72,16 @@ export default function GaleriaPage() {
         {loading ? (
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
             {Array.from({ length: 12 }).map((_, i) => (
-              <div key={i} className="aspect-square bg-gray-200 rounded-xl animate-pulse" />
+              <div key={i} className="aspect-square bg-surface-2 rounded-xl animate-pulse" />
             ))}
           </div>
         ) : visibles.length === 0 ? (
-          <div className="text-center py-24 text-gray-400">Sin elementos en la galería</div>
+          <div className="text-center py-24 text-fg-muted">Sin elementos en la galería</div>
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
             {visibles.map(item => (
               <button key={item.id} onClick={() => setLightbox(item)}
-                className="group aspect-square bg-gray-200 rounded-xl overflow-hidden relative text-left focus:outline-none focus:ring-2 focus:ring-[#C9A84C]">
+                className="group aspect-square bg-surface-2 rounded-xl overflow-hidden relative text-left focus:outline-none focus:ring-2 focus:ring-[#C9A84C]">
                 {item.tipo === 'FOTO' ? (
                   <img src={item.url} alt={item.descripcion ?? ''} loading="lazy"
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"

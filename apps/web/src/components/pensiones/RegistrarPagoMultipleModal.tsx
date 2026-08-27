@@ -91,7 +91,7 @@ export function RegistrarPagoMultipleModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-      <div className="w-full max-w-md bg-white rounded-2xl shadow-xl overflow-hidden max-h-[90vh] flex flex-col">
+      <div className="w-full max-w-md bg-surface rounded-2xl shadow-xl overflow-hidden max-h-[90vh] flex flex-col">
 
         {/* Header */}
         <div className="bg-green-600 px-6 py-4 text-white flex-shrink-0">
@@ -118,7 +118,7 @@ export function RegistrarPagoMultipleModal({
               ))}
               <button
                 onClick={onClose}
-                className="w-full mt-2 border border-gray-300 rounded-xl py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                className="w-full mt-2 border border-border rounded-xl py-2.5 text-sm font-medium text-fg hover:bg-surface-2"
               >
                 Cerrar
               </button>
@@ -129,15 +129,15 @@ export function RegistrarPagoMultipleModal({
             <>
               {/* Lista de meses pendientes */}
               {loadingList ? (
-                <div className="py-6 text-center text-sm text-gray-400">Cargando mensualidades…</div>
+                <div className="py-6 text-center text-sm text-fg-muted">Cargando mensualidades…</div>
               ) : pensiones.length === 0 ? (
-                <div className="py-6 text-center text-sm text-gray-400">
+                <div className="py-6 text-center text-sm text-fg-muted">
                   Este estudiante no tiene mensualidades pendientes.
                 </div>
               ) : (
                 <div>
                   <div className="flex items-center justify-between mb-2">
-                    <p className="text-sm font-semibold text-gray-700">Meses pendientes</p>
+                    <p className="text-sm font-semibold text-fg">Meses pendientes</p>
                     <button
                       onClick={toggleAll}
                       className="text-xs text-blue-600 hover:underline"
@@ -145,11 +145,11 @@ export function RegistrarPagoMultipleModal({
                       {allSelected ? 'Deseleccionar todos' : 'Seleccionar todos'}
                     </button>
                   </div>
-                  <div className="space-y-1.5 rounded-xl border border-gray-200 overflow-hidden">
+                  <div className="space-y-1.5 rounded-xl border border-border overflow-hidden">
                     {pensiones.map(p => (
                       <label
                         key={p.id}
-                        className="flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 cursor-pointer transition-colors border-b border-gray-100 last:border-0"
+                        className="flex items-center gap-3 px-4 py-2.5 hover:bg-surface-2 cursor-pointer transition-colors border-b border-border last:border-0"
                       >
                         <input
                           type="checkbox"
@@ -157,10 +157,10 @@ export function RegistrarPagoMultipleModal({
                           onChange={() => toggle(p.id)}
                           className="h-4 w-4 rounded accent-green-600"
                         />
-                        <span className="flex-1 text-sm font-medium text-gray-800">
+                        <span className="flex-1 text-sm font-medium text-fg">
                           {MESES_NOMBRES[p.mes]}
                         </span>
-                        <span className="text-sm font-semibold text-gray-900">
+                        <span className="text-sm font-semibold text-fg">
                           Bs. {p.monto.toFixed(2)}
                         </span>
                       </label>
@@ -185,26 +185,26 @@ export function RegistrarPagoMultipleModal({
               {pensiones.length > 0 && (
                 <div className="space-y-3">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Fecha de pago</label>
+                    <label className="block text-sm font-medium text-fg mb-1">Fecha de pago</label>
                     <input
                       type="date"
                       value={fecha}
                       max={hoy}
                       onChange={e => setFecha(e.target.value)}
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                      className="w-full border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="block text-sm font-medium text-fg mb-1">
                       N° de comprobante
-                      <span className="ml-1 text-xs font-normal text-gray-400">(aplica a todos los meses)</span>
+                      <span className="ml-1 text-xs font-normal text-fg-muted">(aplica a todos los meses)</span>
                     </label>
                     <input
                       type="text"
                       value={comprobante}
                       onChange={e => setComp(e.target.value)}
                       placeholder="Ej: 001234"
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                      className="w-full border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
                     />
                   </div>
                 </div>
@@ -222,7 +222,7 @@ export function RegistrarPagoMultipleModal({
               <div className="flex gap-3 pt-1">
                 <button
                   onClick={onClose}
-                  className="flex-1 border border-gray-300 rounded-xl py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+                  className="flex-1 border border-border rounded-xl py-2.5 text-sm font-medium text-fg hover:bg-surface-2 transition-colors"
                 >
                   Cancelar
                 </button>

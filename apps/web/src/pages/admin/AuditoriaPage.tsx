@@ -73,37 +73,37 @@ function StaffTable() {
 
   if (loading) return <div className="flex justify-center py-12"><Spinner /></div>
   if (staff.length === 0) {
-    return <div className="py-12 text-center text-sm text-gray-400">Sin docentes ni administrativos registrados</div>
+    return <div className="py-12 text-center text-sm text-fg-muted">Sin docentes ni administrativos registrados</div>
   }
 
   return (
     <table className="w-full text-sm">
       <thead>
-        <tr className="border-b border-gray-100 bg-gray-50 text-xs font-semibold uppercase tracking-wide text-gray-500">
+        <tr className="border-b border-border bg-bg text-xs font-semibold uppercase tracking-wide text-fg-muted">
           <th className="px-5 py-3 text-left">Nombre</th>
           <th className="px-5 py-3 text-left">Rol</th>
           <th className="px-5 py-3 text-left">Última conexión</th>
           <th className="px-5 py-3 text-left">Última acción</th>
         </tr>
       </thead>
-      <tbody className="divide-y divide-gray-50">
+      <tbody className="divide-y divide-border">
         {staff.map(s => (
-          <tr key={s.id} className="hover:bg-gray-50 transition-colors">
-            <td className="px-5 py-3 font-medium text-gray-900">
+          <tr key={s.id} className="hover:bg-surface-2 transition-colors">
+            <td className="px-5 py-3 font-medium text-fg">
               {s.apellido}, {s.nombre}
               {!s.activo && <Badge variant="danger">Inactivo</Badge>}
             </td>
-            <td className="px-5 py-3 text-gray-600">{ROL_LABELS[s.rol] ?? s.rol}</td>
-            <td className="px-5 py-3 text-gray-500">
-              {s.ultima_conexion ? relativo(s.ultima_conexion) : <span className="text-gray-300 italic">Nunca</span>}
+            <td className="px-5 py-3 text-fg-muted">{ROL_LABELS[s.rol] ?? s.rol}</td>
+            <td className="px-5 py-3 text-fg-muted">
+              {s.ultima_conexion ? relativo(s.ultima_conexion) : <span className="text-fg-muted italic">Nunca</span>}
             </td>
-            <td className="px-5 py-3 text-gray-600">
+            <td className="px-5 py-3 text-fg-muted">
               {s.ultima_accion
                 ? <>
                     <span>{labelAccion(s.ultima_accion)}</span>
-                    <span className="ml-1.5 text-xs text-gray-400">· {relativo(s.ultima_accion.creado_en)}</span>
+                    <span className="ml-1.5 text-xs text-fg-muted">· {relativo(s.ultima_accion.creado_en)}</span>
                   </>
-                : <span className="text-gray-300 italic">Sin actividad registrada</span>}
+                : <span className="text-fg-muted italic">Sin actividad registrada</span>}
             </td>
           </tr>
         ))}
@@ -163,18 +163,18 @@ function RegistroDetallado() {
   return (
     <div className="space-y-4">
       {/* Filtros */}
-      <div className="flex flex-wrap gap-3 rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+      <div className="flex flex-wrap gap-3 rounded-xl border border-border bg-surface p-4 shadow-sm">
         <input
           type="text"
           placeholder="Filtrar por recurso..."
           value={recurso}
           onChange={e => setRecurso(e.target.value)}
-          className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="rounded-lg border border-border px-3 py-2 text-sm focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand"
         />
         <select
           value={accion}
           onChange={e => setAccion(e.target.value)}
-          className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="rounded-lg border border-border px-3 py-2 text-sm focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand"
         >
           <option value="">Todas las acciones</option>
           <option value="CREATE">CREATE</option>
@@ -184,15 +184,15 @@ function RegistroDetallado() {
       </div>
 
       {/* Tabla */}
-      <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+      <div className="rounded-xl border border-border bg-surface shadow-sm overflow-hidden">
         {loading && logs.length === 0 ? (
           <div className="flex justify-center py-12"><Spinner /></div>
         ) : logs.length === 0 ? (
-          <div className="py-12 text-center text-sm text-gray-400">Sin registros de auditoría</div>
+          <div className="py-12 text-center text-sm text-fg-muted">Sin registros de auditoría</div>
         ) : (
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-gray-100 bg-gray-50 text-xs font-semibold uppercase tracking-wide text-gray-500">
+              <tr className="border-b border-border bg-bg text-xs font-semibold uppercase tracking-wide text-fg-muted">
                 <th className="px-5 py-3 text-left">Fecha</th>
                 <th className="px-5 py-3 text-left">Acción</th>
                 <th className="px-5 py-3 text-left">Recurso</th>
@@ -200,23 +200,23 @@ function RegistroDetallado() {
                 <th className="px-5 py-3 text-left">IP</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-50">
+            <tbody className="divide-y divide-border">
               {logs.map(l => (
-                <tr key={l.id} className="hover:bg-gray-50 transition-colors">
-                  <td className="px-5 py-3 text-gray-500 whitespace-nowrap">{fmt(l.creado_en)}</td>
+                <tr key={l.id} className="hover:bg-surface-2 transition-colors">
+                  <td className="px-5 py-3 text-fg-muted whitespace-nowrap">{fmt(l.creado_en)}</td>
                   <td className="px-5 py-3">
                     <Badge variant={ACCION_VARIANT[l.accion] ?? 'info'}>{l.accion}</Badge>
                   </td>
-                  <td className="px-5 py-3 font-mono text-xs text-gray-700">{l.recurso}</td>
-                  <td className="px-5 py-3 font-mono text-xs text-gray-500 truncate max-w-[120px]">{l.recurso_id ?? '—'}</td>
-                  <td className="px-5 py-3 text-xs text-gray-400">{l.ip ?? '—'}</td>
+                  <td className="px-5 py-3 font-mono text-xs text-fg">{l.recurso}</td>
+                  <td className="px-5 py-3 font-mono text-xs text-fg-muted truncate max-w-[120px]">{l.recurso_id ?? '—'}</td>
+                  <td className="px-5 py-3 text-xs text-fg-muted">{l.ip ?? '—'}</td>
                 </tr>
               ))}
             </tbody>
           </table>
         )}
         {hasMore && !loading && (
-          <div className="flex justify-center py-4 border-t border-gray-100">
+          <div className="flex justify-center py-4 border-t border-border">
             <button
               onClick={() => { setPage(p => p + 1); cargar() }}
               className="text-sm text-blue-600 hover:underline"
@@ -239,12 +239,12 @@ export default function AuditoriaPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Auditoría del Sistema</h1>
-          <p className="text-sm text-gray-500 mt-0.5">
+          <h1 className="text-2xl font-bold text-fg">Auditoría del Sistema</h1>
+          <p className="text-sm text-fg-muted mt-0.5">
             {vista === 'staff' ? 'Actividad de docentes y administrativos' : 'Registro detallado de acciones'}
           </p>
         </div>
-        <div className="flex gap-1 rounded-xl bg-gray-100 p-1 w-fit">
+        <div className="flex gap-1 rounded-xl bg-surface-2 p-1 w-fit">
           {([
             { key: 'staff' as const, label: 'Actividad de staff' },
             { key: 'log'   as const, label: 'Registro detallado' },
@@ -253,7 +253,7 @@ export default function AuditoriaPage() {
               key={t.key}
               onClick={() => setVista(t.key)}
               className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                vista === t.key ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'
+                vista === t.key ? 'bg-surface text-fg shadow-sm' : 'text-fg-muted hover:text-fg'
               }`}
             >
               {t.label}
@@ -263,7 +263,7 @@ export default function AuditoriaPage() {
       </div>
 
       {vista === 'staff' ? (
-        <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+        <div className="rounded-xl border border-border bg-surface shadow-sm overflow-hidden">
           <StaffTable />
         </div>
       ) : (

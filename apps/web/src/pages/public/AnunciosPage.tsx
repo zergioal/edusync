@@ -32,7 +32,7 @@ export default function AnunciosPage() {
   }, [hash, loading])
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-bg">
       {/* Navbar */}
       <nav className="sticky top-0 z-40 bg-[#1F3864] shadow-lg">
         <div className="max-w-4xl mx-auto px-4 h-14 flex items-center justify-between">
@@ -47,22 +47,22 @@ export default function AnunciosPage() {
       <div className="max-w-4xl mx-auto px-4 py-12">
         <div className="mb-8">
           <h1 className="text-3xl font-black text-[#1F3864]">Anuncios institucionales</h1>
-          <p className="text-gray-500 mt-1 text-sm">Comunicados y noticias de la institución</p>
+          <p className="text-fg-muted mt-1 text-sm">Comunicados y noticias de la institución</p>
         </div>
 
         {loading ? (
           <div className="space-y-4">
             {Array.from({ length: 5 }).map((_, i) => (
-              <div key={i} className="bg-white rounded-xl p-6 shadow-sm animate-pulse h-32" />
+              <div key={i} className="bg-surface rounded-xl p-6 shadow-sm animate-pulse h-32" />
             ))}
           </div>
         ) : anuncios.length === 0 ? (
-          <div className="text-center py-24 text-gray-400">No hay anuncios publicados</div>
+          <div className="text-center py-24 text-fg-muted">No hay anuncios publicados</div>
         ) : (
           <div className="space-y-5">
             {anuncios.map(a => (
               <article key={a.id} id={a.id}
-                className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 scroll-mt-20">
+                className="bg-surface rounded-xl shadow-sm border border-border p-6 scroll-mt-20">
                 <div className="flex items-start justify-between gap-4 flex-wrap">
                   <h2 className="text-lg font-bold text-[#1F3864] leading-snug">{a.titulo}</h2>
                   <time className="text-xs text-[#C9A84C] font-semibold whitespace-nowrap">
@@ -71,7 +71,7 @@ export default function AnunciosPage() {
                     })}
                   </time>
                 </div>
-                <div className="mt-3 text-gray-700 text-sm leading-relaxed whitespace-pre-wrap">
+                <div className="mt-3 text-fg text-sm leading-relaxed whitespace-pre-wrap">
                   {a.contenido}
                 </div>
               </article>

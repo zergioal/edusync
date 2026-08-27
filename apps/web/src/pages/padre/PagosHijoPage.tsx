@@ -36,16 +36,16 @@ export default function PagosHijoPage() {
 
   return (
     <div className="space-y-5">
-      <h1 className="text-xl font-bold text-gray-900">Estado de Pensiones</h1>
+      <h1 className="text-xl font-bold text-fg">Estado de Pensiones</h1>
 
       {hijos.length > 1 && (
         <div className="flex items-center gap-2 flex-wrap">
-          <span className="text-sm text-gray-500">Hijo/a:</span>
+          <span className="text-sm text-fg-muted">Hijo/a:</span>
           {hijos.map(h => (
             <button
               key={h.id}
               onClick={() => setHijoId(h.id)}
-              className={`rounded-full px-3 py-1 text-sm font-medium transition ${hijoId === h.id ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
+              className={`rounded-full px-3 py-1 text-sm font-medium transition ${hijoId === h.id ? 'bg-blue-600 text-white' : 'bg-surface-2 text-fg hover:bg-surface-2'}`}
             >
               {h.nombre} {h.apellido}
               {h.bloqueado && <span className="ml-1 text-red-500">⚠</span>}
@@ -90,7 +90,7 @@ export default function PagosHijoPage() {
         </div>
       )}
 
-      {loading && <div className="p-8 text-center text-sm text-gray-400">Cargando…</div>}
+      {loading && <div className="p-8 text-center text-sm text-fg-muted">Cargando…</div>}
       {error   && <div className="rounded-lg bg-orange-50 p-3 text-sm text-orange-700">{error}</div>}
 
       {/* Grid 12 meses */}
@@ -100,9 +100,9 @@ export default function PagosHijoPage() {
             const mes     = i + 1
             const pension = pensionesMap.get(mes)
 
-            let borderCls = 'border-gray-200'
-            let bgCls     = 'bg-gray-50'
-            let labelCls  = 'text-gray-400'
+            let borderCls = 'border-border'
+            let bgCls     = 'bg-bg'
+            let labelCls  = 'text-fg-muted'
             let label     = mes > mesActual ? 'Próxima' : 'Sin registro'
             let monto: string | null = null
 
@@ -122,9 +122,9 @@ export default function PagosHijoPage() {
                 className={`rounded-xl border p-3 text-center ${bgCls} ${borderCls}`}
                 title={pension?.fecha_pago ? `Pagado: ${new Date(pension.fecha_pago).toLocaleDateString('es-BO')}` : undefined}
               >
-                <div className="text-xs font-semibold text-gray-500 mb-1">{MESES_CORTO[i]}</div>
+                <div className="text-xs font-semibold text-fg-muted mb-1">{MESES_CORTO[i]}</div>
                 {monto && (
-                  <div className="text-sm font-bold text-gray-800">Bs.{parseFloat(monto).toFixed(0)}</div>
+                  <div className="text-sm font-bold text-fg">Bs.{parseFloat(monto).toFixed(0)}</div>
                 )}
                 <div className={`text-xs mt-0.5 font-medium ${labelCls}`}>{label}</div>
                 {pension?.pagado && (
@@ -140,7 +140,7 @@ export default function PagosHijoPage() {
       )}
 
       {!loading && pensiones.length === 0 && !error && (
-        <div className="rounded-xl border-2 border-dashed border-gray-200 p-10 text-center text-sm text-gray-400">
+        <div className="rounded-xl border-2 border-dashed border-border p-10 text-center text-sm text-fg-muted">
           No hay pensiones registradas para este período.
         </div>
       )}

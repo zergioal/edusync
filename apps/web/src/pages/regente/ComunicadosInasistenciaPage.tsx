@@ -99,20 +99,20 @@ export default function ComunicadosInasistenciaPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Comunicados por Inasistencia</h1>
-        <p className="text-sm text-gray-500 mt-0.5">
+        <h1 className="text-2xl font-bold text-fg">Comunicados por Inasistencia</h1>
+        <p className="text-sm text-fg-muted mt-0.5">
           Estudiantes con &gt;3 ausencias consecutivas o &gt;5 ausencias en el mes
         </p>
       </div>
 
       {/* Selector */}
-      <div className="flex items-end gap-4 rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+      <div className="flex items-end gap-4 rounded-xl border border-border bg-surface p-4 shadow-sm">
         <div className="flex flex-col gap-1">
-          <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Paralelo</label>
+          <label className="text-xs font-medium text-fg-muted uppercase tracking-wide">Paralelo</label>
           <select
             value={paraleloId}
             onChange={e => setParaleloId(e.target.value)}
-            className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="rounded-lg border border-border px-3 py-2 text-sm focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand"
           >
             <option value="">— Seleccionar —</option>
             {paralelos.map(p => <option key={p.id} value={p.id}>{p.nombre} ({p.nivel})</option>)}
@@ -128,17 +128,17 @@ export default function ComunicadosInasistenciaPage() {
       </div>
 
       {/* Resultados */}
-      <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+      <div className="rounded-xl border border-border bg-surface shadow-sm overflow-hidden">
         {loading ? (
           <div className="flex justify-center py-12"><Spinner /></div>
         ) : alertas.length === 0 ? (
-          <div className="py-12 text-center text-sm text-gray-400">
+          <div className="py-12 text-center text-sm text-fg-muted">
             {paraleloId ? 'Sin alertas de inasistencia para este paralelo' : 'Selecciona un paralelo para buscar alertas'}
           </div>
         ) : (
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-gray-100 bg-gray-50 text-xs font-semibold uppercase tracking-wide text-gray-500">
+              <tr className="border-b border-border bg-bg text-xs font-semibold uppercase tracking-wide text-fg-muted">
                 <th className="px-5 py-3 text-left">Estudiante</th>
                 <th className="px-5 py-3 text-center">Ausencias</th>
                 <th className="px-5 py-3 text-center">% Asistencia</th>
@@ -146,15 +146,15 @@ export default function ComunicadosInasistenciaPage() {
                 <th className="px-5 py-3 text-right">Contactar</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-50">
+            <tbody className="divide-y divide-border">
               {alertas.map(est => (
-                <tr key={est.estudiante_id} className="hover:bg-gray-50 transition-colors">
-                  <td className="px-5 py-3 font-medium text-gray-900">{est.apellido}, {est.nombre}</td>
+                <tr key={est.estudiante_id} className="hover:bg-surface-2 transition-colors">
+                  <td className="px-5 py-3 font-medium text-fg">{est.apellido}, {est.nombre}</td>
                   <td className="px-5 py-3 text-center text-red-600 font-semibold">{est.ausentes}</td>
                   <td className="px-5 py-3 text-center">
                     {est.porcentaje_asistencia !== null
                       ? <Badge variant="danger">{est.porcentaje_asistencia}%</Badge>
-                      : <span className="text-gray-400">N/A</span>}
+                      : <span className="text-fg-muted">N/A</span>}
                   </td>
                   <td className="px-5 py-3 text-center">
                     <Badge variant={est.motivo === 'CONSECUTIVAS' ? 'danger' : 'warning'}>

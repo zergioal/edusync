@@ -115,22 +115,22 @@ function PreviewHorario({
   const colorClass = (tipo: Slot['tipo']) => {
     if (tipo === 'lectura') return 'bg-indigo-50 text-indigo-700'
     if (tipo === 'recreo')  return 'bg-amber-50 text-amber-700'
-    if (tipo === 'fin')     return 'bg-gray-50 text-gray-500 font-semibold'
-    return 'bg-white text-gray-800'
+    if (tipo === 'fin')     return 'bg-bg text-fg-muted font-semibold'
+    return 'bg-surface text-fg'
   }
 
   return (
-    <div className="mt-3 rounded-lg border border-gray-200 overflow-hidden">
-      <div className="bg-gray-50 px-3 py-1.5 text-xs font-semibold uppercase tracking-wide text-gray-500">
+    <div className="mt-3 rounded-lg border border-border overflow-hidden">
+      <div className="bg-bg px-3 py-1.5 text-xs font-semibold uppercase tracking-wide text-fg-muted">
         Vista previa — {hn.nivel.nombre}
       </div>
-      <div className="divide-y divide-gray-100 max-h-52 overflow-y-auto">
+      <div className="divide-y divide-border max-h-52 overflow-y-auto">
         {slots.map((s, i) => (
           <div key={i} className={`flex items-center gap-3 px-3 py-1.5 text-sm ${colorClass(s.tipo)}`}>
             <span className="w-12 shrink-0 font-mono text-xs">{s.hora}</span>
             <span className="flex-1">{s.label}</span>
             {s.duracion > 0 && (
-              <span className="text-xs text-gray-400">{s.duracion} min</span>
+              <span className="text-xs text-fg-muted">{s.duracion} min</span>
             )}
           </div>
         ))}
@@ -172,35 +172,35 @@ function NivelHorarioConfig({
   const removeRecreo = (idx: number) => update({ recreos: hn.recreos.filter((_, i) => i !== idx) })
 
   return (
-    <div className="rounded-lg border border-gray-100 bg-gray-50 p-4">
-      <h4 className="mb-3 text-sm font-semibold text-gray-700">{hn.nivel.nombre}</h4>
+    <div className="rounded-lg border border-border bg-bg p-4">
+      <h4 className="mb-3 text-sm font-semibold text-fg">{hn.nivel.nombre}</h4>
 
       <div className="grid grid-cols-3 gap-3 mb-3">
         <div>
-          <label className="block text-xs text-gray-500 mb-1">Hora inicio</label>
+          <label className="block text-xs text-fg-muted mb-1">Hora inicio</label>
           <input
             type="time"
             value={hn.hora_inicio}
             onChange={e => update({ hora_inicio: e.target.value })}
-            className="w-full rounded border border-gray-300 px-2 py-1.5 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            className="w-full rounded border border-border px-2 py-1.5 text-sm focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand"
           />
         </div>
         <div>
-          <label className="block text-xs text-gray-500 mb-1">Lectura (min)</label>
+          <label className="block text-xs text-fg-muted mb-1">Lectura (min)</label>
           <input
             type="number" min={0} max={60}
             value={hn.minutos_lectura}
             onChange={e => update({ minutos_lectura: parseInt(e.target.value) || 0 })}
-            className="w-full rounded border border-gray-300 px-2 py-1.5 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            className="w-full rounded border border-border px-2 py-1.5 text-sm focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand"
           />
         </div>
         <div>
-          <label className="block text-xs text-gray-500 mb-1">Períodos/día</label>
+          <label className="block text-xs text-fg-muted mb-1">Períodos/día</label>
           <input
             type="number" min={1} max={12}
             value={hn.max_periodos_dia}
             onChange={e => update({ max_periodos_dia: parseInt(e.target.value) || 1 })}
-            className="w-full rounded border border-gray-300 px-2 py-1.5 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            className="w-full rounded border border-border px-2 py-1.5 text-sm focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand"
           />
         </div>
       </div>
@@ -208,7 +208,7 @@ function NivelHorarioConfig({
       {/* Recreos */}
       <div className="mb-2">
         <div className="flex items-center justify-between mb-1">
-          <span className="text-xs font-medium text-gray-500">Recreos</span>
+          <span className="text-xs font-medium text-fg-muted">Recreos</span>
           {hn.recreos.length < maxPeriodos && (
             <button
               type="button"
@@ -220,25 +220,25 @@ function NivelHorarioConfig({
           )}
         </div>
         {hn.recreos.length === 0 && (
-          <p className="text-xs text-gray-400">Sin recreos configurados</p>
+          <p className="text-xs text-fg-muted">Sin recreos configurados</p>
         )}
         {hn.recreos.map((r, i) => (
           <div key={i} className="flex items-center gap-2 mb-1.5">
-            <span className="text-xs text-gray-500 shrink-0">Después del período</span>
+            <span className="text-xs text-fg-muted shrink-0">Después del período</span>
             <input
               type="number" min={1} max={maxPeriodos}
               value={r.despues_de_periodo}
               onChange={e => setRecreo(i, 'despues_de_periodo', parseInt(e.target.value) || 1)}
-              className="w-14 rounded border border-gray-300 px-2 py-1 text-xs focus:border-blue-500 focus:outline-none"
+              className="w-14 rounded border border-border px-2 py-1 text-xs focus:border-brand focus:outline-none"
             />
-            <span className="text-xs text-gray-500 shrink-0">Duración</span>
+            <span className="text-xs text-fg-muted shrink-0">Duración</span>
             <input
               type="number" min={5} max={60}
               value={r.duracion_min}
               onChange={e => setRecreo(i, 'duracion_min', parseInt(e.target.value) || 5)}
-              className="w-14 rounded border border-gray-300 px-2 py-1 text-xs focus:border-blue-500 focus:outline-none"
+              className="w-14 rounded border border-border px-2 py-1 text-xs focus:border-brand focus:outline-none"
             />
-            <span className="text-xs text-gray-400">min</span>
+            <span className="text-xs text-fg-muted">min</span>
             <button
               type="button"
               onClick={() => removeRecreo(i)}
@@ -339,7 +339,7 @@ function SeccionCargaHoraria({ niveles }: { niveles: Nivel[] }) {
             className={`rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
               nivelId === n.id
                 ? 'bg-blue-600 text-white shadow-sm'
-                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                : 'bg-surface-2 text-fg-muted hover:bg-surface-2'
             }`}
           >
             {n.nombre}
@@ -351,26 +351,26 @@ function SeccionCargaHoraria({ niveles }: { niveles: Nivel[] }) {
 
       {!loading && carga && (
         <>
-          <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white shadow-sm">
+          <div className="overflow-x-auto rounded-xl border border-border bg-surface shadow-sm">
             <table className="text-sm">
               <thead>
-                <tr className="border-b border-gray-100 bg-gray-50">
-                  <th className="sticky left-0 bg-gray-50 px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500 min-w-[200px]">
+                <tr className="border-b border-border bg-bg">
+                  <th className="sticky left-0 bg-bg px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-fg-muted min-w-[200px]">
                     Materia
                   </th>
                   {carga.grados.map(g => (
-                    <th key={g.id} className="px-3 py-3 text-center text-xs font-semibold uppercase tracking-wide text-gray-500 min-w-[80px]">
+                    <th key={g.id} className="px-3 py-3 text-center text-xs font-semibold uppercase tracking-wide text-fg-muted min-w-[80px]">
                       {g.nombre}
                     </th>
                   ))}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-50">
+              <tbody className="divide-y divide-border">
                 {carga.materias.map(mat => (
-                  <tr key={mat.id} className="hover:bg-gray-50">
-                    <td className="sticky left-0 bg-white px-4 py-2.5 font-medium text-gray-800 hover:bg-gray-50">
+                  <tr key={mat.id} className="hover:bg-surface-2">
+                    <td className="sticky left-0 bg-surface px-4 py-2.5 font-medium text-fg hover:bg-surface-2">
                       <span>{mat.nombre}</span>
-                      <span className="ml-2 text-xs text-gray-400">{mat.campo.nombre}</span>
+                      <span className="ml-2 text-xs text-fg-muted">{mat.campo.nombre}</span>
                     </td>
                     {carga.grados.map(g => {
                       const h  = getHoras(mat.id, g.id)
@@ -381,8 +381,8 @@ function SeccionCargaHoraria({ niveles }: { niveles: Nivel[] }) {
                             type="number" min={0} max={999}
                             value={h}
                             onChange={e => setHoras(mat.id, g.id, parseInt(e.target.value) || 0)}
-                            className={`w-16 rounded border text-center text-sm px-1 py-1 focus:outline-none focus:ring-1 focus:ring-blue-500 ${
-                              ov ? 'border-blue-400 bg-blue-50' : 'border-gray-200'
+                            className={`w-16 rounded border text-center text-sm px-1 py-1 focus:outline-none focus:ring-1 focus:ring-brand ${
+                              ov ? 'border-blue-400 bg-blue-50' : 'border-border'
                             }`}
                           />
                         </td>
@@ -489,13 +489,13 @@ export default function ConfiguracionPage() {
   return (
     <div className="space-y-8 pb-12">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Configuración</h1>
-        <p className="text-sm text-gray-500 mt-0.5">Ajustes institucionales, horarios y carga académica</p>
+        <h1 className="text-2xl font-bold text-fg">Configuración</h1>
+        <p className="text-sm text-fg-muted mt-0.5">Ajustes institucionales, horarios y carga académica</p>
       </div>
 
       {/* ── Sección 1: Tipo UE ──────────────────────────────────────────── */}
-      <section className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm space-y-4">
-        <h2 className="text-base font-semibold text-gray-800">Tipo de Unidad Educativa</h2>
+      <section className="rounded-xl border border-border bg-surface p-6 shadow-sm space-y-4">
+        <h2 className="text-base font-semibold text-fg">Tipo de Unidad Educativa</h2>
         <div className="flex flex-wrap gap-4">
           {[
             { value: 'HUMANISTICA', label: 'Humanística', desc: 'Sin materias técnico-productivas' },
@@ -506,7 +506,7 @@ export default function ConfiguracionPage() {
               className={`flex flex-1 min-w-[220px] cursor-pointer items-start gap-3 rounded-lg border-2 p-4 transition-colors ${
                 draft.tipo_ue === opt.value
                   ? 'border-blue-500 bg-blue-50'
-                  : 'border-gray-200 hover:border-gray-300'
+                  : 'border-border hover:border-border'
               }`}
             >
               <input
@@ -518,8 +518,8 @@ export default function ConfiguracionPage() {
                 className="mt-0.5"
               />
               <div>
-                <p className="font-medium text-gray-900 text-sm">{opt.label}</p>
-                <p className="text-xs text-gray-500 mt-0.5">{opt.desc}</p>
+                <p className="font-medium text-fg text-sm">{opt.label}</p>
+                <p className="text-xs text-fg-muted mt-0.5">{opt.desc}</p>
               </div>
             </label>
           ))}
@@ -536,21 +536,21 @@ export default function ConfiguracionPage() {
 
           {/* Carrera técnica */}
           <div className="space-y-1.5">
-            <label className="text-sm font-medium text-gray-700">Carrera técnica de la institución</label>
+            <label className="text-sm font-medium text-fg">Carrera técnica de la institución</label>
             <input
               type="text"
               value={draft.carrera_tecnica ?? ''}
               onChange={e => setDraft(d => d ? { ...d, carrera_tecnica: e.target.value || null } : d)}
               placeholder="Ej: Administración de Empresas"
-              className="w-full max-w-md rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="w-full max-w-md rounded-lg border border-border px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
             />
           </div>
 
           {/* Sub-áreas TTE */}
           {draft.subareas_bth.length > 0 && (
             <div className="space-y-2">
-              <p className="text-sm font-medium text-gray-700">Sub-áreas de Técnica Tecnológica Especializada (TTE)</p>
-              <div className="rounded-lg border border-indigo-200 bg-white overflow-hidden">
+              <p className="text-sm font-medium text-fg">Sub-áreas de Técnica Tecnológica Especializada (TTE)</p>
+              <div className="rounded-lg border border-indigo-200 bg-surface overflow-hidden">
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="bg-indigo-50 text-left text-xs font-semibold uppercase tracking-wide text-indigo-700 border-b border-indigo-100">
@@ -558,10 +558,10 @@ export default function ConfiguracionPage() {
                       <th className="px-4 py-2.5 text-center">Horas/semana</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-50">
+                  <tbody className="divide-y divide-border">
                     {draft.subareas_bth.map(sa => (
-                      <tr key={sa.id} className="hover:bg-gray-50">
-                        <td className="px-4 py-2.5 font-medium text-gray-800">{sa.nombre}</td>
+                      <tr key={sa.id} className="hover:bg-surface-2">
+                        <td className="px-4 py-2.5 font-medium text-fg">{sa.nombre}</td>
                         <td className="px-4 py-2.5 text-center">
                           <span className="inline-flex items-center justify-center h-6 w-10 rounded bg-indigo-100 text-indigo-700 text-xs font-semibold">
                             {sa.horas_semanales ?? '—'}
@@ -572,7 +572,7 @@ export default function ConfiguracionPage() {
                   </tbody>
                 </table>
               </div>
-              <p className="text-xs text-gray-400">Total: {draft.subareas_bth.reduce((s, a) => s + (a.horas_semanales ?? 0), 0)} horas/semana</p>
+              <p className="text-xs text-fg-muted">Total: {draft.subareas_bth.reduce((s, a) => s + (a.horas_semanales ?? 0), 0)} horas/semana</p>
             </div>
           )}
 
@@ -585,35 +585,35 @@ export default function ConfiguracionPage() {
       )}
 
       {/* ── Sección 2: Duración del período ────────────────────────────── */}
-      <section className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm space-y-3">
-        <h2 className="text-base font-semibold text-gray-800">Duración del período pedagógico</h2>
+      <section className="rounded-xl border border-border bg-surface p-6 shadow-sm space-y-3">
+        <h2 className="text-base font-semibold text-fg">Duración del período pedagógico</h2>
         <div className="flex items-center gap-3">
           <input
             type="number" min={20} max={120}
             value={draft.duracion_periodo_min}
             onChange={e => setDraft(d => d ? { ...d, duracion_periodo_min: parseInt(e.target.value) || 40 } : d)}
-            className="w-24 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-24 rounded-lg border border-border px-3 py-2 text-sm focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand"
           />
-          <span className="text-sm text-gray-600">minutos</span>
-          <span className="text-xs text-gray-400">(recomendado: 40 o 45 min)</span>
+          <span className="text-sm text-fg-muted">minutos</span>
+          <span className="text-xs text-fg-muted">(recomendado: 40 o 45 min)</span>
         </div>
       </section>
 
       {/* ── Sección 3: Turnos y horarios por nivel ─────────────────────── */}
-      <section className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm space-y-4">
-        <h2 className="text-base font-semibold text-gray-800">Turnos y horarios por nivel</h2>
-        <p className="text-sm text-gray-500">
+      <section className="rounded-xl border border-border bg-surface p-6 shadow-sm space-y-4">
+        <h2 className="text-base font-semibold text-fg">Turnos y horarios por nivel</h2>
+        <p className="text-sm text-fg-muted">
           Activa los turnos en uso y configura el horario para cada nivel educativo.
         </p>
 
         <div className="space-y-4">
           {draft.turnos.map((turno, ti) => (
             <div key={turno.id} className={`rounded-xl border-2 transition-colors ${
-              turno.activo ? 'border-blue-200' : 'border-gray-100'
+              turno.activo ? 'border-blue-200' : 'border-border'
             }`}>
               <div
                 className={`flex items-center gap-3 px-4 py-3 rounded-xl cursor-pointer ${
-                  turno.activo ? 'bg-blue-50' : 'bg-gray-50'
+                  turno.activo ? 'bg-blue-50' : 'bg-bg'
                 }`}
               >
                 <input
@@ -624,9 +624,9 @@ export default function ConfiguracionPage() {
                   className="h-4 w-4"
                 />
                 <label htmlFor={`turno-${turno.id}`} className="flex-1 cursor-pointer">
-                  <span className="font-semibold text-gray-800">{turno.nombre}</span>
+                  <span className="font-semibold text-fg">{turno.nombre}</span>
                   {!turno.activo && (
-                    <span className="ml-2 text-xs text-gray-400">inactivo</span>
+                    <span className="ml-2 text-xs text-fg-muted">inactivo</span>
                   )}
                 </label>
               </div>
@@ -658,17 +658,17 @@ export default function ConfiguracionPage() {
       {/* ── Sección 4 (implícita en preview de cada nivel) ─────────────── */}
 
       {/* ── Sección 5: Carga horaria por nivel ─────────────────────────── */}
-      <section className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm space-y-4">
+      <section className="rounded-xl border border-border bg-surface p-6 shadow-sm space-y-4">
         <div>
-          <h2 className="text-base font-semibold text-gray-800">Carga horaria por materia y grado</h2>
-          <p className="text-sm text-gray-500 mt-0.5">
+          <h2 className="text-base font-semibold text-fg">Carga horaria por materia y grado</h2>
+          <p className="text-sm text-fg-muted mt-0.5">
             Horas pedagógicas mensuales para cada materia según el grado. Los cambios afectan
             las asignaciones futuras.
           </p>
         </div>
         {draft.niveles.length > 0
           ? <SeccionCargaHoraria niveles={draft.niveles} />
-          : <p className="text-sm text-gray-400">No hay niveles configurados.</p>
+          : <p className="text-sm text-fg-muted">No hay niveles configurados.</p>
         }
       </section>
     </div>

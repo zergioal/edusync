@@ -127,25 +127,25 @@ export default function GestionesPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Gestión Académica</h1>
-          <p className="text-sm text-gray-500 mt-0.5">Años escolares y trimestres</p>
+          <h1 className="text-2xl font-bold text-fg">Gestión Académica</h1>
+          <p className="text-sm text-fg-muted mt-0.5">Años escolares y trimestres</p>
         </div>
         <Button onClick={() => setNewModal(true)}>+ Nueva gestión</Button>
       </div>
 
       {gestiones.length === 0 && (
-        <div className="rounded-xl border-2 border-dashed border-gray-200 bg-white p-12 text-center">
-          <p className="text-gray-400">No hay gestiones creadas.</p>
+        <div className="rounded-xl border-2 border-dashed border-border bg-surface p-12 text-center">
+          <p className="text-fg-muted">No hay gestiones creadas.</p>
         </div>
       )}
 
       <div className="space-y-4">
         {gestiones.map(g => (
-          <div key={g.id} className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+          <div key={g.id} className="rounded-xl border border-border bg-surface shadow-sm overflow-hidden">
             {/* Gestión header */}
-            <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 bg-gray-50">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-border bg-bg">
               <div className="flex items-center gap-3">
-                <h2 className="text-lg font-bold text-gray-900">Gestión {g.anno}</h2>
+                <h2 className="text-lg font-bold text-fg">Gestión {g.anno}</h2>
                 {g.activa
                   ? <Badge variant="success">Activa</Badge>
                   : <Badge variant="default">Inactiva</Badge>}
@@ -158,14 +158,14 @@ export default function GestionesPage() {
             </div>
 
             {/* Trimestres */}
-            <div className="divide-y divide-gray-50">
+            <div className="divide-y divide-border">
               {g.trimestres.map(t => (
                 <div key={t.id} className="flex items-center justify-between px-5 py-3">
                   <div className="flex items-center gap-4">
-                    <span className="text-sm font-semibold text-gray-700 w-28">
+                    <span className="text-sm font-semibold text-fg w-28">
                       {t.numero}° Trimestre
                     </span>
-                    <span className="text-sm text-gray-500">
+                    <span className="text-sm text-fg-muted">
                       {formatDate(t.fecha_inicio)} — {formatDate(t.fecha_fin)}
                     </span>
                     {t.cerrado
@@ -210,7 +210,7 @@ export default function GestionesPage() {
       >
         <form id="form-gestion" onSubmit={handleCreateGestion} className="space-y-4">
           <div className="flex flex-col gap-1">
-            <label className="text-sm font-medium text-gray-700">Año de la gestión *</label>
+            <label className="text-sm font-medium text-fg">Año de la gestión *</label>
             <input
               type="number"
               min={2020}
@@ -218,10 +218,10 @@ export default function GestionesPage() {
               value={newAnno}
               onChange={e => setNewAnno(e.target.value)}
               required
-              className="rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 w-32"
+              className="rounded-lg border border-border px-3 py-2 text-sm shadow-sm focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand w-32"
             />
           </div>
-          <p className="text-sm text-gray-500">
+          <p className="text-sm text-fg-muted">
             Se crearán automáticamente 3 trimestres con fechas por defecto para el año {newAnno}.
           </p>
         </form>
@@ -241,23 +241,23 @@ export default function GestionesPage() {
       >
         <form id="form-trimestre" onSubmit={handleEditTrimestre} className="space-y-4">
           <div className="flex flex-col gap-1">
-            <label className="text-sm font-medium text-gray-700">Fecha de inicio *</label>
+            <label className="text-sm font-medium text-fg">Fecha de inicio *</label>
             <input
               type="date"
               value={editDates.fecha_inicio}
               onChange={e => setEditDates(d => ({ ...d, fecha_inicio: e.target.value }))}
               required
-              className="rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="rounded-lg border border-border px-3 py-2 text-sm shadow-sm focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand"
             />
           </div>
           <div className="flex flex-col gap-1">
-            <label className="text-sm font-medium text-gray-700">Fecha de cierre *</label>
+            <label className="text-sm font-medium text-fg">Fecha de cierre *</label>
             <input
               type="date"
               value={editDates.fecha_fin}
               onChange={e => setEditDates(d => ({ ...d, fecha_fin: e.target.value }))}
               required
-              className="rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="rounded-lg border border-border px-3 py-2 text-sm shadow-sm focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand"
             />
           </div>
         </form>

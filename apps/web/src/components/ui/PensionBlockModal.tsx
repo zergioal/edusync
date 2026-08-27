@@ -29,7 +29,7 @@ export function PensionBlockModal({ deuda, qrUrl, whatsapp, nombreHijo, onVolver
 
   return (
     <div className="flex items-start justify-center pt-8 pb-12">
-      <div className="w-full max-w-sm bg-white rounded-2xl shadow-md border border-amber-100 overflow-hidden">
+      <div className="w-full max-w-sm bg-surface rounded-2xl shadow-md border border-amber-100 overflow-hidden">
 
         {/* Franja superior */}
         <div className="h-1.5 bg-gradient-to-r from-amber-300 to-amber-400" />
@@ -45,30 +45,30 @@ export function PensionBlockModal({ deuda, qrUrl, whatsapp, nombreHijo, onVolver
 
           {/* Títulos */}
           <div>
-            <h2 className="text-base font-semibold text-gray-800">Pensión pendiente de pago</h2>
+            <h2 className="text-base font-semibold text-fg">Pensión pendiente de pago</h2>
             {nombreHijo && (
               <p className="mt-0.5 text-sm text-amber-600">{nombreHijo}</p>
             )}
           </div>
 
           {/* Mensaje */}
-          <p className="text-sm text-gray-500 leading-relaxed">
+          <p className="text-sm text-fg-muted leading-relaxed">
             Para consultar la información académica es necesario estar al día con el pago de pensiones.
             Por favor, comunícate con la administración.
           </p>
 
           {/* Monto */}
           {deuda > 0 && (
-            <p className="text-xs text-gray-400">
+            <p className="text-xs text-fg-muted">
               Saldo pendiente:{' '}
-              <span className="font-semibold text-gray-600">Bs. {fmtBs(deuda)}</span>
+              <span className="font-semibold text-fg-muted">Bs. {fmtBs(deuda)}</span>
             </p>
           )}
 
           {/* QR de pago */}
           {qrUrl && (
-            <div className="rounded-xl border border-gray-100 bg-gray-50 p-4">
-              <p className="mb-3 text-xs font-medium text-gray-400 uppercase tracking-wide">Pago por QR</p>
+            <div className="rounded-xl border border-border bg-bg p-4">
+              <p className="mb-3 text-xs font-medium text-fg-muted uppercase tracking-wide">Pago por QR</p>
               <img
                 src={qrUrl}
                 alt="Código QR de pago"
@@ -94,7 +94,7 @@ export function PensionBlockModal({ deuda, qrUrl, whatsapp, nombreHijo, onVolver
             )}
             <button
               onClick={handleVolver}
-              className="w-full rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors"
+              className="w-full rounded-xl border border-border bg-surface px-4 py-2.5 text-sm font-medium text-fg-muted hover:bg-surface-2 transition-colors"
             >
               Volver
             </button>

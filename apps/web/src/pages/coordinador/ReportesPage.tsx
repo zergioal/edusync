@@ -17,20 +17,20 @@ function ReportesMenu() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Reportes Académicos</h1>
-        <p className="mt-1 text-sm text-gray-500">Selecciona el tipo de reporte a generar.</p>
+        <h1 className="text-2xl font-bold text-fg">Reportes Académicos</h1>
+        <p className="mt-1 text-sm text-fg-muted">Selecciona el tipo de reporte a generar.</p>
       </div>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
         {CARDS.map(c => (
           <Link
             key={c.to}
             to={c.to}
-            className="group flex flex-col gap-3 rounded-xl border border-gray-200 bg-white p-5 shadow-sm transition hover:border-blue-400 hover:shadow-md"
+            className="group flex flex-col gap-3 rounded-xl border border-border bg-surface p-5 shadow-sm transition hover:border-blue-400 hover:shadow-md"
           >
             <div className="text-3xl">{c.icon}</div>
             <div>
-              <div className="font-semibold text-gray-900 group-hover:text-blue-700">{c.title}</div>
-              <div className="mt-1 text-sm text-gray-500">{c.desc}</div>
+              <div className="font-semibold text-fg group-hover:text-blue-700">{c.title}</div>
+              <div className="mt-1 text-sm text-fg-muted">{c.desc}</div>
             </div>
             <div className="mt-auto text-sm font-medium text-blue-600 group-hover:underline">
               Abrir →
