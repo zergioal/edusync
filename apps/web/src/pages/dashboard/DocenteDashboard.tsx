@@ -133,35 +133,35 @@ function DocenteHome() {
             {asignaciones.slice(0, 6).map(a => {
               const nivel = a.paralelo.grado.nivel.nombre
               const nivBg: Record<string, string> = {
-                INICIAL: 'border-amber-200 bg-amber-50',
-                PRIMARIA: 'border-sky-200 bg-sky-50',
-                SECUNDARIA: 'border-violet-200 bg-violet-50',
+                INICIAL:    'border-amber-200 dark:border-amber-900 bg-amber-50 dark:bg-amber-950/30',
+                PRIMARIA:   'border-sky-200 dark:border-sky-900 bg-sky-50 dark:bg-sky-950/30',
+                SECUNDARIA: 'border-violet-200 dark:border-violet-900 bg-violet-50 dark:bg-violet-950/30',
               }
               const nivText: Record<string, string> = {
-                INICIAL: 'text-amber-700', PRIMARIA: 'text-sky-700', SECUNDARIA: 'text-violet-700',
+                INICIAL:    'text-amber-700 dark:text-amber-400',
+                PRIMARIA:   'text-sky-700 dark:text-sky-400',
+                SECUNDARIA: 'text-violet-700 dark:text-violet-400',
               }
               return (
                 <div
                   key={a.id}
-                  className={`rounded-xl border p-4 cursor-pointer hover:shadow-sm transition-all ${nivBg[nivel] ?? 'border-border bg-surface'}`}
+                  className={`glow-card group relative rounded-xl border p-3 cursor-pointer transition-transform hover:-translate-y-0.5 ${nivBg[nivel] ?? 'border-border bg-surface'}`}
                   onClick={() => navigate(nivel === 'INICIAL'
                     ? `/dashboard/docente/inicial/${a.id}`
                     : `/dashboard/docente/planilla/${a.id}`)}
                 >
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="min-w-0">
-                      <p className="text-xs text-fg-muted truncate">{a.materia.campo.nombre}</p>
-                      <p className={`font-semibold text-sm leading-tight mt-0.5 ${nivText[nivel] ?? 'text-fg'}`}>
-                        {a.materia.nombre}
-                      </p>
-                    </div>
-                    <span className={`text-xs font-bold shrink-0 px-2 py-0.5 rounded-full ${nivText[nivel] ?? ''} bg-white/60`}>
+                  <div className="flex items-center justify-between gap-2">
+                    <p className={`font-semibold text-sm leading-tight truncate ${nivText[nivel] ?? 'text-fg'}`}>
+                      {a.materia.nombre}
+                    </p>
+                    <span className={`text-xs font-bold shrink-0 px-2 py-0.5 rounded-full ${nivText[nivel] ?? ''} bg-surface/70`}>
                       {a.paralelo.grado.nombre.match(/^(\d+°)/)?.[1] ?? a.paralelo.grado.nombre.slice(0,3)} {a.paralelo.letra}
                     </span>
                   </div>
-                  <div className="mt-2 flex items-center gap-3 text-xs text-fg-muted">
-                    <span>👥 {a.n_estudiantes}</span>
-                    <span>📊 {a._count.indicadores} indicadores</span>
+                  <div className="mt-1 flex items-center gap-3 text-xs text-fg-muted truncate">
+                    <span className="truncate">{a.materia.campo.nombre}</span>
+                    <span className="shrink-0">👥 {a.n_estudiantes}</span>
+                    <span className="shrink-0">📊 {a._count.indicadores}</span>
                   </div>
                 </div>
               )
