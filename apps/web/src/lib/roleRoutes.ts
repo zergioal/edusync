@@ -32,7 +32,7 @@ export interface NavItem {
 export type NavIcon =
   | 'home' | 'users' | 'student' | 'teacher' | 'book'
   | 'calendar' | 'cash' | 'clock' | 'bell' | 'chart'
-  | 'folder' | 'settings' | 'child'
+  | 'folder' | 'settings' | 'child' | 'tasks'
 
 export const NAV_POR_ROL: Record<string, NavItem[]> = {
   director: [
@@ -128,9 +128,7 @@ export const NAV_POR_ROL: Record<string, NavItem[]> = {
   padre: [
     { to: '/dashboard/padre',                     label: 'Mi Panel',      icon: 'home'     },
     { to: '/dashboard/padre/hijos',               label: 'Mis Hijos',     icon: 'child'    },
-    { to: '/dashboard/padre/notas',               label: 'Notas',         icon: 'book'     },
     { to: '/dashboard/padre/boletin',             label: 'Boletín',       icon: 'folder'   },
-    { to: '/dashboard/padre/asistencia',          label: 'Asistencia',    icon: 'calendar' },
     { to: '/dashboard/padre/pensiones',           label: 'Pensiones',     icon: 'cash'     },
     { to: '/dashboard/padre/anuncios',            label: 'Comunicados',   icon: 'bell'     },
     { to: '/dashboard/padre/mensajes',            label: 'Mensajes',      icon: 'users'    },

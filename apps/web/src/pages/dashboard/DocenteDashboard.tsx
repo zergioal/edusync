@@ -58,10 +58,10 @@ function DocenteHome() {
   const totalEstudiantes = asignaciones.reduce((s, a) => s + a.n_estudiantes, 0)
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
 
       {/* Profile card */}
-      <div className="rounded-2xl bg-surface border border-border shadow-sm p-5 flex items-start gap-5">
+      <div className="rounded-2xl bg-surface border border-border shadow-sm p-4 flex items-center gap-4">
         <div className="relative">
           <AvatarDisplay userId={user?.id ?? ''} avatarId={avatarId} size="xl" />
           <button
@@ -100,8 +100,8 @@ function DocenteHome() {
 
       {/* Stats */}
       <div>
-        <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-fg-muted">Mi actividad</h2>
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <h2 className="mb-2 text-xs font-semibold uppercase tracking-wider text-fg-muted">Mi actividad</h2>
+        <div className="grid grid-cols-3 gap-2 sm:gap-4">
           <StatCard
             label="Materias asignadas"
             value={loadingStats ? '…' : String(totalMaterias)}

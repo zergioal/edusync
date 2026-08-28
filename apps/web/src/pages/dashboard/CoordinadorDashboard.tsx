@@ -54,7 +54,7 @@ function CoordinadorHome() {
   }, [gestionId])
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-5">
       <div className="flex items-start justify-between">
         <div>
           <h1 className="text-2xl font-bold text-fg">
@@ -80,10 +80,10 @@ function CoordinadorHome() {
       </div>
 
       <div>
-        <h2 className="mb-4 text-sm font-semibold uppercase tracking-wide text-fg-muted">
+        <h2 className="mb-2 text-xs font-semibold uppercase tracking-wider text-fg-muted">
           Resumen académico
         </h2>
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <div className="grid grid-cols-2 gap-2 sm:gap-4 xl:grid-cols-4">
           <StatCard label="Paralelos"    value={loadingStats ? '…' : (stats?.paralelos    ?? '—')} sublabel="activos"             icon="users"    color="blue"   />
           <StatCard label="Docentes"     value={loadingStats ? '…' : (stats?.docentes     ?? '—')} sublabel="con asignaciones"    icon="teacher"  color="green"  />
           <StatCard label="Asignaciones" value={loadingStats ? '…' : (stats?.asignaciones ?? '—')} sublabel="esta gestión"        icon="book"     color="purple" />

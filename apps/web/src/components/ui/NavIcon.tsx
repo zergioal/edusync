@@ -54,6 +54,11 @@ const ICONS: Record<NavIconType, string[]> = {
     'M16 7a4 4 0 11-8 0 4 4 0 018 0z',
     'M12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z',
   ],
+  tasks: [
+    'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2',
+    'M9 3.5A1.5 1.5 0 0110.5 2h3A1.5 1.5 0 0115 3.5V6H9V3.5z',
+    'M8.5 13l2.5 2.5 4.5-5',
+  ],
 }
 
 export function NavIcon({ icon, className = 'h-5 w-5' }: Props) {

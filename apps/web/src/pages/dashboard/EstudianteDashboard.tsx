@@ -2,6 +2,7 @@ import { lazy, useEffect, useState } from 'react'
 import { Routes, Route } from 'react-router-dom'
 import { DashboardLayout } from '../../components/layout/DashboardLayout'
 import { StatCard } from '../../components/ui/StatCard'
+import { QuickAccessCard } from '../../components/ui/QuickAccessCard'
 import { useAuth } from '../../context/AuthContext'
 import { useGestionActiva } from '../../hooks/useGestionActiva'
 import { Badge } from '@edusync/ui'
@@ -77,10 +78,10 @@ function EstudianteHome() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
 
       {/* Profile card */}
-      <div className="rounded-2xl bg-surface border border-border shadow-sm p-5 flex items-start gap-5">
+      <div className="rounded-2xl bg-surface border border-border shadow-sm p-4 flex items-center gap-4">
         <div className="relative">
           <AvatarDisplay userId={user?.id ?? ''} avatarId={avatarId} size="xl" />
           <button
@@ -113,10 +114,10 @@ function EstudianteHome() {
 
       {/* Stats */}
       <div>
-        <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-fg-muted">
+        <h2 className="mb-2 text-xs font-semibold uppercase tracking-wider text-fg-muted">
           Situación académica — trimestre actual
         </h2>
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <div className="grid grid-cols-3 gap-2 sm:gap-4">
           <StatCard
             label="Promedio general"
             value={stats?.promedio != null ? String(stats.promedio) : '—'}
@@ -140,23 +141,12 @@ function EstudianteHome() {
 
       {/* Quick links */}
       <div>
-        <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-fg-muted">Acceso rápido</h2>
+        <h2 className="mb-2 text-xs font-semibold uppercase tracking-wider text-fg-muted">Acceso rápido</h2>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          {[
-            { href: 'notas',      emoji: '📊', label: 'Mis Notas',     color: 'bg-blue-50 hover:bg-blue-100 border-blue-200 text-blue-700'    },
-            { href: 'asistencia', emoji: '📅', label: 'Asistencia',    color: 'bg-green-50 hover:bg-green-100 border-green-200 text-green-700'  },
-            { href: 'tareas',     emoji: '📝', label: 'Tareas',        color: 'bg-amber-50 hover:bg-amber-100 border-amber-200 text-amber-700'  },
-            { href: 'boletin',    emoji: '📋', label: 'Mi Boletín',    color: 'bg-purple-50 hover:bg-purple-100 border-purple-200 text-purple-700'},
-          ].map(item => (
-            <a
-              key={item.href}
-              href={`/dashboard/estudiante/${item.href}`}
-              className={`rounded-xl border p-4 flex flex-col items-center gap-2 text-center transition-colors ${item.color}`}
-            >
-              <span className="text-2xl">{item.emoji}</span>
-              <span className="text-sm font-semibold">{item.label}</span>
-            </a>
-          ))}
+          <QuickAccessCard to="/dashboard/estudiante/notas"      icon="book"     label="Mis Notas"  color="blue"   />
+          <QuickAccessCard to="/dashboard/estudiante/asistencia" icon="calendar" label="Asistencia" color="green"  />
+          <QuickAccessCard to="/dashboard/estudiante/tareas"     icon="tasks"    label="Tareas"     color="yellow" />
+          <QuickAccessCard to="/dashboard/estudiante/boletin"    icon="folder"   label="Mi Boletín" color="purple" />
         </div>
       </div>
 

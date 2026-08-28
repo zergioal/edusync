@@ -36,15 +36,18 @@
   }
 }
 
-/* ── Botones del Sidebar: borde de neón animado al pasar el mouse ────────── */
+/* ── Botones del Sidebar / tarjetas: borde de neón animado al pasar el mouse ─
+   .glow-on-hover  → relleno fijo oscuro (sidebar, siempre oscuro)
+   .glow-card      → relleno con el token de superficie (tarjetas, sigue el tema)
+   Ambas comparten el mismo borde de neón animado (::before). En pantallas
+   táctiles no hay :hover, así que también se dispara con :active (el toque). */
 
-.glow-on-hover {
+.glow-on-hover, .glow-card {
   position: relative;
   z-index: 0;
-  border-radius: 0.75rem;
 }
 
-.glow-on-hover::before {
+.glow-on-hover::before, .glow-card::before {
   content: '';
   position: absolute;
   top: -2px;
@@ -61,16 +64,19 @@
   animation: glowing 20s linear infinite;
 }
 
-.glow-on-hover::after {
+.glow-on-hover::after, .glow-card::after {
   content: '';
   position: absolute;
   inset: 0;
   z-index: -1;
-  background: #0f172a;
   border-radius: inherit;
 }
 
-.glow-on-hover:hover::before {
+.glow-on-hover::after { background: #0f172a; }
+.glow-card::after      { background: rgb(var(--color-surface)); }
+
+.glow-on-hover:hover::before, .glow-on-hover:active::before,
+.glow-card:hover::before,     .glow-card:active::before {
   opacity: 1;
 }
 
@@ -80,7 +86,7 @@
   100% { background-position: 0 0; }
 }
 
-/* ── Íconos del Sidebar: se "dibujan" y engrosan al pasar el mouse ────────── */
+/* ── Íconos: se "dibujan" y engrosan al pasar el mouse (o al tocar) ───────── */
 
 .nav-icon-path {
   stroke-dasharray: 1;
@@ -88,7 +94,8 @@
   transition: stroke-width 0.3s;
 }
 
-.sidebar-nav-item:hover .nav-icon-path {
+.sidebar-nav-item:hover .nav-icon-path, .sidebar-nav-item:active .nav-icon-path,
+.group:hover .nav-icon-path,            .group:active .nav-icon-path {
   stroke-width: 2.4;
   animation: draw-icon 500ms ease-in forwards;
 }

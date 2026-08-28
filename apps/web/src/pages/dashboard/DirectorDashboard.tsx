@@ -86,10 +86,10 @@ function DirectorHome() {
   const rolLabel = user?.rol ? (ROL_LABELS[user.rol] ?? user.rol) : ''
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
 
       {/* Profile card */}
-      <div className="rounded-2xl bg-surface border border-border shadow-sm p-5 flex items-start gap-5">
+      <div className="rounded-2xl bg-surface border border-border shadow-sm p-4 flex items-center gap-4">
         <div className="relative">
           <AvatarDisplay userId={user?.id ?? ''} avatarId={avatarId} size="xl" />
           <button
@@ -128,8 +128,8 @@ function DirectorHome() {
 
       {/* KPI Cards */}
       <div>
-        <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-fg-muted">Resumen institucional</h2>
-        <div className="grid grid-cols-2 gap-4 xl:grid-cols-4">
+        <h2 className="mb-2 text-xs font-semibold uppercase tracking-wider text-fg-muted">Resumen institucional</h2>
+        <div className="grid grid-cols-2 gap-2 sm:gap-4 xl:grid-cols-4">
           <StatCard
             label="Paralelos"
             value={loadingStats ? '…' : (stats?.paralelos ?? '—')}

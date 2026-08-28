@@ -43,7 +43,7 @@ function RegenteHome() {
   }, [])
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-5">
       <div className="flex items-start justify-between">
         <div>
           <h1 className="text-2xl font-bold text-fg">
@@ -69,10 +69,10 @@ function RegenteHome() {
       </div>
 
       <div>
-        <h2 className="mb-4 text-sm font-semibold uppercase tracking-wide text-fg-muted">
+        <h2 className="mb-2 text-xs font-semibold uppercase tracking-wider text-fg-muted">
           Resumen de hoy
         </h2>
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <div className="grid grid-cols-3 gap-2 sm:gap-4">
           <StatCard label="Paralelos activos" value={loadingStats ? '…' : (stats?.paralelos ?? '—')} icon="users" color="blue"  />
           <StatCard label="Asistencia hoy"    value={loadingStats ? '…' : (stats?.presentes ?? '—')} icon="chart" color="green" sublabel="presentes" />
           <StatCard label="Alertas"           value={loadingStats ? '…' : (stats?.ausentes  ?? '—')} icon="bell"  color="yellow" sublabel="faltas hoy" />
