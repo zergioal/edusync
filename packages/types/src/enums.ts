@@ -44,3 +44,14 @@ export enum TipoGaleria {
   FOTO = 'FOTO',
   VIDEO = 'VIDEO',
 }
+
+export enum EstadoMatricula {
+  ACTIVO = 'ACTIVO',
+  RETIRADO = 'RETIRADO',
+  TRASLADADO = 'TRASLADADO',
+}
+
+export enum Sexo {
+  M = 'M',
+  F = 'F',
+}

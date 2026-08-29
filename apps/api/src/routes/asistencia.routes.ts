@@ -25,12 +25,12 @@ asistenciaRouter.get('/clase',                     ctrl.getClase)
 // ── Asistencia diaria (regente) ────────────────────────────────────────────
 asistenciaRouter.get('/resumen-hoy',               isRegente,  ctrl.resumenHoy)
 asistenciaRouter.post('/diaria',                   isRegente,  ctrl.registrarDiaria)
-asistenciaRouter.get('/diaria/reporte',            isRegente,  ctrl.reporteDiaria)
+asistenciaRouter.get('/diaria/reporte',            canManage,  ctrl.reporteDiaria)
 asistenciaRouter.get('/diaria',                    isRegente,  ctrl.getDiaria)
 
 // ── Consolidada por estudiante ─────────────────────────────────────────────
 asistenciaRouter.get('/consolidada/:estudiante_id', canManage, ctrl.getConsolidada)
 
 // ── Helpers ────────────────────────────────────────────────────────────────
-asistenciaRouter.get('/paralelos-regente',         isRegente,  ctrl.getParalelosRegente)
+asistenciaRouter.get('/paralelos-regente',         canManage,  ctrl.getParalelosRegente)
 asistenciaRouter.get('/estudiantes-paralelo',      canManage,  ctrl.getEstudiantesParalelo)

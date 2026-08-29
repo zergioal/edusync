@@ -280,8 +280,8 @@ export default function AsistenciaClasePage() {
               >
                 <thead>
                   {/* Date row */}
-                  <tr className="bg-slate-50 border-b border-border">
-                    <th className="sticky left-0 z-10 bg-slate-50 px-4 py-2 text-left text-xs font-semibold text-fg-muted border-r border-border w-48 min-w-[12rem]">
+                  <tr className="bg-bg border-b border-border">
+                    <th className="sticky left-0 z-10 bg-bg px-4 py-2 text-left text-xs font-semibold text-fg-muted border-r border-border w-48 min-w-[12rem]">
                       Estudiante
                     </th>
 
@@ -296,7 +296,7 @@ export default function AsistenciaClasePage() {
                       return (
                         <th
                           key={fecha}
-                          className={`w-8 border-r border-border relative ${isSat ? 'bg-slate-100' : ''} ${isDirty ? 'bg-amber-50' : ''}`}
+                          className={`w-8 border-r border-border relative ${isSat ? 'bg-surface-2' : ''} ${isDirty ? 'bg-amber-50 dark:bg-amber-950/40' : ''}`}
                         >
                           <div
                             className="py-1 px-0.5 flex flex-col items-center gap-0 mx-auto"
@@ -355,10 +355,10 @@ export default function AsistenciaClasePage() {
                     return (
                       <tr
                         key={est.estudiante_id}
-                        className={`border-b border-border hover:bg-blue-50/30 transition-colors ${idx % 2 === 0 ? '' : 'bg-slate-50/30'}`}
+                        className={`border-b border-border hover:bg-surface-2 transition-colors ${idx % 2 === 0 ? '' : 'bg-bg/60'}`}
                       >
                         {/* Name (sticky) */}
-                        <td className={`sticky left-0 z-10 px-4 py-2 font-medium text-fg border-r border-border whitespace-nowrap ${idx % 2 === 0 ? 'bg-surface' : 'bg-slate-50/80'}`}>
+                        <td className={`sticky left-0 z-10 px-4 py-2 font-medium text-fg border-r border-border whitespace-nowrap ${idx % 2 === 0 ? 'bg-surface' : 'bg-surface-2'}`}>
                           <span className="text-fg-muted mr-1.5 text-[10px]">{idx + 1}.</span>
                           {est.apellido}, {est.nombre}
                         </td>
@@ -373,7 +373,7 @@ export default function AsistenciaClasePage() {
                           return (
                             <td
                               key={fecha}
-                              className={`w-8 h-9 text-center border-r border-border ${isSat ? 'bg-slate-100/50' : ''}`}
+                              className={`w-8 h-9 text-center border-r border-border ${isSat ? 'bg-surface-2/50' : ''}`}
                             >
                               {isFut ? (
                                 <span className="text-gray-200 text-xs">·</span>

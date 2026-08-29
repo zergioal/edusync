@@ -22,6 +22,7 @@ interface Padre {
   nombre:    string
   apellido:  string
   email:     string
+  telefono:  string | null
   activo:    boolean
   hijos_a_cargo: { estudiante: Hijo }[]
 }
@@ -51,24 +52,24 @@ const NIVEL_STYLES: Record<string, {
   badge: string; num: string; label: string
 }> = {
   INICIAL: {
-    bg: 'bg-emerald-50', border: 'border-emerald-200',
-    hover: 'hover:bg-emerald-100 hover:border-emerald-400 hover:shadow-emerald-100',
-    badge: 'bg-emerald-100 text-emerald-700', num: 'text-emerald-700', label: 'Inicial',
+    bg: 'bg-emerald-50 dark:bg-emerald-950/40', border: 'border-emerald-200 dark:border-emerald-800/60',
+    hover: 'hover:bg-emerald-100 dark:hover:bg-emerald-900/50 hover:border-emerald-400 dark:hover:border-emerald-600 hover:shadow-emerald-100 dark:hover:shadow-none',
+    badge: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-400', num: 'text-emerald-700 dark:text-emerald-400', label: 'Inicial',
   },
   PRIMARIA: {
-    bg: 'bg-sky-50', border: 'border-sky-200',
-    hover: 'hover:bg-sky-100 hover:border-sky-400 hover:shadow-sky-100',
-    badge: 'bg-sky-100 text-sky-700', num: 'text-sky-700', label: 'Primaria',
+    bg: 'bg-sky-50 dark:bg-sky-950/40', border: 'border-sky-200 dark:border-sky-800/60',
+    hover: 'hover:bg-sky-100 dark:hover:bg-sky-900/50 hover:border-sky-400 dark:hover:border-sky-600 hover:shadow-sky-100 dark:hover:shadow-none',
+    badge: 'bg-sky-100 text-sky-700 dark:bg-sky-950/50 dark:text-sky-400', num: 'text-sky-700 dark:text-sky-400', label: 'Primaria',
   },
   SECUNDARIA: {
-    bg: 'bg-violet-50', border: 'border-violet-200',
-    hover: 'hover:bg-violet-100 hover:border-violet-400 hover:shadow-violet-100',
-    badge: 'bg-violet-100 text-violet-700', num: 'text-violet-800', label: 'Secundaria',
+    bg: 'bg-violet-50 dark:bg-violet-950/40', border: 'border-violet-200 dark:border-violet-800/60',
+    hover: 'hover:bg-violet-100 dark:hover:bg-violet-900/50 hover:border-violet-400 dark:hover:border-violet-600 hover:shadow-violet-100 dark:hover:shadow-none',
+    badge: 'bg-violet-100 text-violet-700 dark:bg-violet-950/50 dark:text-violet-400', num: 'text-violet-800 dark:text-violet-300', label: 'Secundaria',
   },
 }
 const NIVEL_FALLBACK = {
   bg: 'bg-bg', border: 'border-border',
-  hover: 'hover:bg-surface-2 hover:border-gray-400 hover:shadow-gray-100',
+  hover: 'hover:bg-surface-2 hover:border-fg-muted hover:shadow-none',
   badge: 'bg-surface-2 text-fg-muted', num: 'text-fg', label: '',
 }
 
@@ -81,6 +82,7 @@ function PadreModal({ padre, onClose, onSaved }: { padre: Padre | null; onClose:
     nombre:   padre?.nombre   ?? '',
     apellido: padre?.apellido ?? '',
     email:    padre?.email    ?? '',
+    telefono: padre?.telefono ?? '',
   })
   const [saving, setSaving] = useState(false)
   const [error,  setError]  = useState<string | null>(null)
@@ -93,7 +95,7 @@ function PadreModal({ padre, onClose, onSaved }: { padre: Padre | null; onClose:
     setSaving(true); setError(null)
     try {
       if (isEdit) {
-        await api.put(`/padres/${padre!.id}`, { nombre: form.nombre, apellido: form.apellido })
+        await api.put(`/padres/${padre!.id}`, { nombre: form.nombre, apellido: form.apellido, telefono: form.telefono })
         toast.success('Padre/tutor actualizado')
       } else {
         const res = await api.post<{ padre: Padre; credentials: { email: string; password: string } }>('/padres', form)
@@ -131,6 +133,11 @@ function PadreModal({ padre, onClose, onSaved }: { padre: Padre | null; onClose:
             <span className="text-xs font-semibold text-fg-muted uppercase tracking-wide">Correo electrónico</span>
             <input required type="email" value={form.email} onChange={set('email')} disabled={isEdit}
               className="rounded-xl border border-border px-3 py-2 text-sm focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-200 disabled:bg-bg disabled:text-fg-muted" />
+          </label>
+          <label className="flex flex-col gap-1">
+            <span className="text-xs font-semibold text-fg-muted uppercase tracking-wide">Teléfono</span>
+            <input type="tel" value={form.telefono} onChange={set('telefono')} placeholder="7XXXXXXX"
+              className="rounded-xl border border-border px-3 py-2 text-sm focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-200" />
           </label>
           {!isEdit && (
             <p className="text-xs text-fg-muted">
@@ -350,30 +357,32 @@ export default function PadresPage() {
       <div className="rounded-2xl border border-border bg-surface shadow-sm overflow-x-auto">
         <table className="w-full min-w-[560px] text-sm">
           <thead>
-            <tr className="border-b border-border bg-slate-50 text-left text-xs font-semibold uppercase tracking-wide text-fg-muted">
+            <tr className="border-b border-border bg-bg text-left text-xs font-semibold uppercase tracking-wide text-fg-muted">
               <th className="px-3 py-3 w-10 text-center">N°</th>
               <th className="px-4 py-3">Apellidos y Nombres</th>
               <th className="px-4 py-3 hidden sm:table-cell">Correo</th>
+              <th className="px-4 py-3 hidden sm:table-cell">Teléfono</th>
               <th className="px-4 py-3 hidden md:table-cell">Hijos vinculados</th>
               <th className="px-4 py-3 text-right">Acciones</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
             {loading && (
-              <tr><td colSpan={5} className="py-12 text-center"><Spinner /></td></tr>
+              <tr><td colSpan={6} className="py-12 text-center"><Spinner /></td></tr>
             )}
             {!loading && padres.length === 0 && (
               <tr>
-                <td colSpan={5} className="py-12 text-center text-fg-muted">
+                <td colSpan={6} className="py-12 text-center text-fg-muted">
                   No hay padres/tutores vinculados a este curso.
                 </td>
               </tr>
             )}
             {padres.map((p, idx) => (
-              <tr key={p.id} className="hover:bg-slate-50/60 transition-colors">
+              <tr key={p.id} className="hover:bg-surface-2 transition-colors">
                 <td className="px-3 py-3 text-center text-xs font-mono text-fg-muted">{idx + 1}</td>
                 <td className="px-4 py-3 font-medium text-fg whitespace-nowrap">{p.apellido}, {p.nombre}</td>
                 <td className="px-4 py-3 text-fg-muted text-xs hidden sm:table-cell">{p.email}</td>
+                <td className="px-4 py-3 text-fg-muted text-xs hidden sm:table-cell">{p.telefono ?? '—'}</td>
                 <td className="px-4 py-3 hidden md:table-cell">
                   {p.hijos_a_cargo.length === 0 ? (
                     <span className="italic text-fg-muted text-xs">Sin hijos vinculados</span>

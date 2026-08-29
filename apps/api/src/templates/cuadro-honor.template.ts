@@ -1,4 +1,5 @@
 import type { Escala } from '../services/calculo.service'
+import { encabezadoConLogo, type InstitucionInfo } from './_header'
 
 const AZUL = '#1F3864'
 
@@ -10,6 +11,7 @@ function escalaColor(e: Escala): string {
 }
 
 export interface DatosCuadroHonor {
+  institucion?: InstitucionInfo
   paralelo:  string
   grado:     string
   nivel:     string
@@ -61,13 +63,13 @@ export function generarHTMLCuadroHonor(d: DatosCuadroHonor): string {
 </style>
 </head>
 <body>
-<div style="text-align:center;margin-bottom:12px;">
+${encabezadoConLogo(d.institucion, `
   <div style="font-size:22px;font-weight:bold;color:${AZUL};letter-spacing:2px;">⭐ CUADRO DE HONOR ⭐</div>
   <div style="font-size:11px;color:#555;margin-top:4px;">
     ${d.nivel} – ${d.grado} "${d.paralelo}" | Trimestre ${d.trimestre}° | Gestión ${d.anno}
   </div>
   <div style="font-size:10px;color:#888;margin-top:2px;">Ordenado por promedio general descendente</div>
-</div>
+`)}
 <table>
   <thead>
     <tr>

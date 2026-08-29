@@ -14,7 +14,7 @@ const EST_INCLUDE = {
     orderBy: { gestion: { anno: 'desc' as const } },
   },
   relaciones_padre: {
-    include: { padre: { select: { id: true, nombre: true, apellido: true, email: true } } },
+    include: { padre: { select: { id: true, nombre: true, apellido: true, email: true, telefono: true } } },
   },
 } as const
 
@@ -83,7 +83,7 @@ export class EstudiantesService {
           take:    1,
         },
         relaciones_padre: {
-          include: { padre: { select: { id: true, nombre: true, apellido: true, email: true } } },
+          include: { padre: { select: { id: true, nombre: true, apellido: true, email: true, telefono: true } } },
           take:    1,
         },
       },
@@ -119,6 +119,7 @@ export class EstudiantesService {
       becado?:              boolean
       motivo_beca?:         string
       fecha_nacimiento?:    string
+      sexo?:                'M' | 'F'
     }
   ) {
     // Derive nivel_id from paralelo
@@ -149,6 +150,7 @@ export class EstudiantesService {
         becado:      data.becado ?? false,
         ...(data.becado && data.motivo_beca ? { motivo_beca: data.motivo_beca } : {}),
         ...(data.fecha_nacimiento ? { fecha_nacimiento: new Date(data.fecha_nacimiento) } : {}),
+        ...(data.sexo ? { sexo: data.sexo } : {}),
         usuario: {
           create: {
             supabase_auth_id: authId,
@@ -185,6 +187,7 @@ export class EstudiantesService {
             apellido:         apellidoT ?? '',
             rol:              'PADRE_TUTOR' as const,
             institucion_id,
+            ...(data.telefono_tutor1 ? { telefono: data.telefono_tutor1 } : {}),
           },
         })
         tutor1Id = tutorUsuario.id
@@ -212,6 +215,7 @@ export class EstudiantesService {
       becado?:           boolean
       motivo_beca?:      string | null
       fecha_nacimiento?: string | null
+      sexo?:             'M' | 'F' | null
     },
   ) {
     const est = await this.findOne(id)
@@ -236,6 +240,7 @@ export class EstudiantesService {
     const estData: Record<string, unknown> = {}
     if (data.becado      !== undefined) estData.becado      = data.becado
     if (data.motivo_beca !== undefined) estData.motivo_beca = data.motivo_beca ?? null
+    if (data.sexo        !== undefined) estData.sexo        = data.sexo ?? null
     if (data.fecha_nacimiento !== undefined) {
       estData.fecha_nacimiento = data.fecha_nacimiento ? new Date(data.fecha_nacimiento) : null
     }
@@ -252,7 +257,7 @@ export class EstudiantesService {
 
   async linkPadre(
     estudiante_id: string,
-    data: { padre_id?: string; nombre?: string; apellido?: string; email?: string },
+    data: { padre_id?: string; nombre?: string; apellido?: string; email?: string; telefono?: string },
   ) {
     const est = await prisma.estudiante.findUnique({
       where:  { id: estudiante_id },
@@ -279,6 +284,7 @@ export class EstudiantesService {
           apellido:         data.apellido,
           rol:              'PADRE_TUTOR' as const,
           institucion_id:   est.usuario.institucion_id,
+          ...(data.telefono ? { telefono: data.telefono } : {}),
         },
       })
       padre_id = tutorUsuario.id

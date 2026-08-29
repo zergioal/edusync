@@ -25,6 +25,7 @@ const AuditoriaPage        = lazy(() => import('../admin/AuditoriaPage'))
 const AnunciosInternosPage = lazy(() => import('../shared/AnunciosInternosPage'))
 const MensajesPage         = lazy(() => import('../shared/MensajesPage'))
 const PadresPage           = lazy(() => import('../secretaria/PadresPage'))
+const ReportesPage         = lazy(() => import('../secretaria/reportes/ReportesPage'))
 
 // ─── Panel principal ──────────────────────────────────────────────────────────
 
@@ -167,6 +168,7 @@ export default function AdminDashboard() {
         <Route path="estudiantes"      element={<EstudiantesPage />} />
         <Route path="estudiante/:id"   element={<PerfilEstudiantePage />} />
         <Route path="gestiones"        element={<GestionesPage />} />
+        <Route path="reportes/*"       element={<ReportesPage />} />
 
         {/* Finanzas / Contador */}
         <Route path="finanzas"                      element={<PensionesPage />} />

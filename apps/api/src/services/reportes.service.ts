@@ -1,11 +1,20 @@
 import { prisma } from '@edusync/database'
 import { AppError } from '../middlewares/errorHandler'
+import type { EstadoMatricula } from '@edusync/types'
 import {
   calcularEscala, calcNotasEstudiante, calcularPromedioAnual, determinarResultado,
   type DimInfo,
 } from './calculo.service'
 import type { DatosCentralizador } from '../templates/centralizador.template'
 import type { DatosCuadroHonor }   from '../templates/cuadro-honor.template'
+import { getInstitucionInfo }      from '../utils/institucion.util'
+
+async function verificarGestion(gestion_id: string, institucion_id: string) {
+  const gestion = await prisma.gestion.findUnique({ where: { id: gestion_id } })
+  if (!gestion) throw new AppError(404, 'Gestión no encontrada', 'NOT_FOUND')
+  if (gestion.institucion_id !== institucion_id) throw new AppError(403, 'Sin acceso', 'FORBIDDEN')
+  return gestion
+}
 
 // ─── Helper: carga datos base de un paralelo+trimestre ───────────────────────
 
@@ -109,8 +118,10 @@ export class ReportesService {
 
     estudiantesCalc.sort((a, b) => b.promedio_general - a.promedio_general)
     const withPos = estudiantesCalc.map((e, i) => ({ posicion: i + 1, ...e }))
+    const institucion = await getInstitucionInfo(institucion_id)
 
     return {
+      institucion,
       paralelo:    paralelo.letra,
       grado:       paralelo.grado.nombre,
       nivel:       paralelo.grado.nivel.nombre,
@@ -154,8 +165,10 @@ export class ReportesService {
         promedio: cnt > 0 ? Math.round(sumTotal / cnt) : null,
       }
     })
+    const institucion = await getInstitucionInfo(institucion_id)
 
     return {
+      institucion,
       paralelo:    paralelo.letra,
       grado:       paralelo.grado.nombre,
       nivel:       paralelo.grado.nivel.nombre,
@@ -350,5 +363,213 @@ export class ReportesService {
         materias_reprobadas,
       }
     })
+  }
+
+  // ── Reportes de Secretaría ───────────────────────────────────────────────
+
+  async getNomina(
+    institucion_id: string,
+    gestion_id:     string,
+    nivel_id?:      string,
+    grado_id?:      string,
+    paralelo_id?:   string,
+  ) {
+    const gestion = await verificarGestion(gestion_id, institucion_id)
+
+    const matriculas = await prisma.matricula.findMany({
+      where: {
+        gestion_id,
+        ...(paralelo_id ? { paralelo_id } : {}),
+        paralelo: {
+          ...(grado_id ? { grado_id } : {}),
+          ...(nivel_id ? { grado: { nivel_id } } : {}),
+        },
+      },
+      include: {
+        estudiante: { include: { usuario: { select: { nombre: true, apellido: true, email: true } } } },
+        paralelo:   { include: { grado: { include: { nivel: true } } } },
+      },
+      orderBy: [
+        { paralelo: { grado: { orden: 'asc' } } },
+        { paralelo: { letra: 'asc' } },
+        { estudiante: { usuario: { apellido: 'asc' } } },
+      ],
+    })
+
+    return {
+      anno: gestion.anno,
+      estudiantes: matriculas.map(m => ({
+        codigo:   m.estudiante.codigo,
+        nombre:   m.estudiante.usuario.nombre,
+        apellido: m.estudiante.usuario.apellido,
+        email:    m.estudiante.usuario.email,
+        nivel:    m.paralelo.grado.nivel.nombre,
+        grado:    m.paralelo.grado.nombre,
+        paralelo: m.paralelo.letra,
+        estado:   m.estado,
+      })),
+    }
+  }
+
+  async getFichaEstudiante(estudiante_id: string, institucion_id: string) {
+    const estudiante = await prisma.estudiante.findUnique({
+      where: { id: estudiante_id },
+      include: {
+        usuario: true,
+        matriculas: {
+          include: { paralelo: { include: { grado: { include: { nivel: true } } } }, gestion: { select: { anno: true } } },
+          orderBy: { gestion: { anno: 'desc' } },
+        },
+        relaciones_padre: {
+          include: { padre: { select: { nombre: true, apellido: true, email: true, telefono: true } } },
+        },
+      },
+    })
+    if (!estudiante) throw new AppError(404, 'Estudiante no encontrado', 'NOT_FOUND')
+    if (estudiante.usuario.institucion_id !== institucion_id) throw new AppError(403, 'Sin acceso', 'FORBIDDEN')
+
+    return {
+      datos_personales: {
+        nombre:           estudiante.usuario.nombre,
+        apellido:         estudiante.usuario.apellido,
+        email:            estudiante.usuario.email,
+        telefono:         estudiante.usuario.telefono,
+        codigo:           estudiante.codigo,
+        fecha_nacimiento: estudiante.fecha_nacimiento,
+        sexo:             estudiante.sexo,
+        becado:           estudiante.becado,
+        motivo_beca:      estudiante.motivo_beca,
+      },
+      matriculas: estudiante.matriculas.map(m => ({
+        anno:          m.gestion.anno,
+        nivel:         m.paralelo.grado.nivel.nombre,
+        grado:         m.paralelo.grado.nombre,
+        paralelo:      m.paralelo.letra,
+        estado:        m.estado,
+        lleva_tecnica: m.lleva_tecnica,
+      })),
+      tutores: estudiante.relaciones_padre.map(r => ({
+        nombre:   r.padre.nombre,
+        apellido: r.padre.apellido,
+        email:    r.padre.email,
+        telefono: r.padre.telefono,
+      })),
+    }
+  }
+
+  async getEstadisticaMatricula(institucion_id: string, gestion_id: string) {
+    const gestion = await verificarGestion(gestion_id, institucion_id)
+
+    const matriculas = await prisma.matricula.findMany({
+      where: { gestion_id },
+      include: {
+        estudiante: { select: { sexo: true } },
+        paralelo:   { include: { grado: { include: { nivel: true } } } },
+      },
+    })
+
+    const porNivel: Record<string, number> = {}
+    const porGradoParalelo = new Map<string, { nivel: string; grado: string; paralelo: string; total: number }>()
+    const porSexo: Record<string, number> = { M: 0, F: 0, 'Sin registrar': 0 }
+
+    for (const m of matriculas) {
+      const nivel = m.paralelo.grado.nivel.nombre
+      porNivel[nivel] = (porNivel[nivel] ?? 0) + 1
+
+      const key = `${m.paralelo.grado_id}::${m.paralelo_id}`
+      const entry = porGradoParalelo.get(key)
+        ?? { nivel, grado: m.paralelo.grado.nombre, paralelo: m.paralelo.letra, total: 0 }
+      entry.total++
+      porGradoParalelo.set(key, entry)
+
+      const sexo = m.estudiante.sexo ?? 'Sin registrar'
+      porSexo[sexo] = (porSexo[sexo] ?? 0) + 1
+    }
+
+    return {
+      anno:               gestion.anno,
+      total:              matriculas.length,
+      por_nivel:          Object.entries(porNivel).map(([nivel, total]) => ({ nivel, total })),
+      por_grado_paralelo: [...porGradoParalelo.values()],
+      por_sexo:           porSexo,
+    }
+  }
+
+  async getPadresTutores(institucion_id: string, gestion_id: string, paralelo_id?: string) {
+    await verificarGestion(gestion_id, institucion_id)
+
+    const matriculas = await prisma.matricula.findMany({
+      where: { gestion_id, ...(paralelo_id ? { paralelo_id } : {}) },
+      include: {
+        estudiante: {
+          include: {
+            usuario: { select: { nombre: true, apellido: true } },
+            relaciones_padre: {
+              include: { padre: { select: { nombre: true, apellido: true, email: true, telefono: true } } },
+            },
+          },
+        },
+        paralelo: { include: { grado: { include: { nivel: true } } } },
+      },
+      orderBy: [{ estudiante: { usuario: { apellido: 'asc' } } }],
+    })
+
+    const filas: Array<{
+      estudiante: string; codigo: string; nivel: string; grado: string; paralelo: string
+      tutor: string; email: string; telefono: string | null
+    }> = []
+
+    for (const m of matriculas) {
+      const est  = m.estudiante
+      const base = {
+        estudiante: `${est.usuario.apellido} ${est.usuario.nombre}`,
+        codigo:     est.codigo,
+        nivel:      m.paralelo.grado.nivel.nombre,
+        grado:      m.paralelo.grado.nombre,
+        paralelo:   m.paralelo.letra,
+      }
+      if (est.relaciones_padre.length === 0) {
+        filas.push({ ...base, tutor: '—', email: '—', telefono: null })
+      } else {
+        for (const rel of est.relaciones_padre) {
+          filas.push({
+            ...base,
+            tutor:    `${rel.padre.apellido} ${rel.padre.nombre}`,
+            email:    rel.padre.email,
+            telefono: rel.padre.telefono,
+          })
+        }
+      }
+    }
+    return filas
+  }
+
+  async getEstudiantesPorEstado(institucion_id: string, gestion_id: string, estado?: EstadoMatricula) {
+    await verificarGestion(gestion_id, institucion_id)
+
+    const matriculas = await prisma.matricula.findMany({
+      where: { gestion_id, ...(estado ? { estado } : {}) },
+      include: {
+        estudiante: { include: { usuario: { select: { nombre: true, apellido: true } } } },
+        paralelo:   { include: { grado: { include: { nivel: true } } } },
+      },
+      orderBy: [{ estudiante: { usuario: { apellido: 'asc' } } }],
+    })
+
+    const resumen: Record<EstadoMatricula, number> = { ACTIVO: 0, RETIRADO: 0, TRASLADADO: 0 } as Record<EstadoMatricula, number>
+    const estudiantes = matriculas.map(m => {
+      resumen[m.estado] = (resumen[m.estado] ?? 0) + 1
+      return {
+        estudiante_id: m.estudiante_id,
+        nombre:        m.estudiante.usuario.nombre,
+        apellido:      m.estudiante.usuario.apellido,
+        codigo:        m.estudiante.codigo,
+        nivel:         m.paralelo.grado.nivel.nombre,
+        grado:         m.paralelo.grado.nombre,
+        paralelo:      m.paralelo.letra,
+        estado:        m.estado,
+      }
+    })
+    return { resumen, estudiantes }
   }
 }

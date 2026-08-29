@@ -115,8 +115,8 @@ export function AsistenciaMateriaDetalle({ asignacionId, materiaNombre, estudian
           <div className="overflow-x-auto rounded-xl border border-border bg-surface">
             <table className="text-xs border-collapse" style={{ minWidth: `${160 + schoolDays.length * 34}px` }}>
               <thead>
-                <tr className="bg-slate-50 border-b border-border">
-                  <th className="sticky left-0 z-10 bg-slate-50 px-4 py-2 text-left text-xs font-semibold text-fg-muted border-r border-border w-32 min-w-[8rem]">
+                <tr className="bg-bg border-b border-border">
+                  <th className="sticky left-0 z-10 bg-bg px-4 py-2 text-left text-xs font-semibold text-fg-muted border-r border-border w-32 min-w-[8rem]">
                     Día
                   </th>
                   {schoolDays.map(fecha => {
@@ -125,7 +125,7 @@ export function AsistenciaMateriaDetalle({ asignacionId, materiaNombre, estudian
                     const isSat = dow === 6
                     const isFut = fecha > today
                     return (
-                      <th key={fecha} className={`w-8 border-r border-border ${isSat ? 'bg-slate-100' : ''}`}>
+                      <th key={fecha} className={`w-8 border-r border-border ${isSat ? 'bg-surface-2' : ''}`}>
                         <div className="py-1 px-0.5 flex flex-col items-center gap-0 mx-auto" style={{ writingMode: 'vertical-lr', transform: 'rotate(180deg)' }}>
                           <span className={`font-bold ${isFut ? 'text-fg-muted' : 'text-fg'}`}>{d}</span>
                           <span className={isFut ? 'text-gray-200' : 'text-fg-muted'}>{DIA_ABREV[dow]}</span>
@@ -150,7 +150,7 @@ export function AsistenciaMateriaDetalle({ asignacionId, materiaNombre, estudian
                     const estado = records[fecha]
                     const cfg    = estado ? ESTADO_CFG[estado] : null
                     return (
-                      <td key={fecha} className={`w-8 h-9 text-center border-r border-border ${isSat ? 'bg-slate-100/50' : ''}`}>
+                      <td key={fecha} className={`w-8 h-9 text-center border-r border-border ${isSat ? 'bg-surface-2/50' : ''}`}>
                         {isFut ? (
                           <span className="text-gray-200 text-xs">·</span>
                         ) : cfg ? (

@@ -4,6 +4,7 @@
 
 @layer base {
   :root {
+    color-scheme: light;
     --color-bg:            248 250 252;  /* slate-50 */
     --color-surface:       255 255 255;  /* white */
     --color-surface-2:     241 245 249;  /* slate-100 */
@@ -16,6 +17,7 @@
   }
 
   :root.dark {
+    color-scheme: dark;
     --color-bg:              2   6  23;  /* slate-950 */
     --color-surface:        15  23  42;  /* slate-900 */
     --color-surface-2:      30  41  59;  /* slate-800 */

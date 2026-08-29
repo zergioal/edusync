@@ -459,7 +459,7 @@ export default function DocentesPage() {
       <div className="rounded-xl border border-border bg-surface shadow-sm overflow-x-auto">
         <table className="w-full min-w-[700px] text-sm">
           <thead>
-            <tr className="border-b border-border bg-slate-50 text-left text-xs font-semibold uppercase tracking-wide text-fg-muted">
+            <tr className="border-b border-border bg-bg text-left text-xs font-semibold uppercase tracking-wide text-fg-muted">
               <th className="px-4 py-3 text-center w-10">N°</th>
               <th className="px-4 py-3">Apellidos y Nombres</th>
               <th className="px-4 py-3">Correo</th>
@@ -488,7 +488,7 @@ export default function DocentesPage() {
                 abbreviateCurso(a.paralelo?.grado?.nombre ?? '', a.paralelo?.letra ?? '')
               ))]
               return (
-                <tr key={doc.id} className="hover:bg-slate-50/60 transition-colors align-top">
+                <tr key={doc.id} className="hover:bg-surface-2 transition-colors align-top">
                   <td className="px-4 py-3 text-center text-xs font-mono text-fg-muted select-none">
                     {idx + 1}
                   </td>
@@ -499,10 +499,10 @@ export default function DocentesPage() {
                   <td className="px-4 py-3">
                     <div className="flex flex-wrap gap-1">
                       {materias.slice(0, 2).map(m => (
-                        <span key={m} className="inline-block rounded-md bg-slate-100 px-2 py-0.5 text-xs text-slate-600">{m}</span>
+                        <span key={m} className="inline-block rounded-md bg-surface-2 px-2 py-0.5 text-xs text-fg-muted">{m}</span>
                       ))}
                       {materias.length > 2 && (
-                        <span className="inline-block rounded-md bg-slate-100 px-2 py-0.5 text-xs text-slate-400">+{materias.length - 2} más</span>
+                        <span className="inline-block rounded-md bg-surface-2 px-2 py-0.5 text-xs text-fg-muted">+{materias.length - 2} más</span>
                       )}
                       {materias.length === 0 && <span className="text-xs text-fg-muted italic">Sin materias</span>}
                     </div>

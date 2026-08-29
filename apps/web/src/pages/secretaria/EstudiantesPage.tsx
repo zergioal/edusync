@@ -23,13 +23,14 @@ interface ParaleloCard {
 }
 
 interface Paralelo { id: string; letra: string; grado: { nombre: string; nivel: { nombre: string } } }
-interface PadreRef { id: string; nombre: string; apellido: string; email: string }
+interface PadreRef { id: string; nombre: string; apellido: string; email: string; telefono: string | null }
 interface Estudiante {
   id:               string
   codigo:           string
   becado:           boolean
   motivo_beca:      string | null
   fecha_nacimiento: string | null
+  sexo:             'M' | 'F' | null
   usuario:          { nombre: string; apellido: string; email: string; activo: boolean }
   matriculas:       { paralelo: Paralelo }[]
   relaciones_padre: { padre: PadreRef }[]
@@ -62,24 +63,24 @@ const NIVEL_STYLES: Record<string, {
   badge: string; num: string; label: string
 }> = {
   INICIAL: {
-    bg: 'bg-emerald-50', border: 'border-emerald-200',
-    hover: 'hover:bg-emerald-100 hover:border-emerald-400 hover:shadow-emerald-100',
-    badge: 'bg-emerald-100 text-emerald-700', num: 'text-emerald-700', label: 'Inicial',
+    bg: 'bg-emerald-50 dark:bg-emerald-950/40', border: 'border-emerald-200 dark:border-emerald-800/60',
+    hover: 'hover:bg-emerald-100 dark:hover:bg-emerald-900/50 hover:border-emerald-400 dark:hover:border-emerald-600 hover:shadow-emerald-100 dark:hover:shadow-none',
+    badge: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-400', num: 'text-emerald-700 dark:text-emerald-400', label: 'Inicial',
   },
   PRIMARIA: {
-    bg: 'bg-sky-50', border: 'border-sky-200',
-    hover: 'hover:bg-sky-100 hover:border-sky-400 hover:shadow-sky-100',
-    badge: 'bg-sky-100 text-sky-700', num: 'text-sky-700', label: 'Primaria',
+    bg: 'bg-sky-50 dark:bg-sky-950/40', border: 'border-sky-200 dark:border-sky-800/60',
+    hover: 'hover:bg-sky-100 dark:hover:bg-sky-900/50 hover:border-sky-400 dark:hover:border-sky-600 hover:shadow-sky-100 dark:hover:shadow-none',
+    badge: 'bg-sky-100 text-sky-700 dark:bg-sky-950/50 dark:text-sky-400', num: 'text-sky-700 dark:text-sky-400', label: 'Primaria',
   },
   SECUNDARIA: {
-    bg: 'bg-violet-50', border: 'border-violet-200',
-    hover: 'hover:bg-violet-100 hover:border-violet-400 hover:shadow-violet-100',
-    badge: 'bg-violet-100 text-violet-700', num: 'text-violet-800', label: 'Secundaria',
+    bg: 'bg-violet-50 dark:bg-violet-950/40', border: 'border-violet-200 dark:border-violet-800/60',
+    hover: 'hover:bg-violet-100 dark:hover:bg-violet-900/50 hover:border-violet-400 dark:hover:border-violet-600 hover:shadow-violet-100 dark:hover:shadow-none',
+    badge: 'bg-violet-100 text-violet-700 dark:bg-violet-950/50 dark:text-violet-400', num: 'text-violet-800 dark:text-violet-300', label: 'Secundaria',
   },
 }
 const NIVEL_FALLBACK = {
   bg: 'bg-bg', border: 'border-border',
-  hover: 'hover:bg-surface-2 hover:border-gray-400 hover:shadow-gray-100',
+  hover: 'hover:bg-surface-2 hover:border-fg-muted hover:shadow-none',
   badge: 'bg-surface-2 text-fg-muted', num: 'text-fg', label: '',
 }
 
@@ -96,7 +97,7 @@ function PadreRow({
   const [editing,  setEditing]  = useState(false)
   const [saving,   setSaving]   = useState(false)
   const [removing, setRemoving] = useState(false)
-  const [form, setForm] = useState({ apellido: padre.apellido, nombre: padre.nombre, email: padre.email })
+  const [form, setForm] = useState({ apellido: padre.apellido, nombre: padre.nombre, email: padre.email, telefono: padre.telefono ?? '' })
 
   const save = async () => {
     setSaving(true)
@@ -142,6 +143,9 @@ function PadreRow({
         <input value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))}
           placeholder="Correo electrónico" type="email"
           className="w-full rounded-lg border border-border px-2 py-1.5 text-sm focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-200" />
+        <input value={form.telefono} onChange={e => setForm(f => ({ ...f, telefono: e.target.value }))}
+          placeholder="Teléfono" type="tel"
+          className="w-full rounded-lg border border-border px-2 py-1.5 text-sm focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-200" />
         <div className="flex justify-end gap-2">
           <Button type="button" variant="ghost" onClick={() => setEditing(false)} disabled={saving}>Cancelar</Button>
           <Button type="button" onClick={save} disabled={saving}>{saving ? '…' : 'Guardar'}</Button>
@@ -154,7 +158,7 @@ function PadreRow({
     <div className="flex items-center justify-between rounded-lg border border-border bg-bg px-3 py-2">
       <div>
         <p className="text-sm font-medium text-fg">{padre.apellido}, {padre.nombre}</p>
-        <p className="text-xs text-fg-muted">{padre.email}</p>
+        <p className="text-xs text-fg-muted">{padre.email}{padre.telefono ? ` · ${padre.telefono}` : ''}</p>
       </div>
       <div className="flex gap-3 text-xs font-medium">
         <button type="button" onClick={() => setEditing(true)} className="text-indigo-600 hover:text-indigo-800">
@@ -190,6 +194,7 @@ function EditarEstudianteModal({ estudiante, onClose, onSaved }: EditModalProps)
       : '',
     becado:      estudiante.becado,
     motivo_beca: estudiante.motivo_beca ?? '',
+    sexo:        estudiante.sexo ?? '',
   })
   const [saving, setSaving] = useState(false)
   const [error,  setError]  = useState<string | null>(null)
@@ -218,6 +223,7 @@ function EditarEstudianteModal({ estudiante, onClose, onSaved }: EditModalProps)
         fecha_nacimiento: form.fecha_nacimiento || null,
         becado:           form.becado,
         motivo_beca:      form.becado ? (form.motivo_beca || null) : null,
+        sexo:             form.sexo || null,
       })
       toast.success('Estudiante actualizado')
       onSaved()
@@ -242,7 +248,7 @@ function EditarEstudianteModal({ estudiante, onClose, onSaved }: EditModalProps)
           setLinkingPadre(false)
           return
         }
-        body = { apellido, nombre, email: nuevoEmail }
+        body = { apellido, nombre, email: nuevoEmail, ...(nuevoTel ? { telefono: nuevoTel } : {}) }
       }
       const est = await api.post<{ relaciones_padre: { padre: PadreRef }[] }>(
         `/estudiantes/${estudiante.id}/padres`, body
@@ -293,11 +299,22 @@ function EditarEstudianteModal({ estudiante, onClose, onSaved }: EditModalProps)
             <span className="text-xs text-fg-muted">Es también el usuario de acceso — al cambiarlo, el login se actualiza automáticamente.</span>
           </label>
 
-          <label className="flex flex-col gap-1">
-            <span className="text-xs font-semibold text-fg-muted uppercase tracking-wide">Fecha de nacimiento</span>
-            <input type="date" value={form.fecha_nacimiento} onChange={setField('fecha_nacimiento')}
-              className="rounded-xl border border-border px-3 py-2 text-sm focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-200" />
-          </label>
+          <div className="grid grid-cols-2 gap-3">
+            <label className="flex flex-col gap-1">
+              <span className="text-xs font-semibold text-fg-muted uppercase tracking-wide">Fecha de nacimiento</span>
+              <input type="date" value={form.fecha_nacimiento} onChange={setField('fecha_nacimiento')}
+                className="rounded-xl border border-border px-3 py-2 text-sm focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-200" />
+            </label>
+            <label className="flex flex-col gap-1">
+              <span className="text-xs font-semibold text-fg-muted uppercase tracking-wide">Sexo</span>
+              <select value={form.sexo} onChange={e => setForm(f => ({ ...f, sexo: e.target.value as '' | 'M' | 'F' }))}
+                className="rounded-xl border border-border px-3 py-2 text-sm focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-200">
+                <option value="">— Sin especificar —</option>
+                <option value="M">Masculino</option>
+                <option value="F">Femenino</option>
+              </select>
+            </label>
+          </div>
 
           <div className="rounded-xl border border-border bg-bg p-3 space-y-2">
             <label className="flex items-center gap-2 cursor-pointer select-none">
@@ -613,7 +630,7 @@ export default function EstudiantesPage({ basePath = '/dashboard/admin' }: { bas
       <div className="rounded-2xl border border-border bg-surface shadow-sm overflow-x-auto">
         <table className="w-full min-w-[640px] text-sm">
           <thead>
-            <tr className="border-b border-border bg-slate-50 text-left text-xs font-semibold uppercase tracking-wide text-fg-muted">
+            <tr className="border-b border-border bg-bg text-left text-xs font-semibold uppercase tracking-wide text-fg-muted">
               <th className="px-3 py-3 w-10 text-center">N°</th>
               <th className="px-4 py-3">Código</th>
               <th className="px-4 py-3">Apellidos y Nombres</th>
@@ -633,7 +650,7 @@ export default function EstudiantesPage({ basePath = '/dashboard/admin' }: { bas
               </tr>
             )}
             {estudiantes.map((est, idx) => (
-              <tr key={est.id} className="hover:bg-slate-50/60 transition-colors">
+              <tr key={est.id} className="hover:bg-surface-2 transition-colors">
                 <td className="px-3 py-3 text-center text-xs font-mono text-fg-muted">{idx + 1}</td>
                 <td className="px-4 py-3">
                   <span className="font-mono text-xs bg-surface-2 px-2 py-1 rounded-lg text-fg-muted whitespace-nowrap">

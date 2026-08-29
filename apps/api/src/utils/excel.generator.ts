@@ -1,5 +1,38 @@
 import * as XLSX from 'xlsx'
 
+// ── Tabla simple genérica (nómina, estadísticas, listados, etc.) ──────────────
+
+export interface ColumnaTablaExcel { header: string; key: string }
+export interface TablaSimpleExcelData {
+  titulo:    string
+  subtitulo?: string
+  columnas:  ColumnaTablaExcel[]
+  filas:     Record<string, string | number | null | undefined>[]
+}
+
+export function generateTablaSimpleExcel(data: TablaSimpleExcelData): Buffer {
+  const wb = XLSX.utils.book_new()
+
+  const rows: (string | number | null)[][] = [
+    [data.titulo],
+    ...(data.subtitulo ? [[data.subtitulo]] : []),
+    [],
+    data.columnas.map(c => c.header),
+    ...data.filas.map(fila => data.columnas.map(c => fila[c.key] ?? '')),
+  ]
+
+  const ws = XLSX.utils.aoa_to_sheet(rows)
+  ws['!cols'] = data.columnas.map(() => ({ wch: 18 }))
+
+  const lastCol = data.columnas.length - 1
+  const merges = [{ s: { r: 0, c: 0 }, e: { r: 0, c: lastCol } }]
+  if (data.subtitulo) merges.push({ s: { r: 1, c: 0 }, e: { r: 1, c: lastCol } })
+  ws['!merges'] = merges
+
+  XLSX.utils.book_append_sheet(wb, ws, 'Reporte')
+  return XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' }) as Buffer
+}
+
 export interface CentralizadorExcelData {
   paralelo:  string
   grado:     string

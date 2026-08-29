@@ -13,9 +13,12 @@ import type { DimensionPlanilla, EstudiantePlanilla } from '../../hooks/usePlani
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
+type EstadoMatricula = 'ACTIVO' | 'RETIRADO' | 'TRASLADADO'
+
 interface Matricula {
   id:            string
   lleva_tecnica: boolean
+  estado:        EstadoMatricula
   gestion:       { id: string; anno: number; activa: boolean }
   paralelo:      { letra: string; grado: { nombre: string; nivel: { nombre: string } } }
 }
@@ -26,12 +29,12 @@ interface Estudiante {
   nivel:   { nombre: string }
   usuario: { nombre: string; apellido: string; email: string; activo: boolean }
   matriculas:       Matricula[]
-  relaciones_padre: { padre: { nombre: string; apellido: string; email: string } }[]
+  relaciones_padre: { padre: { nombre: string; apellido: string; email: string; telefono: string | null } }[]
 }
 
 const CAN_MANAGE_TECNICA = [Rol.ADMIN_SISTEMA, Rol.DIRECTOR, Rol.COORDINADOR, Rol.SECRETARIA] as string[]
 
-type Tab = 'datos' | 'calificaciones' | 'asistencia' | 'pensiones'
+type Tab = 'datos' | 'calificaciones' | 'asistencia' | 'pensiones' | 'documentos' | 'certificados'
 
 // ─── Shared: Selector Gestion + Trimestre ─────────────────────────────────────
 
@@ -52,15 +55,24 @@ function GestionTrimestreSelector({
 
 // ─── Tab: Datos ───────────────────────────────────────────────────────────────
 
+const ESTADO_MATRICULA_LABEL: Record<EstadoMatricula, string> = {
+  ACTIVO: 'Activo', RETIRADO: 'Retirado', TRASLADADO: 'Trasladado',
+}
+const ESTADO_MATRICULA_BADGE: Record<EstadoMatricula, 'success' | 'danger' | 'warning'> = {
+  ACTIVO: 'success', RETIRADO: 'danger', TRASLADADO: 'warning',
+}
+
 function DatosTab({
-  est, canManageTecnica, onMatriculaUpdate,
+  est, canManageTecnica, onMatriculaUpdate, onEstadoUpdate,
 }: {
   est: Estudiante
   canManageTecnica: boolean
   onMatriculaUpdate: (matriculaId: string, lleva_tecnica: boolean) => void
+  onEstadoUpdate:    (matriculaId: string, estado: EstadoMatricula) => void
 }) {
   const matriculaActiva = est.matriculas.find(m => m.gestion.activa) ?? est.matriculas[0]
   const [toggleLoading, setToggleLoading] = useState(false)
+  const [estadoLoading, setEstadoLoading] = useState(false)
 
   const handleToggleTecnica = useCallback(async () => {
     if (!matriculaActiva) return
@@ -72,6 +84,16 @@ function DatosTab({
     } catch { /* ignore */ }
     finally { setToggleLoading(false) }
   }, [matriculaActiva, est.id, onMatriculaUpdate])
+
+  const handleEstadoChange = useCallback(async (estado: EstadoMatricula) => {
+    if (!matriculaActiva) return
+    setEstadoLoading(true)
+    try {
+      await api.patch(`/matriculas/${est.id}/${matriculaActiva.gestion.id}/estado`, { estado })
+      onEstadoUpdate(matriculaActiva.id, estado)
+    } catch { /* ignore */ }
+    finally { setEstadoLoading(false) }
+  }, [matriculaActiva, est.id, onEstadoUpdate])
 
   // Show lleva_tecnica toggle for students in 5° or 6° Secundaria
   const esTTE = matriculaActiva
@@ -104,6 +126,25 @@ function DatosTab({
             </div>
             <div><span className="text-fg-muted">Gestión:</span>{' '}
               <span className="font-medium">{matriculaActiva.gestion.anno}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-fg-muted">Estado de matrícula:</span>
+              {canManageTecnica ? (
+                <select
+                  value={matriculaActiva.estado}
+                  onChange={e => handleEstadoChange(e.target.value as EstadoMatricula)}
+                  disabled={estadoLoading}
+                  className="rounded-lg border border-border px-2 py-1 text-sm font-medium focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand disabled:opacity-50"
+                >
+                  {(Object.keys(ESTADO_MATRICULA_LABEL) as EstadoMatricula[]).map(e => (
+                    <option key={e} value={e}>{ESTADO_MATRICULA_LABEL[e]}</option>
+                  ))}
+                </select>
+              ) : (
+                <Badge variant={ESTADO_MATRICULA_BADGE[matriculaActiva.estado]}>
+                  {ESTADO_MATRICULA_LABEL[matriculaActiva.estado]}
+                </Badge>
+              )}
             </div>
             {esTTE && (
               <div className="col-span-2 flex items-center justify-between rounded-lg bg-indigo-50 border border-indigo-100 px-4 py-3">
@@ -146,7 +187,7 @@ function DatosTab({
                   </div>
                   <div>
                     <p className="font-medium text-fg">{rel.padre.apellido}, {rel.padre.nombre}</p>
-                    <p className="text-fg-muted">{rel.padre.email}</p>
+                    <p className="text-fg-muted">{rel.padre.email}{rel.padre.telefono ? ` · ${rel.padre.telefono}` : ''}</p>
                   </div>
                 </div>
               ))}
@@ -647,6 +688,234 @@ function PensionesTab({ estudianteId }: { estudianteId: string }) {
   )
 }
 
+// ─── Tab: Documentos ──────────────────────────────────────────────────────────
+
+interface DocumentoRow {
+  id: string; tipo: string; entregado: boolean
+  fecha_entrega: string | null; observacion: string | null
+}
+
+function DocumentosTab({ estudianteId }: { estudianteId: string }) {
+  const [checklist, setChecklist] = useState<DocumentoRow[]>([])
+  const [loading,   setLoading]   = useState(true)
+  const [error,     setError]     = useState('')
+  const [saving,    setSaving]    = useState<string | null>(null)
+
+  useEffect(() => {
+    setLoading(true); setError('')
+    api.get<DocumentoRow[]>(`/documentos/${estudianteId}`)
+      .then(setChecklist)
+      .catch(() => setError('No se pudo cargar el checklist de documentos'))
+      .finally(() => setLoading(false))
+  }, [estudianteId])
+
+  const toggle = useCallback(async (row: DocumentoRow) => {
+    setSaving(row.tipo)
+    try {
+      const updated = await api.patch<DocumentoRow>(`/documentos/${estudianteId}`, {
+        tipo: row.tipo, entregado: !row.entregado,
+      })
+      setChecklist(prev => prev.map(d => d.tipo === row.tipo ? updated : d))
+    } catch { /* ignore */ }
+    finally { setSaving(null) }
+  }, [estudianteId])
+
+  if (loading) return <div className="flex justify-center py-12"><Spinner /></div>
+  if (error)   return <div className="rounded-xl bg-red-50 p-4 text-sm text-red-700">{error}</div>
+
+  const entregados = checklist.filter(d => d.entregado).length
+
+  return (
+    <div className="space-y-4">
+      <div className="rounded-xl border border-border bg-surface shadow-sm overflow-hidden">
+        <div className="px-5 py-3 border-b border-border flex items-center justify-between">
+          <span className="text-sm font-semibold text-fg">Documentación del expediente</span>
+          <Badge variant={entregados === checklist.length ? 'success' : 'warning'}>
+            {entregados} / {checklist.length} entregados
+          </Badge>
+        </div>
+        <div className="divide-y divide-border">
+          {checklist.map(row => (
+            <label key={row.tipo} className="flex items-center gap-3 px-5 py-3 cursor-pointer hover:bg-surface-2">
+              <input
+                type="checkbox"
+                checked={row.entregado}
+                disabled={saving === row.tipo}
+                onChange={() => toggle(row)}
+                className="h-4 w-4 rounded border-border text-indigo-600 focus:ring-indigo-500"
+              />
+              <div className="flex-1">
+                <p className={`text-sm font-medium ${row.entregado ? 'text-fg' : 'text-fg-muted'}`}>{row.tipo}</p>
+                {row.entregado && row.fecha_entrega && (
+                  <p className="text-xs text-fg-muted">
+                    Entregado el {new Date(row.fecha_entrega).toLocaleDateString('es-BO')}
+                  </p>
+                )}
+              </div>
+              {row.entregado
+                ? <Badge variant="success">Entregado</Badge>
+                : <Badge variant="danger">Pendiente</Badge>}
+            </label>
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ─── Tab: Certificados ──────────────────────────────────────────────────────
+
+interface CertificadoRow {
+  id: string; tipo: string; fecha_emision: string; observacion: string | null
+  emitido_por: { nombre: string; apellido: string }
+}
+
+function EmitirCertificadoModal({
+  estudianteId, tipos, onClose, onCreated,
+}: {
+  estudianteId: string
+  tipos:        readonly string[]
+  onClose:      () => void
+  onCreated:    (c: CertificadoRow) => void
+}) {
+  const [tipo,        setTipo]        = useState(tipos[0] ?? '')
+  const [tipoOtro,     setTipoOtro]    = useState('')
+  const [observacion, setObservacion] = useState('')
+  const [saving,       setSaving]      = useState(false)
+  const [error,        setError]       = useState('')
+
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setSaving(true); setError('')
+    try {
+      const c = await api.post<CertificadoRow>('/certificados', {
+        estudiante_id: estudianteId,
+        tipo,
+        ...(tipo === 'Otro' ? { tipo_otro: tipoOtro } : {}),
+        ...(observacion ? { observacion } : {}),
+      })
+      onCreated(c)
+      onClose()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Error al emitir el certificado')
+    } finally { setSaving(false) }
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+      <div className="w-full max-w-md rounded-2xl bg-surface p-6 shadow-xl space-y-4">
+        <h2 className="text-lg font-bold text-fg">Emitir certificado / trámite</h2>
+        {error && <div className="rounded-xl bg-red-50 border border-red-100 p-3 text-sm text-red-700">{error}</div>}
+        <form onSubmit={submit} className="space-y-3">
+          <label className="flex flex-col gap-1">
+            <span className="text-xs font-semibold text-fg-muted uppercase tracking-wide">Tipo</span>
+            <select value={tipo} onChange={e => setTipo(e.target.value)}
+              className="rounded-xl border border-border px-3 py-2 text-sm focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-200">
+              {tipos.map(t => <option key={t} value={t}>{t}</option>)}
+            </select>
+          </label>
+          {tipo === 'Otro' && (
+            <label className="flex flex-col gap-1">
+              <span className="text-xs font-semibold text-fg-muted uppercase tracking-wide">Especificar</span>
+              <input required value={tipoOtro} onChange={e => setTipoOtro(e.target.value)}
+                placeholder="Ej: Certificado de buena conducta"
+                className="rounded-xl border border-border px-3 py-2 text-sm focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-200" />
+            </label>
+          )}
+          <label className="flex flex-col gap-1">
+            <span className="text-xs font-semibold text-fg-muted uppercase tracking-wide">Observación (opcional)</span>
+            <textarea value={observacion} onChange={e => setObservacion(e.target.value)} rows={2}
+              className="rounded-xl border border-border px-3 py-2 text-sm focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-200" />
+          </label>
+          <div className="flex justify-end gap-2 pt-2">
+            <Button type="button" variant="ghost" onClick={onClose} disabled={saving}>Cancelar</Button>
+            <Button type="submit" disabled={saving}>{saving ? '…' : 'Emitir certificado'}</Button>
+          </div>
+        </form>
+      </div>
+    </div>
+  )
+}
+
+function CertificadosTab({ estudianteId }: { estudianteId: string }) {
+  const [certificados, setCertificados] = useState<CertificadoRow[]>([])
+  const [tipos,   setTipos]   = useState<string[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error,   setError]   = useState('')
+  const [modalOpen, setModalOpen] = useState(false)
+
+  useEffect(() => {
+    setLoading(true); setError('')
+    Promise.all([
+      api.get<CertificadoRow[]>(`/certificados/estudiante/${estudianteId}`),
+      api.get<string[]>('/certificados/tipos'),
+    ])
+      .then(([c, t]) => { setCertificados(c); setTipos(t) })
+      .catch(() => setError('No se pudo cargar el historial de certificados'))
+      .finally(() => setLoading(false))
+  }, [estudianteId])
+
+  const remove = async (c: CertificadoRow) => {
+    if (!confirm(`¿Eliminar el registro de "${c.tipo}"?`)) return
+    try {
+      await api.delete(`/certificados/${c.id}`)
+      setCertificados(prev => prev.filter(x => x.id !== c.id))
+    } catch { /* ignore */ }
+  }
+
+  if (loading) return <div className="flex justify-center py-12"><Spinner /></div>
+  if (error)   return <div className="rounded-xl bg-red-50 p-4 text-sm text-red-700">{error}</div>
+
+  return (
+    <div className="space-y-4">
+      <div className="flex justify-end">
+        <Button onClick={() => setModalOpen(true)}>+ Emitir certificado</Button>
+      </div>
+      <div className="rounded-xl border border-border bg-surface shadow-sm overflow-hidden">
+        {certificados.length === 0 ? (
+          <p className="px-5 py-10 text-center text-sm text-fg-muted">Sin certificados emitidos.</p>
+        ) : (
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="bg-bg text-left text-xs font-semibold uppercase tracking-wide text-fg-muted border-b border-border">
+                <th className="px-5 py-3">Tipo</th>
+                <th className="px-5 py-3">Fecha</th>
+                <th className="px-5 py-3">Emitido por</th>
+                <th className="px-5 py-3">Observación</th>
+                <th className="px-5 py-3 text-right">Acciones</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border">
+              {certificados.map(c => (
+                <tr key={c.id} className="hover:bg-surface-2">
+                  <td className="px-5 py-2.5 font-medium">{c.tipo}</td>
+                  <td className="px-5 py-2.5 text-fg-muted">{new Date(c.fecha_emision).toLocaleDateString('es-BO')}</td>
+                  <td className="px-5 py-2.5 text-fg-muted">{c.emitido_por.apellido}, {c.emitido_por.nombre}</td>
+                  <td className="px-5 py-2.5 text-fg-muted">{c.observacion ?? '—'}</td>
+                  <td className="px-5 py-2.5 text-right">
+                    <button onClick={() => remove(c)} className="text-xs font-medium text-red-500 hover:text-red-700">
+                      Eliminar
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
+
+      {modalOpen && (
+        <EmitirCertificadoModal
+          estudianteId={estudianteId}
+          tipos={tipos}
+          onClose={() => setModalOpen(false)}
+          onCreated={c => setCertificados(prev => [c, ...prev])}
+        />
+      )}
+    </div>
+  )
+}
+
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 const ALL_TABS: { key: Tab; label: string }[] = [
@@ -654,6 +923,8 @@ const ALL_TABS: { key: Tab; label: string }[] = [
   { key: 'calificaciones', label: 'Calificaciones' },
   { key: 'asistencia',     label: 'Asistencia' },
   { key: 'pensiones',      label: 'Pensiones' },
+  { key: 'documentos',     label: 'Documentos' },
+  { key: 'certificados',   label: 'Certificados' },
 ]
 
 export default function PerfilEstudiantePage({
@@ -663,14 +934,16 @@ export default function PerfilEstudiantePage({
   const navigate  = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
 
-  const TABS = visibleTabs ? ALL_TABS.filter(t => visibleTabs.includes(t.key)) : ALL_TABS
+  const { user } = useAuth()
+  const canManageTecnica = user?.rol ? CAN_MANAGE_TECNICA.includes(user.rol) : false
+
+  // Documentos/Certificados solo para roles con acceso al módulo (mismo guard que el backend)
+  const baseTabs = canManageTecnica ? ALL_TABS : ALL_TABS.filter(t => t.key !== 'documentos' && t.key !== 'certificados')
+  const TABS = visibleTabs ? baseTabs.filter(t => visibleTabs.includes(t.key)) : baseTabs
 
   const rawTab   = (searchParams.get('tab') ?? TABS[0]?.key ?? 'datos') as Tab
   const tab      = TABS.some(t => t.key === rawTab) ? rawTab : (TABS[0]?.key ?? 'datos') as Tab
   const setTab   = (t: Tab) => setSearchParams({ tab: t }, { replace: true })
-
-  const { user } = useAuth()
-  const canManageTecnica = user?.rol ? CAN_MANAGE_TECNICA.includes(user.rol) : false
 
   const [est,     setEst]     = useState<Estudiante | null>(null)
   const [loading, setLoading] = useState(true)
@@ -691,6 +964,18 @@ export default function PerfilEstudiantePage({
         ...prev,
         matriculas: prev.matriculas.map(m =>
           m.id === matriculaId ? { ...m, lleva_tecnica } : m
+        ),
+      }
+    })
+  }, [])
+
+  const handleEstadoUpdate = useCallback((matriculaId: string, estado: EstadoMatricula) => {
+    setEst(prev => {
+      if (!prev) return prev
+      return {
+        ...prev,
+        matriculas: prev.matriculas.map(m =>
+          m.id === matriculaId ? { ...m, estado } : m
         ),
       }
     })
@@ -730,10 +1015,12 @@ export default function PerfilEstudiantePage({
       </div>
 
       {/* Tab content */}
-      {tab === 'datos'          && <DatosTab         est={est} canManageTecnica={canManageTecnica} onMatriculaUpdate={handleMatriculaUpdate} />}
+      {tab === 'datos'          && <DatosTab         est={est} canManageTecnica={canManageTecnica} onMatriculaUpdate={handleMatriculaUpdate} onEstadoUpdate={handleEstadoUpdate} />}
       {tab === 'calificaciones' && <CalificacionesTab estudianteId={est.id} />}
       {tab === 'asistencia'     && <AsistenciaTab     estudianteId={est.id} />}
       {tab === 'pensiones'      && <PensionesTab       estudianteId={est.id} />}
+      {tab === 'documentos'     && <DocumentosTab      estudianteId={est.id} />}
+      {tab === 'certificados'   && <CertificadosTab    estudianteId={est.id} />}
     </div>
   )
 }

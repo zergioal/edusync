@@ -1,5 +1,6 @@
 import type { Request, Response, NextFunction } from 'express'
 import { MatriculasService } from '../services/matriculas.service'
+import type { EstadoMatricula } from '@edusync/types'
 
 export class MatriculasController {
   private service = new MatriculasService()
@@ -19,6 +20,14 @@ export class MatriculasController {
       const { estudiante_id, gestion_id } = req.params as { estudiante_id: string; gestion_id: string }
       const { lleva_tecnica } = req.body as { lleva_tecnica: boolean }
       res.json({ data: await this.service.toggleLlevaTecnica(estudiante_id, gestion_id, lleva_tecnica) })
+    } catch (e) { next(e) }
+  }
+
+  updateEstado = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const { estudiante_id, gestion_id } = req.params as { estudiante_id: string; gestion_id: string }
+      const { estado } = req.body as { estado: EstadoMatricula }
+      res.json({ data: await this.service.updateEstado(estudiante_id, gestion_id, estado) })
     } catch (e) { next(e) }
   }
 

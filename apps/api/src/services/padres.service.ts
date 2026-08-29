@@ -73,7 +73,7 @@ export class PadresService {
     return padre
   }
 
-  async create(institucion_id: string, data: { nombre: string; apellido: string; email: string }) {
+  async create(institucion_id: string, data: { nombre: string; apellido: string; email: string; telefono?: string }) {
     const existing = await prisma.usuario.findUnique({ where: { email: data.email } })
     if (existing) throw new AppError(409, 'Ya existe un usuario con ese correo', 'DUPLICATE_EMAIL')
 
@@ -88,18 +88,20 @@ export class PadresService {
         apellido:         data.apellido,
         rol:              'PADRE_TUTOR',
         institucion_id,
+        ...(data.telefono ? { telefono: data.telefono } : {}),
       },
       include: PADRE_INCLUDE,
     })
     return { padre, credentials: { email: data.email, password } }
   }
 
-  async update(id: string, data: { nombre?: string; apellido?: string; email?: string }) {
+  async update(id: string, data: { nombre?: string; apellido?: string; email?: string; telefono?: string }) {
     const padre = await this.findOne(id)
 
     const usuarioData: Record<string, unknown> = {}
     if (data.nombre   !== undefined) usuarioData.nombre   = data.nombre
     if (data.apellido !== undefined) usuarioData.apellido = data.apellido
+    if (data.telefono !== undefined) usuarioData.telefono = data.telefono
 
     if (data.email !== undefined && data.email !== padre.email) {
       const emailTaken = await prisma.usuario.findUnique({ where: { email: data.email } })

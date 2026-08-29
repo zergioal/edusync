@@ -49,6 +49,17 @@ enum EstadoAsistencia {
   LICENCIA
 }
 
+enum EstadoMatricula {
+  ACTIVO
+  RETIRADO
+  TRASLADADO
+}
+
+enum Sexo {
+  M
+  F
+}
+
 enum VisiblePara {
   TODOS
   DOCENTES
@@ -111,6 +122,7 @@ model Usuario {
   nombre           String
   apellido         String
   grado_academico  String?
+  telefono         String?
   activo           Boolean  @default(true)
   created_at       DateTime @default(now())
 
@@ -124,6 +136,7 @@ model Usuario {
   mensajes_enviados   Mensaje[]           @relation("MensajesEnviados")
   mensajes_recibidos  Mensaje[]           @relation("MensajesRecibidos")
   notificaciones      Notificacion[]
+  certificados_emitidos CertificadoEmitido[] @relation("CertificadosEmitidosPor")
 
   @@map("usuarios")
 }
@@ -150,6 +163,7 @@ model Estudiante {
   becado            Boolean   @default(false)
   motivo_beca       String?   @db.VarChar(255)
   fecha_nacimiento  DateTime?
+  sexo              Sexo?
 
   usuario             Usuario              @relation(fields: [usuario_id], references: [id], onDelete: Cascade)
   nivel               Nivel                @relation(fields: [nivel_id], references: [id])
@@ -162,6 +176,8 @@ model Estudiante {
   observaciones       ObservacionInicial[]
   resultados_finales  ResultadoFinal[]
   promociones         Promocion[]
+  documentos          DocumentoEstudiante[]
+  certificados        CertificadoEmitido[]
 
   @@map("estudiantes")
 }
@@ -228,11 +244,12 @@ model Paralelo {
 }
 
 model Matricula {
-  id            String  @id @default(uuid())
+  id            String          @id @default(uuid())
   estudiante_id String
   paralelo_id   String
   gestion_id    String
-  lleva_tecnica Boolean @default(true)
+  lleva_tecnica Boolean         @default(true)
+  estado        EstadoMatricula @default(ACTIVO)
 
   estudiante Estudiante @relation(fields: [estudiante_id], references: [id], onDelete: Cascade)
   paralelo   Paralelo   @relation(fields: [paralelo_id], references: [id])
@@ -685,6 +702,36 @@ model Promocion {
 
   @@unique([estudiante_id, gestion_id])
   @@map("promociones")
+}
+
+// ─── Documentos y certificados (Secretaría) ───────────────────────────────────
+
+model DocumentoEstudiante {
+  id            String    @id @default(uuid())
+  estudiante_id String
+  tipo          String
+  entregado     Boolean   @default(false)
+  fecha_entrega DateTime?
+  observacion   String?
+
+  estudiante Estudiante @relation(fields: [estudiante_id], references: [id], onDelete: Cascade)
+
+  @@unique([estudiante_id, tipo])
+  @@map("documentos_estudiante")
+}
+
+model CertificadoEmitido {
+  id             String   @id @default(uuid())
+  estudiante_id  String
+  tipo           String
+  fecha_emision  DateTime @default(now())
+  emitido_por_id String
+  observacion    String?
+
+  estudiante  Estudiante @relation(fields: [estudiante_id], references: [id], onDelete: Cascade)
+  emitido_por Usuario    @relation("CertificadosEmitidosPor", fields: [emitido_por_id], references: [id])
+
+  @@map("certificados_emitidos")
 }
 
 // ─── Auditoría ────────────────────────────────────────────────────────────────

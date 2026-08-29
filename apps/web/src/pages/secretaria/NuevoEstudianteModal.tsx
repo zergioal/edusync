@@ -41,6 +41,7 @@ export function NuevoEstudianteModal({ isOpen, onClose, onSuccess }: Props) {
   const [apellidoMaterno, setApellidoMaterno] = useState("");
   const [nombre, setNombre] = useState("");
   const [fechaNacimiento, setFechaNacimiento] = useState("");
+  const [sexo, setSexo] = useState<"" | "M" | "F">("");
   const [email, setEmail] = useState("");
   const [becado, setBecado] = useState(false);
   const [motivoBeca, setMotivoBeca] = useState("");
@@ -75,6 +76,7 @@ export function NuevoEstudianteModal({ isOpen, onClose, onSuccess }: Props) {
     setApellidoMaterno("");
     setNombre("");
     setFechaNacimiento("");
+    setSexo("");
     setEmail("");
     setBecado(false);
     setMotivoBeca("");
@@ -123,6 +125,7 @@ export function NuevoEstudianteModal({ isOpen, onClose, onSuccess }: Props) {
         email,
         becado,
         fecha_nacimiento: fechaNacimiento || undefined,
+        sexo: sexo || undefined,
         motivo_beca: becado ? motivoBeca || undefined : undefined,
         paralelo_id: paraleloId,
         gestion_id: gestionId,
@@ -285,16 +288,30 @@ export function NuevoEstudianteModal({ isOpen, onClose, onSuccess }: Props) {
               className="rounded-lg border border-border px-3 py-2 text-sm shadow-sm focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand"
             />
           </div>
-          <div className="flex flex-col gap-1">
-            <label className="text-sm font-medium text-fg">
-              Fecha de nacimiento
-            </label>
-            <input
-              type="date"
-              value={fechaNacimiento}
-              onChange={(e) => setFechaNacimiento(e.target.value)}
-              className="rounded-lg border border-border px-3 py-2 text-sm shadow-sm focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand"
-            />
+          <div className="grid grid-cols-2 gap-3">
+            <div className="flex flex-col gap-1">
+              <label className="text-sm font-medium text-fg">
+                Fecha de nacimiento
+              </label>
+              <input
+                type="date"
+                value={fechaNacimiento}
+                onChange={(e) => setFechaNacimiento(e.target.value)}
+                className="rounded-lg border border-border px-3 py-2 text-sm shadow-sm focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand"
+              />
+            </div>
+            <div className="flex flex-col gap-1">
+              <label className="text-sm font-medium text-fg">Sexo</label>
+              <select
+                value={sexo}
+                onChange={(e) => setSexo(e.target.value as "" | "M" | "F")}
+                className="rounded-lg border border-border px-3 py-2 text-sm shadow-sm focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand"
+              >
+                <option value="">— Sin especificar —</option>
+                <option value="M">Masculino</option>
+                <option value="F">Femenino</option>
+              </select>
+            </div>
           </div>
           <div className="flex flex-col gap-1">
             <label className="text-sm font-medium text-fg">

@@ -76,7 +76,7 @@ function TablaMes({ year, month, diasMap }: {
     <div className="overflow-x-auto rounded-xl border border-border bg-surface shadow-sm">
       <table className="text-sm border-collapse" style={{ minWidth: `${schoolDays.length * 36 + 180}px` }}>
         <thead>
-          <tr className="bg-slate-50 border-b border-border">
+          <tr className="bg-bg border-b border-border">
             {/* Nombre columna */}
             <th className="px-4 py-2 text-left text-xs font-semibold text-fg-muted uppercase tracking-wide w-36 border-r border-border">
               Día
@@ -88,7 +88,7 @@ function TablaMes({ year, month, diasMap }: {
               return (
                 <th
                   key={d}
-                  className={`w-9 border-r border-border ${isSat ? 'bg-slate-100' : ''}`}
+                  className={`w-9 border-r border-border ${isSat ? 'bg-surface-2' : ''}`}
                 >
                   <div
                     style={{ writingMode: 'vertical-lr', transform: 'rotate(180deg)' }}
@@ -114,7 +114,7 @@ function TablaMes({ year, month, diasMap }: {
           </tr>
         </thead>
         <tbody>
-          <tr className="hover:bg-slate-50/50">
+          <tr className="hover:bg-surface-2">
             <td className="px-4 py-2 font-medium text-fg border-r border-border text-sm whitespace-nowrap">
               {MESES_NOMBRES[month]}
             </td>
@@ -128,7 +128,7 @@ function TablaMes({ year, month, diasMap }: {
                 <td
                   key={d}
                   className={`w-9 h-9 text-center border-r border-border relative
-                    ${isSat ? 'bg-slate-50' : ''}
+                    ${isSat ? 'bg-surface-2' : ''}
                     ${isToday ? 'ring-1 ring-inset ring-indigo-400' : ''}
                   `}
                   title={cfg ? `${key}: ${cfg.title}` : key}
