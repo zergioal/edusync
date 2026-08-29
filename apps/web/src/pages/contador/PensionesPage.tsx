@@ -153,7 +153,7 @@ export default function PensionesPage() {
     }
   }
 
-  const canAnular = user?.rol === 'DIRECTOR' || user?.rol === 'ADMIN_SISTEMA'
+  const canAnular = user?.rol === 'DIRECTOR' || user?.rol === 'ADMIN_SISTEMA' || user?.rol === 'CONTADOR'
 
   const anular = async (id: string) => {
     if (!confirm('¿Anular este pago? El acceso del estudiante volverá a bloquearse.')) return

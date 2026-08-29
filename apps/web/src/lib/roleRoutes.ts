@@ -103,6 +103,7 @@ export const NAV_POR_ROL: Record<string, NavItem[]> = {
     { to: '/dashboard/admin',                label: 'Panel',          icon: 'home'     },
     { to: '/dashboard/admin/estudiantes',    label: 'Estudiantes',    icon: 'student'  },
     { to: '/dashboard/admin/finanzas',       label: 'Finanzas',       icon: 'cash'     },
+    { to: '/dashboard/admin/finanzas/tarifas', label: 'Configuración', icon: 'settings' },
     { to: '/dashboard/admin/anuncios',       label: 'Comunicados',    icon: 'bell'     },
     { to: '/dashboard/admin/mensajes',       label: 'Mensajes',       icon: 'folder'   },
   ],

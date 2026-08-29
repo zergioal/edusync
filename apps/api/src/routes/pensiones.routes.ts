@@ -8,7 +8,7 @@ const ctrl = new PensionesController()
 
 const STAFF_FIN = requireRol(Rol.CONTADOR, Rol.DIRECTOR, Rol.ADMIN_SISTEMA, Rol.COORDINADOR, Rol.SECRETARIA, Rol.REGENTE, Rol.DOCENTE)
 const CONTADOR  = requireRol(Rol.CONTADOR)
-const ANULADOR  = requireRol(Rol.DIRECTOR, Rol.ADMIN_SISTEMA)
+const ANULADOR  = requireRol(Rol.DIRECTOR, Rol.ADMIN_SISTEMA, Rol.CONTADOR)
 
 // mi-estado-financiero va primero para que no colisione con /:id/*
 pensionesRouter.get('/mi-estado-financiero',              ctrl.miEstadoFinanciero)

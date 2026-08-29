@@ -49,10 +49,20 @@ export default function RegistrarPensionesPage() {
   useEffect(() => { cargar() }, [cargar])
 
   function toggle(estudianteId: string) {
+    const est = lista.find(e => e.estudiante_id === estudianteId)
+    if (est?.pagado && !confirm(
+      `¿Marcar como pendiente el pago de ${est.apellido}, ${est.nombre}?\n\nSi la pensión ya está vencida, el estudiante volverá a quedar bloqueado del sistema académico.`
+    )) return
     setLista(prev => prev.map(e => e.estudiante_id === estudianteId ? { ...e, pagado: !e.pagado } : e))
   }
 
   function marcarTodos(pagado: boolean) {
+    if (!pagado) {
+      const pagados = lista.filter(e => !e.becado && e.pagado)
+      if (pagados.length > 0 && !confirm(
+        `¿Marcar como pendientes ${pagados.length} pago(s) ya registrados?\n\nLos estudiantes cuya pensión ya esté vencida volverán a quedar bloqueados del sistema académico.`
+      )) return
+    }
     setLista(prev => prev.map(e => e.becado ? e : { ...e, pagado }))
   }
 

@@ -59,7 +59,7 @@ export default function EstadoCuentaPage() {
       .then(setCuenta).catch(() => {})
   }
 
-  const canAnular = user?.rol === 'DIRECTOR' || user?.rol === 'ADMIN_SISTEMA'
+  const canAnular = user?.rol === 'DIRECTOR' || user?.rol === 'ADMIN_SISTEMA' || user?.rol === 'CONTADOR'
 
   const anular = async (id: string) => {
     if (!confirm('¿Anular este pago?')) return
