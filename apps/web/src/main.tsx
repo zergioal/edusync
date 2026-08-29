@@ -12,6 +12,14 @@ import './index.css'
 // hover del sidebar/tarjetas también se sientan al tocar en celular.
 document.addEventListener('touchstart', () => {}, true)
 
+// Service worker: habilita "Instalar app" (PWA) y las notificaciones del
+// sistema con vibración desde NotificacionesBell.
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js').catch(() => {})
+  })
+}
+
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <ErrorBoundary>

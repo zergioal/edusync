@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { api } from '../../lib/api'
 import { useAuth } from '../../context/AuthContext'
 import { getRolDashboardPath } from '../../lib/roleRoutes'
+import { pedirPermiso, avisar, actualizarBadge } from '../../lib/notificacionesNativas'
 
 interface Notificacion {
   id:               string
@@ -36,12 +37,27 @@ export function NotificacionesBell() {
   const [notifs,    setNotifs]    = useState<Notificacion[]>([])
   const [noLeidas,  setNoLeidas]  = useState(0)
   const ref = useRef<HTMLDivElement>(null)
+  // IDs no leídos ya vistos en el último poll — null = todavía no cargó nunca
+  // (para no disparar avisos de todo lo pendiente en la primera carga de la página).
+  const idsVistosRef = useRef<Set<string> | null>(null)
 
   const cargar = useCallback(async () => {
     try {
       const data = await api.get<ApiResult>('/notificaciones?solo_no_leidas=false')
+      const idsNoLeidos = data.items.filter(n => !n.leida).map(n => n.id)
+
+      if (idsVistosRef.current !== null) {
+        const nuevas = data.items.filter(n => !n.leida && !idsVistosRef.current!.has(n.id))
+        if (nuevas.length > 0) {
+          const primera = nuevas[0]!
+          avisar(primera.titulo, primera.cuerpo)
+        }
+      }
+      idsVistosRef.current = new Set(idsNoLeidos)
+
       setNotifs(data.items)
       setNoLeidas(data.no_leidas)
+      actualizarBadge(data.no_leidas)
     } catch { /* silencioso */ }
   }, [])
 
@@ -65,8 +81,17 @@ export function NotificacionesBell() {
     try {
       await api.put(`/notificaciones/${id}/leer`, {})
       setNotifs(prev => prev.map(n => n.id === id ? { ...n, leida: true } : n))
-      setNoLeidas(prev => Math.max(0, prev - 1))
+      setNoLeidas(prev => {
+        const next = Math.max(0, prev - 1)
+        actualizarBadge(next)
+        return next
+      })
     } catch { /* silencioso */ }
+  }
+
+  function toggleOpen() {
+    setOpen(o => !o)
+    pedirPermiso()
   }
 
   function handleClick(n: Notificacion) {
@@ -91,6 +116,7 @@ export function NotificacionesBell() {
       await api.put('/notificaciones/leer-todas', {})
       setNotifs(prev => prev.map(n => ({ ...n, leida: true })))
       setNoLeidas(0)
+      actualizarBadge(0)
     } catch { /* silencioso */ }
   }
 
@@ -101,7 +127,7 @@ export function NotificacionesBell() {
   return (
     <div ref={ref} className="relative">
       <button
-        onClick={() => setOpen(o => !o)}
+        onClick={toggleOpen}
         className="relative flex h-9 w-9 items-center justify-center rounded-lg hover:bg-surface-2 transition-colors"
         aria-label="Notificaciones"
       >

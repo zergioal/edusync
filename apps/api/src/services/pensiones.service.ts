@@ -16,7 +16,7 @@ function diasMora(mes: number, anno: number): number {
 }
 
 /** Una pensión vence el día 15 de su mes — "vencida" desde ese día en adelante (fecha, sin hora). */
-function estaVencida(mes: number, anno: number): boolean {
+export function estaVencida(mes: number, anno: number): boolean {
   const vencimiento = new Date(anno, mes - 1, 15)
   const hoy = new Date()
   hoy.setHours(0, 0, 0, 0)

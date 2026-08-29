@@ -1,6 +1,7 @@
 import type { Request, Response, NextFunction } from 'express'
 import { prisma } from '@edusync/database'
 import { Rol } from '@edusync/types'
+import { estaVencida } from '../services/pensiones.service'
 
 export async function checkAccesoAcademico(
   req: Request,
@@ -12,8 +13,6 @@ export async function checkAccesoAcademico(
 
   // Solo aplica a estudiantes y padres
   if (auth.rol !== Rol.ESTUDIANTE && auth.rol !== Rol.PADRE_TUTOR) { next(); return }
-
-  const mesActual = new Date().getMonth() + 1
 
   const gestion = await prisma.gestion.findFirst({
     where: { institucion_id: auth.institucion_id, activa: true },
@@ -39,23 +38,20 @@ export async function checkAccesoAcademico(
 
   if (estudianteIds.length === 0) { next(); return }
 
+  // Igual que pensiones.service.ts#miEstadoFinanciero: bloqueado si hay alguna
+  // pensión vencida (venció el día 15 de su mes) sin pagar — no solo el mes en curso.
   const pendientes = await prisma.pension.findMany({
-    where: {
-      estudiante_id: { in: estudianteIds },
-      gestion_id:    gestion.id,
-      mes:           mesActual,
-      pagado:        false,
-    },
+    where: { estudiante_id: { in: estudianteIds }, gestion_id: gestion.id, pagado: false },
   })
+  const vencidas = pendientes.filter(p => estaVencida(p.mes, gestion.anno))
 
-  if (pendientes.length === 0) { next(); return }
+  if (vencidas.length === 0) { next(); return }
 
-  const monto_pendiente = pendientes.reduce((s, p) => s + Number(p.monto), 0)
+  const monto_pendiente = vencidas.reduce((s, p) => s + Number(p.monto), 0)
 
   res.status(403).json({
     bloqueado:       true,
-    mes_activo:      mesActual,
     monto_pendiente,
-    mensaje:         `Tienes pensiones pendientes del mes ${mesActual}. Regulariza tu situación para acceder al sistema académico.`,
+    message:         'Hay pensiones vencidas pendientes de pago. Regulariza tu situación para acceder al sistema académico.',
   })
 }
