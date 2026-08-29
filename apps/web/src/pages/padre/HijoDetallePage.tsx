@@ -27,7 +27,7 @@ export default function HijoDetallePage() {
   return (
     <div className="space-y-5">
       <div className="flex items-center gap-4">
-        <Button variant="ghost" size="sm" onClick={() => navigate('/dashboard/padre/hijos')}>← Volver</Button>
+        <Button variant="ghost" size="sm" onClick={() => navigate(-1)}>← Volver</Button>
         <h1 className="text-2xl font-bold text-fg">{hijo.apellido}, {hijo.nombre}</h1>
       </div>
 

@@ -135,10 +135,10 @@ export default function ObservacionesInicialPage() {
       <div className="flex items-start justify-between flex-wrap gap-4">
         <div>
           <button
-            onClick={() => navigate('/dashboard/docente/asignaciones')}
+            onClick={() => navigate(-1)}
             className="mb-2 text-sm text-blue-600 hover:text-blue-800 flex items-center gap-1"
           >
-            ← Mis Materias
+            ← Volver
           </button>
           <h1 className="text-2xl font-bold text-fg">Observaciones — Nivel Inicial</h1>
           <p className="mt-0.5 text-sm text-fg-muted">

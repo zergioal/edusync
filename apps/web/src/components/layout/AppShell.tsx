@@ -56,6 +56,8 @@ export function AppShell({ children }: AppShellProps) {
     return isExact ? location.pathname === item.to : location.pathname.startsWith(item.to)
   })
   const pageLabel = currentNav?.label ?? ''
+  const homePath = user ? getRolDashboardPath(user.rol) : '/'
+  const isHome   = location.pathname === homePath
 
   return (
     <div className="flex h-screen overflow-hidden bg-bg">
@@ -101,19 +103,40 @@ export function AppShell({ children }: AppShellProps) {
               </svg>
             </button>
 
-            {/* Logo móvil */}
-            <div className="md:hidden flex items-center gap-2">
+            {/* Logo móvil (toca para ir al panel) */}
+            <button
+              type="button"
+              onClick={() => navigate(homePath)}
+              disabled={isHome}
+              className="md:hidden flex items-center gap-2 rounded-lg py-1 pr-2 active:bg-surface-2 disabled:opacity-70 transition-colors"
+              aria-label="Ir al panel"
+              title="Ir al panel"
+            >
               <img src={logo} alt="Pío XII" className="h-7 w-7 rounded-lg object-contain" />
               <span className="text-sm font-bold text-fg">U.E. Pío XII</span>
-            </div>
+            </button>
 
-            {/* Título de página (desktop) */}
-            {pageLabel && (
-              <div className="hidden md:flex items-center gap-2">
-                <span className="text-xs text-fg-muted">/</span>
-                <span className="text-sm font-semibold text-fg">{pageLabel}</span>
-              </div>
-            )}
+            {/* Inicio (desktop) + título de página */}
+            <div className="hidden md:flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => navigate(homePath)}
+                disabled={isHome}
+                title="Ir al panel"
+                aria-label="Ir al panel"
+                className="flex h-8 w-8 items-center justify-center rounded-lg text-fg-muted hover:bg-surface-2 hover:text-fg transition-colors disabled:opacity-40 disabled:hover:bg-transparent"
+              >
+                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9.5L12 3l9 6.5V20a1 1 0 01-1 1H14v-5h-4v5H4a1 1 0 01-1-1V9.5z" />
+                </svg>
+              </button>
+              {pageLabel && (
+                <>
+                  <span className="text-xs text-fg-muted">/</span>
+                  <span className="text-sm font-semibold text-fg">{pageLabel}</span>
+                </>
+              )}
+            </div>
           </div>
 
           {/* Derecha */}

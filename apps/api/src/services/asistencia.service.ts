@@ -3,7 +3,7 @@ import { AppError } from '../middlewares/errorHandler'
 
 interface RegistroAsistencia {
   estudiante_id: string
-  estado: 'PRESENTE' | 'AUSENTE' | 'TARDANZA' | 'LICENCIA'
+  estado: 'PRESENTE' | 'AUSENTE' | 'TARDANZA' | 'LICENCIA' | null
 }
 
 /** Descarta silenciosamente registros de estudiantes que no estén ACTIVO — protección
@@ -59,11 +59,15 @@ export class AsistenciaService {
 
     await prisma.$transaction(
       registros.map(r =>
-        prisma.asistenciaClase.upsert({
-          where:  { asignacion_id_estudiante_id_fecha: { asignacion_id, estudiante_id: r.estudiante_id, fecha: fechaDate } },
-          create: { asignacion_id, estudiante_id: r.estudiante_id, fecha: fechaDate, estado: r.estado },
-          update: { estado: r.estado },
-        }),
+        r.estado === null
+          ? prisma.asistenciaClase.deleteMany({
+              where: { asignacion_id, estudiante_id: r.estudiante_id, fecha: fechaDate },
+            })
+          : prisma.asistenciaClase.upsert({
+              where:  { asignacion_id_estudiante_id_fecha: { asignacion_id, estudiante_id: r.estudiante_id, fecha: fechaDate } },
+              create: { asignacion_id, estudiante_id: r.estudiante_id, fecha: fechaDate, estado: r.estado },
+              update: { estado: r.estado },
+            }),
       ),
     )
 

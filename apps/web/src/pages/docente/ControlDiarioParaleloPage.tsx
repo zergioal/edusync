@@ -106,10 +106,10 @@ export default function ControlDiarioParaleloPage() {
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <button
-            onClick={() => navigate('/dashboard/docente/control-diario')}
+            onClick={() => navigate(-1)}
             className="mb-1 flex items-center gap-1 text-xs text-indigo-500 hover:text-indigo-700 font-medium transition-colors"
           >
-            ← Cambiar de curso
+            ← Volver
           </button>
           <h1 className="text-xl font-bold text-fg">Control diario</h1>
           <p className="text-sm text-fg-muted mt-0.5">Clic en una categoría para anotar al toque — igual que el cuaderno.</p>

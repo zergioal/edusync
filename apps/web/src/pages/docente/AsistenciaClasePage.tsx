@@ -39,12 +39,13 @@ const ESTADO_CFG = {
   LICENCIA: { bg: 'bg-blue-400',    text: 'text-white', ring: 'ring-blue-500',    label: 'L', title: 'Licencia' },
 } as const
 
-// Cycle: empty → P → F → A → L → P
-function nextEstado(cur: Estado | undefined): Estado {
-  if (!cur || cur === 'LICENCIA') return 'PRESENTE'
-  if (cur === 'PRESENTE') return 'AUSENTE'
-  if (cur === 'AUSENTE')  return 'TARDANZA'
-  return 'LICENCIA'
+// Cycle: empty → P → F → A → L → empty
+function nextEstado(cur: Estado | null | undefined): Estado | null {
+  if (!cur)                return 'PRESENTE'
+  if (cur === 'PRESENTE')  return 'AUSENTE'
+  if (cur === 'AUSENTE')   return 'TARDANZA'
+  if (cur === 'TARDANZA')  return 'LICENCIA'
+  return null
 }
 
 function hoyStr() { return new Date().toISOString().slice(0, 10) }
@@ -68,8 +69,8 @@ export default function AsistenciaClasePage() {
   const [asignacion,  setAsignacion]  = useState<AsignacionInfo | null>(null)
   const [mes,         setMes]         = useState<string>(mesStr(new Date()))
   const [estudiantes, setEstudiantes] = useState<Estudiante[]>([])
-  // records[fecha][estudiante_id] = Estado
-  const [records,     setRecords]     = useState<Record<string, Record<string, Estado>>>({})
+  // records[fecha][estudiante_id] = Estado | null (null = celda dejada vacía explícitamente)
+  const [records,     setRecords]     = useState<Record<string, Record<string, Estado | null>>>({})
   const [dirtyDays,   setDirtyDays]   = useState<Set<string>>(new Set())
   const [savingDays,  setSavingDays]  = useState<Set<string>>(new Set())
   const [loading,     setLoading]     = useState(true)
@@ -94,7 +95,7 @@ export default function AsistenciaClasePage() {
         `/asistencia/clase/mensual?asignacion_id=${asignacion_id}&mes=${mes}`,
       )
       setEstudiantes(d.estudiantes)
-      const typed: Record<string, Record<string, Estado>> = {}
+      const typed: Record<string, Record<string, Estado | null>> = {}
       for (const [fecha, dayRec] of Object.entries(d.records)) {
         typed[fecha] = {}
         for (const [estId, est] of Object.entries(dayRec)) {
@@ -212,10 +213,10 @@ export default function AsistenciaClasePage() {
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <button
-            onClick={() => navigate('/dashboard/docente/asistencia')}
+            onClick={() => navigate(-1)}
             className="mb-1 flex items-center gap-1 text-xs text-indigo-500 hover:text-indigo-700 font-medium transition-colors"
           >
-            ← Cambiar materia
+            ← Volver
           </button>
           <h1 className="text-xl font-bold text-fg">Asistencia de Clase</h1>
           <p className="text-sm text-fg-muted mt-0.5">{titulo}</p>

@@ -36,7 +36,7 @@ export class AsistenciaController {
       const { asignacion_id, fecha, registros } = req.body as {
         asignacion_id: string
         fecha: string
-        registros: Array<{ estudiante_id: string; estado: 'PRESENTE' | 'AUSENTE' | 'TARDANZA' | 'LICENCIA' }>
+        registros: Array<{ estudiante_id: string; estado: 'PRESENTE' | 'AUSENTE' | 'TARDANZA' | 'LICENCIA' | null }>
       }
       const data = await this.service.registrarClase(
         asignacion_id, fecha, registros, req.auth!.usuario_id,
