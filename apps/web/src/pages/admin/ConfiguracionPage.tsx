@@ -382,7 +382,7 @@ function SeccionCargaHoraria({ niveles }: { niveles: Nivel[] }) {
                             value={h}
                             onChange={e => setHoras(mat.id, g.id, parseInt(e.target.value) || 0)}
                             className={`w-16 rounded border text-center text-sm px-1 py-1 focus:outline-none focus:ring-1 focus:ring-brand ${
-                              ov ? 'border-blue-400 bg-blue-50' : 'border-border'
+                              ov ? 'border-blue-400 bg-blue-50 dark:bg-blue-950/30' : 'border-border'
                             }`}
                           />
                         </td>
@@ -505,7 +505,7 @@ export default function ConfiguracionPage() {
               key={opt.value}
               className={`flex flex-1 min-w-[220px] cursor-pointer items-start gap-3 rounded-lg border-2 p-4 transition-colors ${
                 draft.tipo_ue === opt.value
-                  ? 'border-blue-500 bg-blue-50'
+                  ? 'border-blue-500 bg-blue-50 dark:bg-blue-950/30'
                   : 'border-border hover:border-border'
               }`}
             >
@@ -613,7 +613,7 @@ export default function ConfiguracionPage() {
             }`}>
               <div
                 className={`flex items-center gap-3 px-4 py-3 rounded-xl cursor-pointer ${
-                  turno.activo ? 'bg-blue-50' : 'bg-bg'
+                  turno.activo ? 'bg-blue-50 dark:bg-blue-950/30' : 'bg-bg'
                 }`}
               >
                 <input

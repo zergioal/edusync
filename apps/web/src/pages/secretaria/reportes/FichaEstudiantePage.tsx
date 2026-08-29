@@ -105,7 +105,7 @@ export default function FichaEstudiantePage() {
                   type="button"
                   onMouseDown={e => e.preventDefault()}
                   onClick={() => select(s)}
-                  className="w-full text-left px-3 py-2.5 hover:bg-blue-50 transition-colors border-b border-gray-50 last:border-0"
+                  className="w-full text-left px-3 py-2.5 hover:bg-surface-2 transition-colors border-b border-border last:border-0"
                 >
                   <p className="text-sm font-medium text-fg">{s.usuario.apellido}, {s.usuario.nombre}</p>
                   <p className="text-xs text-fg-muted font-mono">{s.codigo}</p>

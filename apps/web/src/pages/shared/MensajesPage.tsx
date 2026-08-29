@@ -178,7 +178,7 @@ export default function MensajesPage() {
                   key={m.id}
                   onClick={() => abrirMensaje(m)}
                   className={`w-full text-left px-4 py-3 hover:bg-surface-2 transition-colors ${
-                    selected?.id === m.id ? 'bg-blue-50' : ''
+                    selected?.id === m.id ? 'bg-blue-50 dark:bg-blue-950/30' : ''
                   }`}
                 >
                   <div className="flex items-start justify-between gap-2">
@@ -274,7 +274,7 @@ export default function MensajesPage() {
                         type="button"
                         onMouseDown={e => e.preventDefault()}
                         onClick={() => { setDestinatario(u); setDestQuery(''); setDestSuggestions([]); setDestOpen(false) }}
-                        className="w-full text-left px-3 py-2.5 hover:bg-blue-50 transition-colors border-b border-gray-50 last:border-0"
+                        className="w-full text-left px-3 py-2.5 hover:bg-surface-2 transition-colors border-b border-border last:border-0"
                       >
                         <p className="text-sm font-medium text-fg">{u.apellido}, {u.nombre}</p>
                         <p className="text-xs text-fg-muted">{ROL_LABELS[u.rol]} · {u.email}</p>

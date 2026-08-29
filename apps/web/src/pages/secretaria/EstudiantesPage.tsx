@@ -131,7 +131,7 @@ function PadreRow({
 
   if (editing) {
     return (
-      <div className="rounded-lg border border-indigo-200 bg-indigo-50 p-3 space-y-2">
+      <div className="rounded-lg border border-indigo-200 dark:border-indigo-800/60 bg-indigo-50 dark:bg-indigo-950/30 p-3 space-y-2">
         <div className="grid grid-cols-2 gap-2">
           <input value={form.apellido} onChange={e => setForm(f => ({ ...f, apellido: e.target.value }))}
             placeholder="Apellidos"

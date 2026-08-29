@@ -152,8 +152,8 @@ export default function CentralizadorPage() {
                   </tr>
                 ))}
                 {/* Promedio del curso */}
-                <tr className="bg-blue-50 font-bold">
-                  <td className="border border-border px-2 py-1 text-center">—</td>
+                <tr className="bg-blue-50 dark:bg-blue-950/30 font-bold">
+                  <td className="border border-border px-2 py-1 text-center text-[#1F3864] dark:text-blue-300">—</td>
                   <td className="border border-border px-3 py-1 text-[#1F3864]">Promedio del curso</td>
                   {(promediosCurso ?? []).map((p, i) => (
                     <td key={i} className="border border-border px-1 py-1 text-center text-[#1F3864]">{p ?? '—'}</td>

@@ -57,7 +57,7 @@ export default function CargaHorariaDocentesPage() {
                 <td colSpan={4} className="py-12 text-center text-fg-muted">No hay docentes registrados</td>
               </tr>
             ) : docentes.map(d => (
-              <tr key={d.id} className={`hover:bg-surface-2 transition-colors ${d.horas_pedagogicas_total === 0 ? 'bg-red-50' : ''}`}>
+              <tr key={d.id} className={`hover:bg-surface-2 transition-colors ${d.horas_pedagogicas_total === 0 ? 'bg-red-50 dark:bg-red-950/30' : ''}`}>
                 <td className="px-5 py-3 font-medium text-fg">{d.apellido}, {d.nombre}</td>
                 <td className="px-5 py-3 text-fg-muted">{d.email}</td>
                 <td className="px-5 py-3 text-center">{d.n_asignaciones ?? '—'}</td>

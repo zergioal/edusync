@@ -141,12 +141,12 @@ export default function EstadoCuentaPage() {
                 {meses.map(m => (
                   <tr key={m.id}
                     className={`transition-colors ${
-                      m.mes === mesActual ? 'bg-yellow-50 hover:bg-yellow-100' : 'hover:bg-surface-2'
+                      m.mes === mesActual ? 'bg-yellow-50 dark:bg-yellow-950/30 hover:bg-yellow-100 dark:hover:bg-yellow-900/40' : 'hover:bg-surface-2'
                     }`}>
                     <td className="px-4 py-3 font-medium text-fg">
                       {m.nombre_mes}
                       {m.mes === mesActual && (
-                        <span className="ml-1.5 text-xs bg-yellow-200 text-yellow-800 rounded px-1">actual</span>
+                        <span className="ml-1.5 text-xs bg-yellow-200 text-yellow-800 dark:bg-yellow-900/60 dark:text-yellow-300 rounded px-1">actual</span>
                       )}
                     </td>
                     <td className="px-4 py-3 font-semibold text-fg">Bs. {m.monto.toFixed(2)}</td>

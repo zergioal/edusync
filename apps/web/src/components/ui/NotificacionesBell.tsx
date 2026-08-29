@@ -132,7 +132,7 @@ export function NotificacionesBell() {
                 <div
                   key={n.id}
                   onClick={() => handleClick(n)}
-                  className={`px-4 py-3 cursor-pointer hover:bg-surface-2 transition-colors ${!n.leida ? 'bg-blue-50' : ''}`}
+                  className={`px-4 py-3 cursor-pointer hover:bg-surface-2 transition-colors ${!n.leida ? 'bg-blue-50 dark:bg-blue-950/30' : ''}`}
                 >
                   <div className="flex items-start gap-3">
                     <span className={`mt-0.5 inline-flex flex-shrink-0 items-center rounded-full px-1.5 py-0.5 text-xs font-medium ${TIPO_COLOR[n.tipo] ?? TIPO_COLOR['GENERAL']}`}>

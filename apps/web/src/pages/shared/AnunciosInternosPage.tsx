@@ -100,7 +100,7 @@ export default function AnunciosInternosPage() {
               key={a.id}
               onClick={() => setVer(a)}
               className={`cursor-pointer rounded-xl border bg-surface shadow-sm p-5 hover:border-blue-200 transition-colors ${
-                a.destacado ? 'border-amber-300 bg-amber-50' : 'border-border'
+                a.destacado ? 'border-amber-300 dark:border-amber-800/60 bg-amber-50 dark:bg-amber-950/30' : 'border-border'
               }`}
             >
               <div className="flex items-start justify-between gap-4">

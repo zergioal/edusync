@@ -394,7 +394,7 @@ export default function AsignacionesPage() {
               }`}
             >
               {/* Fila del docente */}
-              <div className={`flex items-center gap-4 px-5 py-4 ${expanded ? 'bg-blue-50' : 'hover:bg-surface-2'}`}>
+              <div className={`flex items-center gap-4 px-5 py-4 ${expanded ? 'bg-blue-50 dark:bg-blue-950/30' : 'hover:bg-surface-2'}`}>
                 {/* Avatar */}
                 <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-blue-100 font-bold text-blue-700 text-sm">
                   {g.apellido[0]}{g.nombre[0]}

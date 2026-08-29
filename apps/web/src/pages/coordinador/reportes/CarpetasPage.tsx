@@ -89,7 +89,7 @@ export default function CarpetasPage() {
             </thead>
             <tbody className="divide-y divide-border">
               {data.map(c => (
-                <tr key={c.estudiante.codigo} className={c.puede_recibir ? 'bg-surface' : 'bg-red-50'}>
+                <tr key={c.estudiante.codigo} className={c.puede_recibir ? 'bg-surface' : 'bg-red-50 dark:bg-red-950/30'}>
                   <td className="px-3 py-2 text-center text-fg-muted">{c.posicion_lista}</td>
                   <td className="px-3 py-2 font-medium">
                     {c.estudiante.apellido} {c.estudiante.nombre}

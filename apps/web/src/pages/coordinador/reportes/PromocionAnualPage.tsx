@@ -112,7 +112,7 @@ export default function PromocionAnualPage() {
                     <>
                       <tr
                         key={key}
-                        className={`cursor-pointer hover:bg-surface-2 ${est.resultado_final === 'REPITE' ? 'bg-red-50' : ''}`}
+                        className={`cursor-pointer hover:bg-surface-2 ${est.resultado_final === 'REPITE' ? 'bg-red-50 dark:bg-red-950/30' : ''}`}
                         onClick={() => setExpanded(expanded === key ? null : key)}
                       >
                         <td className="px-3 py-2">

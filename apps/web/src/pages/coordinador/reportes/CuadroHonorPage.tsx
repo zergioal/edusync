@@ -127,7 +127,7 @@ export default function CuadroHonorPage() {
               </thead>
               <tbody className="divide-y divide-border">
                 {data.estudiantes.map(est => (
-                  <tr key={est.codigo} className={est.posicion <= 3 ? 'bg-amber-50' : 'hover:bg-surface-2'}>
+                  <tr key={est.codigo} className={est.posicion <= 3 ? 'bg-amber-50 dark:bg-amber-950/30' : 'hover:bg-surface-2'}>
                     <td className="px-3 py-2 text-center text-base">
                       {est.posicion <= 3 ? MEDAL[est.posicion - 1] : est.posicion}
                     </td>

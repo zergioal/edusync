@@ -176,7 +176,7 @@ function DocentePerfilModal({ docenteId, onClose, onSaved }: {
           {(['datos', 'asignaciones'] as PerfilTab[]).map(t => (
             <button key={t} onClick={() => setTab(t)}
               className={`px-4 py-2 rounded-t-lg text-sm font-medium capitalize transition-all border-b-2 ${
-                tab === t ? 'border-blue-600 text-blue-700 bg-blue-50' : 'border-transparent text-fg-muted hover:text-fg'
+                tab === t ? 'border-blue-600 text-blue-700 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/30' : 'border-transparent text-fg-muted hover:text-fg'
               }`}
             >
               {t === 'datos' ? 'Datos' : `Asignaciones${doc ? ` (${doc.asignaciones.length})` : ''}`}
