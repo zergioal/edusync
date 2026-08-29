@@ -12,6 +12,7 @@ const CalificacionesHijoPage = lazy(() => import('../padre/CalificacionesHijoPag
 const BoletinHijoPage        = lazy(() => import('../padre/BoletinHijoPage'))
 const PagosHijoPage          = lazy(() => import('../padre/PagosHijoPage'))
 const AsistenciaHijoPage     = lazy(() => import('../padre/AsistenciaHijoPage'))
+const ControlDiarioHijoPage  = lazy(() => import('../padre/ControlDiarioHijoPage'))
 const MisHijosPage           = lazy(() => import('../padre/MisHijosPage'))
 const HijoDetallePage        = lazy(() => import('../padre/HijoDetallePage'))
 const AnunciosInternosPage   = lazy(() => import('../shared/AnunciosInternosPage'))
@@ -193,6 +194,7 @@ export default function PadreDashboard() {
         <Route path="boletin"   element={<BoletinHijoPage />} />
         <Route path="pensiones"  element={<PagosHijoPage />} />
         <Route path="asistencia" element={<AsistenciaHijoPage />} />
+        <Route path="control-diario" element={<ControlDiarioHijoPage />} />
         <Route path="anuncios"   element={<AnunciosInternosPage />} />
         <Route path="mensajes"   element={<MensajesPage />} />
         <Route path="calendario" element={<SectionPlaceholder title="Calendario" />} />

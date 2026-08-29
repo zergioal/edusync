@@ -34,6 +34,7 @@ import { auditoriaRouter }      from './auditoria.routes'
 import { padresRouter }         from './padres.routes'
 import { documentosRouter }     from './documentos.routes'
 import { certificadosRouter }   from './certificados.routes'
+import { observacionesDiariasRouter } from './observaciones-diarias.routes'
 
 export const apiRouter: ExpressRouter = Router()
 
@@ -75,3 +76,4 @@ apiRouter.use('/auditoria',       auditoriaRouter)
 apiRouter.use('/padres',          padresRouter)
 apiRouter.use('/documentos',      documentosRouter)
 apiRouter.use('/certificados',    certificadosRouter)
+apiRouter.use('/observaciones-diarias', observacionesDiariasRouter)

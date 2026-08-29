@@ -26,6 +26,7 @@ const TIPO_COLOR: Record<string, string> = {
   TAREA:             'bg-purple-100 text-purple-700',
   TRIMESTRE_CERRADO: 'bg-red-100 text-red-700',
   GENERAL:           'bg-surface-2 text-fg',
+  OBSERVACION:       'bg-amber-100 text-amber-700',
 }
 
 export function NotificacionesBell() {
@@ -78,6 +79,9 @@ export function NotificacionesBell() {
       setOpen(false)
     } else if (n.referencia_tipo === 'ANUNCIO') {
       navigate(`${base}/anuncios`)
+      setOpen(false)
+    } else if (n.referencia_tipo === 'OBSERVACION_DIARIA') {
+      navigate(`${base}/control-diario`)
       setOpen(false)
     }
   }

@@ -11,6 +11,7 @@ import { AvatarDisplay, AvatarPickerModal, useAvatar } from '../../components/ui
 const MisCalificacionesPage = lazy(() => import('../estudiante/MisCalificacionesPage'))
 const MiBoletinPage         = lazy(() => import('../estudiante/MiBoletinPage'))
 const MiAsistenciaPage      = lazy(() => import('../estudiante/MiAsistenciaPage'))
+const MiControlDiarioPage   = lazy(() => import('../estudiante/MiControlDiarioPage'))
 const MisTareasPage         = lazy(() => import('../estudiante/MisTareasPage'))
 const AnunciosInternosPage  = lazy(() => import('../shared/AnunciosInternosPage'))
 const MensajesPage          = lazy(() => import('../shared/MensajesPage'))
@@ -176,6 +177,7 @@ export default function EstudianteDashboard() {
         <Route path="notas"      element={<MisCalificacionesPage />} />
         <Route path="boletin"    element={<MiBoletinPage />} />
         <Route path="asistencia" element={<MiAsistenciaPage />} />
+        <Route path="control-diario" element={<MiControlDiarioPage />} />
         <Route path="tareas"     element={<MisTareasPage />} />
         <Route path="horario"    element={<SectionPlaceholder title="Mi Horario" />} />
         <Route path="anuncios"   element={<AnunciosInternosPage />} />

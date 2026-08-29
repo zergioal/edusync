@@ -84,6 +84,17 @@ enum TipoNotificacion {
   TAREA
   TRIMESTRE_CERRADO
   GENERAL
+  OBSERVACION
+}
+
+enum CategoriaObservacion {
+  NO_ENTREGO_TAREA
+  FALTO
+  SALIO_SIN_PERMISO
+  NO_RINDIO_EVALUACION
+  CITACION_AGENDA
+  INDISCIPLINA
+  OTRO
 }
 
 enum TipoGaleria {
@@ -160,6 +171,7 @@ model Docente {
   paralelos             Paralelo[]
   asignaciones          Asignacion[]
   observaciones_inicial ObservacionInicial[]
+  observaciones_diarias ObservacionDiaria[]
   horarios              Horario[]
 
   @@map("docentes")
@@ -188,6 +200,7 @@ model Estudiante {
   asistencias_clase   AsistenciaClase[]
   asistencias_diarias AsistenciaDiaria[]
   observaciones       ObservacionInicial[]
+  observaciones_diarias ObservacionDiaria[]
   resultados_finales  ResultadoFinal[]
   documentos          DocumentoEstudiante[]
   certificados        CertificadoEmitido[]
@@ -250,6 +263,7 @@ model Paralelo {
   matriculas          Matricula[]
   asignaciones        Asignacion[]
   asistencias_diarias AsistenciaDiaria[]
+  observaciones_diarias ObservacionDiaria[]
   horarios            Horario[]
   turno               ParaleloTurno?
   anuncios            Anuncio[]
@@ -360,6 +374,7 @@ model Asignacion {
   indicadores Indicador[]
   asistencias AsistenciaClase[]
   tareas      Tarea[]
+  observaciones_diarias ObservacionDiaria[]
 
   @@unique([docente_id, materia_id, paralelo_id, gestion_id])
   @@map("asignaciones")
@@ -424,6 +439,27 @@ model ObservacionInicial {
 
   @@unique([estudiante_id, trimestre_id])
   @@map("observaciones_inicial")
+}
+
+model ObservacionDiaria {
+  id            String               @id @default(uuid())
+  estudiante_id String
+  docente_id    String
+  paralelo_id   String
+  asignacion_id String?
+  categoria     CategoriaObservacion
+  detalle       String?              @db.Text
+  fecha         DateTime             @db.Date
+  creada_en     DateTime             @default(now())
+
+  estudiante Estudiante  @relation(fields: [estudiante_id], references: [id], onDelete: Cascade)
+  docente    Docente     @relation(fields: [docente_id], references: [id])
+  paralelo   Paralelo    @relation(fields: [paralelo_id], references: [id])
+  asignacion Asignacion? @relation(fields: [asignacion_id], references: [id], onDelete: SetNull)
+
+  @@index([estudiante_id, fecha])
+  @@index([paralelo_id, fecha])
+  @@map("observaciones_diarias")
 }
 
 model Pension {

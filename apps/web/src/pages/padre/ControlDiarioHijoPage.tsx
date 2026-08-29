@@ -1,0 +1,40 @@
+import { useState } from 'react'
+import { useAuth } from '../../context/AuthContext'
+import MiControlDiarioPage from '../estudiante/MiControlDiarioPage'
+
+export default function ControlDiarioHijoPage() {
+  const { estadoFinanciero } = useAuth()
+  const hijos = estadoFinanciero?.hijos ?? []
+  const [hijoId, setHijoId] = useState(hijos[0]?.id ?? '')
+
+  if (hijos.length === 0) {
+    return (
+      <div className="rounded-xl border-2 border-dashed border-border p-10 text-center text-sm text-fg-muted">
+        No hay hijos registrados en tu cuenta.
+      </div>
+    )
+  }
+
+  const activeId = hijoId || hijos[0]!.id
+
+  return (
+    <div className="space-y-5">
+      {hijos.length > 1 && (
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className="text-sm text-fg-muted">Hijo/a:</span>
+          {hijos.map(h => (
+            <button
+              key={h.id}
+              onClick={() => setHijoId(h.id)}
+              className={`rounded-full px-3 py-1 text-sm font-medium transition ${hijoId === h.id ? 'bg-blue-600 text-white' : 'bg-surface-2 text-fg hover:bg-surface-2'}`}
+            >
+              {h.nombre} {h.apellido}
+            </button>
+          ))}
+        </div>
+      )}
+
+      <MiControlDiarioPage estudianteId={activeId} />
+    </div>
+  )
+}

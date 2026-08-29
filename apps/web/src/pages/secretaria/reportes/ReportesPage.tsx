@@ -1,4 +1,5 @@
 import { Routes, Route, Link } from 'react-router-dom'
+import { Icon, type IconName } from '../../../components/ui/Icon'
 import NominaPage                 from './NominaPage'
 import FichaEstudiantePage        from './FichaEstudiantePage'
 import EstadoMatriculaPage        from './EstadoMatriculaPage'
@@ -10,17 +11,17 @@ import CentralizadorPage  from '../../coordinador/reportes/CentralizadorPage'
 import PromocionAnualPage from '../../coordinador/reportes/PromocionAnualPage'
 import ReporteAsistenciaPage from '../../regente/ReporteAsistenciaPage'
 
-const CARDS = [
-  { to: 'nomina',              icon: '🧾', title: 'Nómina de Estudiantes',        desc: 'Lista de estudiantes inscritos, con filtros por gestión, nivel, grado y paralelo.' },
-  { to: 'ficha',                icon: '🪪', title: 'Ficha Individual',              desc: 'Datos personales, académicos y del tutor de un estudiante específico.' },
-  { to: 'estado-matricula',     icon: '🎒', title: 'Estado del Estudiante',         desc: 'Preinscritos, activos, retirados, trasladados y egresados.' },
-  { to: 'documentacion',        icon: '📂', title: 'Documentación Pendiente',       desc: 'Identifica expedientes incompletos por estudiante.' },
-  { to: 'estadistica',          icon: '📈', title: 'Estadística de Matrícula',      desc: 'Cantidad de estudiantes por nivel, grado, paralelo y sexo.' },
-  { to: 'calificaciones',       icon: '📊', title: 'Calificaciones por Curso',      desc: 'Centralizador de notas: todas las materias en una misma hoja por paralelo y trimestre.' },
-  { to: 'asistencia',           icon: '🗓️', title: 'Asistencia e Inasistencias',    desc: 'Presentes, ausentes y tardanzas por paralelo y período.' },
-  { to: 'promocion',            icon: '🎓', title: 'Aprobados, Reprobados y Promovidos', desc: 'Resultado final de la gestión (requiere los 3 trimestres cerrados).' },
-  { to: 'certificados',         icon: '📜', title: 'Certificados y Trámites',       desc: 'Constancias, certificados e historiales académicos emitidos.' },
-  { to: 'padres-tutores',       icon: '👨‍👩‍👧', title: 'Padres / Tutores',              desc: 'Datos de contacto de padres, madres y tutores por estudiante.' },
+const CARDS: { to: string; icon: IconName; title: string; desc: string }[] = [
+  { to: 'nomina',              icon: 'document-list', title: 'Nómina de Estudiantes',        desc: 'Lista de estudiantes inscritos, con filtros por gestión, nivel, grado y paralelo.' },
+  { to: 'ficha',                icon: 'id-card',       title: 'Ficha Individual',              desc: 'Datos personales, académicos y del tutor de un estudiante específico.' },
+  { to: 'estado-matricula',     icon: 'user-check',    title: 'Estado del Estudiante',         desc: 'Preinscritos, activos, retirados, trasladados y egresados.' },
+  { to: 'documentacion',        icon: 'folder',        title: 'Documentación Pendiente',       desc: 'Identifica expedientes incompletos por estudiante.' },
+  { to: 'estadistica',          icon: 'trending-up',   title: 'Estadística de Matrícula',      desc: 'Cantidad de estudiantes por nivel, grado, paralelo y sexo.' },
+  { to: 'calificaciones',       icon: 'grid',          title: 'Calificaciones por Curso',      desc: 'Centralizador de notas: todas las materias en una misma hoja por paralelo y trimestre.' },
+  { to: 'asistencia',           icon: 'calendar-check', title: 'Asistencia e Inasistencias',    desc: 'Presentes, ausentes y tardanzas por paralelo y período.' },
+  { to: 'promocion',            icon: 'graduation-cap', title: 'Aprobados, Reprobados y Promovidos', desc: 'Resultado final de la gestión (requiere los 3 trimestres cerrados).' },
+  { to: 'certificados',         icon: 'award',         title: 'Certificados y Trámites',       desc: 'Constancias, certificados e historiales académicos emitidos.' },
+  { to: 'padres-tutores',       icon: 'users',         title: 'Padres / Tutores',              desc: 'Datos de contacto de padres, madres y tutores por estudiante.' },
 ]
 
 function ReportesMenu() {
@@ -37,7 +38,9 @@ function ReportesMenu() {
             to={c.to}
             className="group flex flex-col gap-3 rounded-xl border border-border bg-surface p-5 shadow-sm transition hover:border-blue-400 hover:shadow-md"
           >
-            <div className="text-3xl">{c.icon}</div>
+            <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-blue-50 text-blue-600 dark:bg-blue-950/40 dark:text-blue-400">
+              <Icon name={c.icon} className="h-6 w-6" />
+            </div>
             <div>
               <div className="font-semibold text-fg group-hover:text-blue-700">{c.title}</div>
               <div className="mt-1 text-sm text-fg-muted">{c.desc}</div>
