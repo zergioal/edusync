@@ -276,7 +276,7 @@ export default function AsistenciaClasePage() {
             <div className="overflow-x-auto rounded-xl border border-border bg-surface shadow-sm">
               <table
                 className="text-xs border-collapse"
-                style={{ minWidth: `${240 + schoolDays.length * 34 + 140}px` }}
+                style={{ minWidth: `${240 + schoolDays.length * 42 + 140}px` }}
               >
                 <thead>
                   {/* Date row */}
@@ -296,7 +296,7 @@ export default function AsistenciaClasePage() {
                       return (
                         <th
                           key={fecha}
-                          className={`w-8 border-r border-border relative ${isSat ? 'bg-surface-2' : ''} ${isDirty ? 'bg-amber-50 dark:bg-amber-950/40' : ''}`}
+                          className={`w-10 border-r border-border relative ${isSat ? 'bg-surface-2' : ''} ${isDirty ? 'bg-amber-50 dark:bg-amber-950/40' : ''}`}
                         >
                           <div
                             className="py-1 px-0.5 flex flex-col items-center gap-0 mx-auto"
@@ -331,13 +331,13 @@ export default function AsistenciaClasePage() {
                       return (
                         <td key={fecha} className="border-r border-border text-center">
                           {!isFut && (
-                            <div className="flex flex-col gap-px items-center py-0.5">
+                            <div className="flex flex-col gap-1 items-center py-1">
                               {ESTADOS_COLUMNA.map(e => (
                                 <button
                                   key={e}
                                   onClick={() => marcarColumna(fecha, e)}
                                   title={`Todos: ${ESTADO_CFG[e].title}`}
-                                  className={`w-4 h-2 rounded-sm transition-opacity hover:opacity-80 ${ESTADO_CFG[e].bg}`}
+                                  className={`w-7 h-3 rounded-sm transition-opacity hover:opacity-80 active:opacity-100 ${ESTADO_CFG[e].bg}`}
                                 />
                               ))}
                             </div>
@@ -373,7 +373,7 @@ export default function AsistenciaClasePage() {
                           return (
                             <td
                               key={fecha}
-                              className={`w-8 h-9 text-center border-r border-border ${isSat ? 'bg-surface-2/50' : ''}`}
+                              className={`w-10 h-11 text-center border-r border-border ${isSat ? 'bg-surface-2/50' : ''}`}
                             >
                               {isFut ? (
                                 <span className="text-gray-200 text-xs">·</span>
@@ -381,7 +381,7 @@ export default function AsistenciaClasePage() {
                                 <button
                                   onClick={() => clickCell(fecha, est.estudiante_id)}
                                   title={cfg ? cfg.title : '—'}
-                                  className={`w-7 h-7 rounded font-bold transition-all hover:scale-110 active:scale-95 ${
+                                  className={`w-9 h-9 rounded font-bold text-sm transition-all hover:scale-110 active:scale-95 ${
                                     cfg
                                       ? `${cfg.bg} ${cfg.text}`
                                       : 'text-fg-muted hover:bg-surface-2 hover:text-fg-muted'
