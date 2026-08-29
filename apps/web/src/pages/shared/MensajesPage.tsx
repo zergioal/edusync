@@ -142,9 +142,9 @@ export default function MensajesPage() {
         <Button onClick={() => setCompose(true)}>Nuevo mensaje</Button>
       </div>
 
-      <div className="flex gap-4 h-[calc(100vh-14rem)]">
-        {/* Panel izquierdo: lista */}
-        <div className="w-72 flex-shrink-0 flex flex-col rounded-xl border border-border bg-surface shadow-sm overflow-hidden">
+      <div className="flex flex-col md:flex-row gap-4 h-[calc(100vh-14rem)]">
+        {/* Panel izquierdo: lista — en pantallas chicas se oculta al abrir un mensaje */}
+        <div className={`${selected ? 'hidden' : 'flex'} md:flex h-full w-full md:w-72 flex-shrink-0 flex-col rounded-xl border border-border bg-surface shadow-sm overflow-hidden`}>
           {/* Tabs */}
           <div className="flex border-b border-border">
             {(['recibidos', 'enviados'] as const).map(t => (
@@ -201,12 +201,18 @@ export default function MensajesPage() {
           )}
         </div>
 
-        {/* Panel derecho: detalle */}
-        <div className="flex-1 rounded-xl border border-border bg-surface shadow-sm overflow-y-auto p-6">
+        {/* Panel derecho: detalle — en pantallas chicas ocupa toda la pantalla al abrir un mensaje */}
+        <div className={`${selected ? 'flex' : 'hidden'} md:flex h-full flex-1 flex-col rounded-xl border border-border bg-surface shadow-sm overflow-y-auto p-4 sm:p-6`}>
           {selected ? (
             <div className="space-y-4">
-              <h2 className="text-xl font-semibold text-fg">{selected.asunto}</h2>
-              <div className="flex items-center gap-4 text-sm text-fg-muted pb-4 border-b border-border">
+              <button
+                onClick={() => setSelected(null)}
+                className="md:hidden flex items-center gap-1 text-sm font-medium text-blue-600 hover:underline"
+              >
+                ← Volver a la lista
+              </button>
+              <h2 className="text-xl font-semibold text-fg break-words">{selected.asunto}</h2>
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-fg-muted pb-4 border-b border-border">
                 {selected.remitente && (
                   <span>De: <span className="font-medium text-fg">{selected.remitente.apellido}, {selected.remitente.nombre}</span></span>
                 )}
@@ -215,7 +221,7 @@ export default function MensajesPage() {
                 )}
                 <span>{fmt(selected.enviado_en)}</span>
               </div>
-              <div className="whitespace-pre-wrap text-sm text-fg">{selected.cuerpo}</div>
+              <div className="whitespace-pre-wrap break-words text-sm text-fg">{selected.cuerpo}</div>
             </div>
           ) : (
             <div className="flex h-full items-center justify-center text-sm text-fg-muted">
