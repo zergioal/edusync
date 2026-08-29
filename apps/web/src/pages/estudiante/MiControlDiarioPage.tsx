@@ -4,7 +4,7 @@ import { Spinner } from '@edusync/ui'
 
 type Categoria =
   | 'NO_ENTREGO_TAREA' | 'FALTO' | 'SALIO_SIN_PERMISO'
-  | 'NO_RINDIO_EVALUACION' | 'CITACION_AGENDA' | 'INDISCIPLINA' | 'OTRO'
+  | 'NO_RINDIO_EVALUACION' | 'CITACION_AGENDA' | 'INDISCIPLINA' | 'NO_TRABAJA_EN_CLASE' | 'OTRO'
 
 interface Observacion {
   id:        string
@@ -23,6 +23,7 @@ const CATEGORIA_CFG: Record<Categoria, { label: string; badge: string }> = {
   NO_RINDIO_EVALUACION: { label: 'No rindió evaluación',    badge: 'bg-purple-100 text-purple-700' },
   CITACION_AGENDA:      { label: 'Citación en agenda',      badge: 'bg-blue-100 text-blue-700' },
   INDISCIPLINA:         { label: 'Indisciplina',            badge: 'bg-rose-100 text-rose-700' },
+  NO_TRABAJA_EN_CLASE:  { label: 'No trabaja en clase',     badge: 'bg-teal-100 text-teal-700' },
   OTRO:                 { label: 'Observación',             badge: 'bg-surface-2 text-fg-muted' },
 }
 

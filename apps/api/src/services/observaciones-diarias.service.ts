@@ -10,6 +10,7 @@ const CATEGORIA_LABEL: Record<CategoriaObservacion, string> = {
   NO_RINDIO_EVALUACION: 'No rindió evaluación',
   CITACION_AGENDA:      'Citación enviada en agenda',
   INDISCIPLINA:         'Indisciplina',
+  NO_TRABAJA_EN_CLASE:  'No trabaja en clase',
   OTRO:                 'Observación',
 }
 

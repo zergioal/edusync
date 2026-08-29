@@ -7,7 +7,7 @@ export type IconName =
   | 'trophy' | 'grid' | 'clipboard-check' | 'folder' | 'graduation-cap' | 'notebook'
   | 'document-list' | 'id-card' | 'user-check' | 'trending-up' | 'calendar-check'
   | 'award' | 'users'
-  | 'document-x' | 'user-x' | 'door-exit' | 'clipboard-x' | 'mail' | 'alert-triangle' | 'pencil'
+  | 'document-x' | 'user-x' | 'door-exit' | 'clipboard-x' | 'mail' | 'alert-triangle' | 'pencil' | 'user-minus'
 
 // Set minimalista de línea, mismo lenguaje visual que components/ui/NavIcon.tsx
 // (viewBox 24x24, trazo redondeado) — para tarjetas de reportes y botones de acción.
@@ -109,6 +109,11 @@ const PATHS: Record<IconName, string[]> = {
   pencil: [
     'M16.5 4.5l3 3L7 20l-4 1 1-4L16.5 4.5z',
     'M15 6l3 3',
+  ],
+  'user-minus': [
+    'M9 11a4 4 0 100-8 4 4 0 000 8z',
+    'M3 21v-2a4 4 0 014-4h2.5',
+    'M15 15h6',
   ],
 }
 

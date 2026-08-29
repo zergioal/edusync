@@ -7,7 +7,7 @@ import { Spinner } from '@edusync/ui'
 
 type Categoria =
   | 'NO_ENTREGO_TAREA' | 'FALTO' | 'SALIO_SIN_PERMISO'
-  | 'NO_RINDIO_EVALUACION' | 'CITACION_AGENDA' | 'INDISCIPLINA' | 'OTRO'
+  | 'NO_RINDIO_EVALUACION' | 'CITACION_AGENDA' | 'INDISCIPLINA' | 'NO_TRABAJA_EN_CLASE' | 'OTRO'
 
 interface Estudiante { estudiante_id: string; nombre: string; apellido: string }
 interface Hoy { id: string; estudiante_id: string; categoria: Categoria; detalle: string | null; creada_en: string }
@@ -21,6 +21,7 @@ const CATEGORIAS: { value: Categoria; label: string; icon: IconName; chip: strin
   { value: 'NO_RINDIO_EVALUACION', label: 'No rindió evaluación',  icon: 'clipboard-x',    chip: 'bg-purple-100 text-purple-700 hover:bg-purple-200' },
   { value: 'CITACION_AGENDA',      label: 'Citación en agenda',    icon: 'mail',           chip: 'bg-blue-100 text-blue-700 hover:bg-blue-200' },
   { value: 'INDISCIPLINA',         label: 'Indisciplina',          icon: 'alert-triangle', chip: 'bg-rose-100 text-rose-700 hover:bg-rose-200' },
+  { value: 'NO_TRABAJA_EN_CLASE',  label: 'No trabaja en clase',   icon: 'user-minus',    chip: 'bg-teal-100 text-teal-700 hover:bg-teal-200' },
   { value: 'OTRO',                 label: 'Otro',                  icon: 'pencil',         chip: 'bg-surface-2 text-fg-muted hover:bg-surface-2/80' },
 ]
 const CATEGORIA_LABEL = Object.fromEntries(CATEGORIAS.map(c => [c.value, c.label])) as Record<Categoria, string>
@@ -148,7 +149,7 @@ export default function ControlDiarioParaleloPage() {
                   )}
                 </div>
 
-                <div className="mt-3 grid grid-cols-4 sm:grid-cols-7 gap-1.5">
+                <div className="mt-3 grid grid-cols-4 sm:grid-cols-8 gap-1.5">
                   {CATEGORIAS.map(c => {
                     const yaRegistrada = c.value !== 'OTRO' && usadasHoy.has(c.value)
                     return (
