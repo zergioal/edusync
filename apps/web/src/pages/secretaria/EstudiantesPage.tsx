@@ -24,6 +24,8 @@ interface ParaleloCard {
 
 interface Paralelo { id: string; letra: string; grado: { nombre: string; nivel: { nombre: string } } }
 interface PadreRef { id: string; nombre: string; apellido: string; email: string; telefono: string | null }
+type EstadoEstudiante = 'PREINSCRITO' | 'ACTIVO' | 'RETIRADO' | 'TRASLADADO' | 'EGRESADO'
+
 interface Estudiante {
   id:               string
   codigo:           string
@@ -31,9 +33,29 @@ interface Estudiante {
   motivo_beca:      string | null
   fecha_nacimiento: string | null
   sexo:             'M' | 'F' | null
+  estado:               EstadoEstudiante
+  estado_motivo:        string | null
+  estado_fecha:         string | null
+  institucion_destino:  string | null
   usuario:          { nombre: string; apellido: string; email: string; activo: boolean }
   matriculas:       { paralelo: Paralelo }[]
   relaciones_padre: { padre: PadreRef }[]
+}
+
+const ESTADO_LABEL: Record<EstadoEstudiante, string> = {
+  PREINSCRITO: 'Preinscrito', ACTIVO: 'Activo', RETIRADO: 'Retirado', TRASLADADO: 'Trasladado', EGRESADO: 'Egresado',
+}
+const ESTADO_BADGE_VARIANT: Record<EstadoEstudiante, 'success' | 'danger' | 'warning' | 'default' | 'info'> = {
+  PREINSCRITO: 'info', ACTIVO: 'success', RETIRADO: 'danger', TRASLADADO: 'warning', EGRESADO: 'default',
+}
+/** Transiciones permitidas desde cada estado — espejo de estudiantes.service.ts.
+ *  EGRESADO no aparece como destino: solo lo asigna el cierre de gestión. */
+const TRANSICIONES: Record<EstadoEstudiante, EstadoEstudiante[]> = {
+  PREINSCRITO: ['ACTIVO'],
+  ACTIVO:      ['RETIRADO', 'TRASLADADO'],
+  RETIRADO:    [],
+  TRASLADADO:  [],
+  EGRESADO:    [],
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -195,9 +217,16 @@ function EditarEstudianteModal({ estudiante, onClose, onSaved }: EditModalProps)
     becado:      estudiante.becado,
     motivo_beca: estudiante.motivo_beca ?? '',
     sexo:        estudiante.sexo ?? '',
+    estado:               estudiante.estado,
+    estado_motivo:        '',
+    institucion_destino:  '',
   })
   const [saving, setSaving] = useState(false)
   const [error,  setError]  = useState<string | null>(null)
+
+  const opcionesEstado = TRANSICIONES[estudiante.estado] ?? []
+  const estadoCambiado = form.estado !== estudiante.estado
+  const motivoRequerido = estadoCambiado && (form.estado === 'RETIRADO' || form.estado === 'TRASLADADO')
 
   const [padres, setPadres] = useState<PadreRef[]>(estudiante.relaciones_padre.map(r => r.padre))
   const [addingPadre, setAddingPadre] = useState(false)
@@ -213,6 +242,10 @@ function EditarEstudianteModal({ estudiante, onClose, onSaved }: EditModalProps)
 
   async function submit(e: React.FormEvent) {
     e.preventDefault()
+    if (motivoRequerido && !form.estado_motivo.trim()) {
+      setError('Indica el motivo del cambio de estado')
+      return
+    }
     setSaving(true); setError(null)
     try {
       await api.patch(`/estudiantes/${estudiante.id}`, {
@@ -224,6 +257,12 @@ function EditarEstudianteModal({ estudiante, onClose, onSaved }: EditModalProps)
         becado:           form.becado,
         motivo_beca:      form.becado ? (form.motivo_beca || null) : null,
         sexo:             form.sexo || null,
+        ...(estadoCambiado ? {
+          estado: form.estado,
+          ...(form.estado_motivo.trim() ? { estado_motivo: form.estado_motivo.trim() } : {}),
+          ...(form.estado === 'TRASLADADO' && form.institucion_destino.trim()
+            ? { institucion_destino: form.institucion_destino.trim() } : {}),
+        } : {}),
       })
       toast.success('Estudiante actualizado')
       onSaved()
@@ -314,6 +353,42 @@ function EditarEstudianteModal({ estudiante, onClose, onSaved }: EditModalProps)
                 <option value="F">Femenino</option>
               </select>
             </label>
+          </div>
+
+          <div className="rounded-xl border border-border bg-bg p-3 space-y-2">
+            <label className="flex flex-col gap-1">
+              <span className="text-xs font-semibold text-fg-muted uppercase tracking-wide">Estado del estudiante</span>
+              {opcionesEstado.length > 0 ? (
+                <select
+                  value={form.estado}
+                  onChange={e => setForm(f => ({ ...f, estado: e.target.value as EstadoEstudiante }))}
+                  className="rounded-xl border border-border px-3 py-2 text-sm focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+                >
+                  <option value={estudiante.estado}>{ESTADO_LABEL[estudiante.estado]} (actual)</option>
+                  {opcionesEstado.map(e => <option key={e} value={e}>{ESTADO_LABEL[e]}</option>)}
+                </select>
+              ) : (
+                <span className="text-sm text-fg">{ESTADO_LABEL[estudiante.estado]} — no se puede cambiar desde aquí</span>
+              )}
+            </label>
+            {motivoRequerido && (
+              <label className="flex flex-col gap-1">
+                <span className="text-xs font-semibold text-fg-muted uppercase tracking-wide">Motivo *</span>
+                <textarea required rows={2} value={form.estado_motivo}
+                  onChange={e => setForm(f => ({ ...f, estado_motivo: e.target.value }))}
+                  placeholder={form.estado === 'RETIRADO' ? 'Ej: Cambio de ciudad, decisión familiar…' : 'Ej: Traslado por mudanza'}
+                  className="rounded-xl border border-border px-3 py-2 text-sm focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-200" />
+              </label>
+            )}
+            {estadoCambiado && form.estado === 'TRASLADADO' && (
+              <label className="flex flex-col gap-1">
+                <span className="text-xs font-semibold text-fg-muted uppercase tracking-wide">Institución de destino (opcional)</span>
+                <input value={form.institucion_destino}
+                  onChange={e => setForm(f => ({ ...f, institucion_destino: e.target.value }))}
+                  placeholder="Nombre de la unidad educativa"
+                  className="rounded-xl border border-border px-3 py-2 text-sm focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-200" />
+              </label>
+            )}
           </div>
 
           <div className="rounded-xl border border-border bg-bg p-3 space-y-2">
@@ -421,6 +496,7 @@ export default function EstudiantesPage({ basePath = '/dashboard/admin' }: { bas
   const [gestionId,    setGestionId]    = useState('')
   const [buscar,       setBuscar]       = useState('')
   const [buscarInput,  setBuscarInput]  = useState('')
+  const [estadoFiltro, setEstadoFiltro] = useState<'ACTIVO' | 'TODOS' | EstadoEstudiante>('ACTIVO')
 
   // Cargar paralelos para la grilla de cursos
   useEffect(() => {
@@ -434,7 +510,7 @@ export default function EstudiantesPage({ basePath = '/dashboard/admin' }: { bas
     if (!selectedParalelo) return
     setLoading(true)
     try {
-      const qs = new URLSearchParams({ paralelo_id: selectedParalelo.id })
+      const qs = new URLSearchParams({ paralelo_id: selectedParalelo.id, estado: estadoFiltro })
       if (gestionId) qs.set('gestion_id', gestionId)
       if (buscar)    qs.set('buscar', buscar)
       setEstudiantes(await api.get<Estudiante[]>(`/estudiantes?${qs}`))
@@ -443,13 +519,13 @@ export default function EstudiantesPage({ basePath = '/dashboard/admin' }: { bas
     } finally {
       setLoading(false)
     }
-  }, [selectedParalelo, gestionId, buscar])
+  }, [selectedParalelo, gestionId, buscar, estadoFiltro])
 
   useEffect(() => { if (view === 'lista') load() }, [load, view])
 
   function selectCurso(p: ParaleloCard) {
     setSelectedParalelo(p)
-    setBuscar(''); setBuscarInput(''); setGestionId('')
+    setBuscar(''); setBuscarInput(''); setGestionId(''); setEstadoFiltro('ACTIVO')
     setView('lista')
   }
 
@@ -606,6 +682,18 @@ export default function EstudiantesPage({ basePath = '/dashboard/admin' }: { bas
       <div className="rounded-2xl border border-border bg-surface p-4 shadow-sm space-y-3">
         <div className="flex flex-wrap gap-4 items-end">
           <SelectGestion value={gestionId} onChange={setGestionId} label="Gestión" placeholder="— Todas —" />
+          <div className="flex flex-col gap-1">
+            <label className="text-xs font-semibold uppercase tracking-wide text-fg-muted">Estado</label>
+            <select value={estadoFiltro} onChange={e => setEstadoFiltro(e.target.value as typeof estadoFiltro)}
+              className="rounded-xl border border-border px-3 py-2 text-sm shadow-sm focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-200">
+              <option value="ACTIVO">Activos</option>
+              <option value="TODOS">Todos</option>
+              <option value="PREINSCRITO">Preinscritos</option>
+              <option value="RETIRADO">Retirados</option>
+              <option value="TRASLADADO">Trasladados</option>
+              <option value="EGRESADO">Egresados</option>
+            </select>
+          </div>
           <form onSubmit={e => { e.preventDefault(); setBuscar(buscarInput) }} className="flex gap-2 items-end">
             <div className="flex flex-col gap-1">
               <label className="text-xs font-semibold uppercase tracking-wide text-fg-muted">Buscar</label>
@@ -635,17 +723,18 @@ export default function EstudiantesPage({ basePath = '/dashboard/admin' }: { bas
               <th className="px-4 py-3">Código</th>
               <th className="px-4 py-3">Apellidos y Nombres</th>
               <th className="px-4 py-3 hidden md:table-cell">Tutor principal</th>
+              <th className="px-4 py-3 text-center">Estado</th>
               <th className="px-4 py-3 text-right">Acciones</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
             {loading && (
-              <tr><td colSpan={4} className="py-12 text-center"><Spinner /></td></tr>
+              <tr><td colSpan={5} className="py-12 text-center"><Spinner /></td></tr>
             )}
             {!loading && estudiantes.length === 0 && (
               <tr>
-                <td colSpan={4} className="py-12 text-center text-fg-muted">
-                  No hay estudiantes en este curso.
+                <td colSpan={5} className="py-12 text-center text-fg-muted">
+                  No hay estudiantes {estadoFiltro === 'TODOS' ? '' : `en estado "${ESTADO_LABEL[estadoFiltro as EstadoEstudiante] ?? 'Activo'}" `}en este curso.
                 </td>
               </tr>
             )}
@@ -669,6 +758,9 @@ export default function EstudiantesPage({ basePath = '/dashboard/admin' }: { bas
                   <div className="text-xs text-fg-muted truncate max-w-[180px]">{est.usuario.email}</div>
                 </td>
                 <td className="px-4 py-3 text-fg-muted text-sm hidden md:table-cell">{getTutor(est)}</td>
+                <td className="px-4 py-3 text-center">
+                  <Badge variant={ESTADO_BADGE_VARIANT[est.estado]}>{ESTADO_LABEL[est.estado]}</Badge>
+                </td>
                 <td className="px-4 py-3 text-right">
                   <div className="flex items-center justify-end gap-1 flex-nowrap">
                     <Button variant="ghost" size="sm"

@@ -1,5 +1,5 @@
 import type { Request, Response, NextFunction } from 'express'
-import type { EstadoMatricula } from '@edusync/types'
+import type { EstadoEstudiante } from '@edusync/types'
 import { ReportesService } from '../services/reportes.service'
 import { AppError }        from '../middlewares/errorHandler'
 import { generarHTMLCentralizador } from '../templates/centralizador.template'
@@ -179,7 +179,7 @@ export class ReportesController {
     const { gestion_id, estado } = req.query as Record<string, string>
     if (!gestion_id) throw new AppError(400, 'gestion_id es requerido', 'MISSING_PARAM')
     const [data, institucion] = await Promise.all([
-      this.service.getEstudiantesPorEstado(req.auth!.institucion_id, gestion_id, estado as EstadoMatricula | undefined),
+      this.service.getEstudiantesPorEstado(req.auth!.institucion_id, gestion_id, estado as EstadoEstudiante | undefined),
       getInstitucionInfo(req.auth!.institucion_id),
     ])
     return {
@@ -203,7 +203,7 @@ export class ReportesController {
     try {
       const { gestion_id, estado } = req.query as Record<string, string>
       if (!gestion_id) throw new AppError(400, 'gestion_id es requerido', 'MISSING_PARAM')
-      res.json({ data: await this.service.getEstudiantesPorEstado(req.auth!.institucion_id, gestion_id, estado as EstadoMatricula | undefined) })
+      res.json({ data: await this.service.getEstudiantesPorEstado(req.auth!.institucion_id, gestion_id, estado as EstadoEstudiante | undefined) })
     } catch (e) { next(e) }
   }
   estadoMatriculaPdf = async (req: Request, res: Response, next: NextFunction): Promise<void> => {

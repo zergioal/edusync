@@ -24,6 +24,7 @@ export default function PromocionAnualPage() {
   const [loading,    setLoading]    = useState(false)
   const [error,      setError]      = useState<string | null>(null)
   const [expanded,   setExpanded]   = useState<string | null>(null)
+  const [filtro,     setFiltro]     = useState<'TODOS' | 'PROMOVIDO' | 'REPITE'>('TODOS')
 
   async function cargar() {
     if (!gestionId || !paraleloId) return
@@ -70,21 +71,36 @@ export default function PromocionAnualPage() {
 
       {data && (
         <div className="space-y-4">
-          {/* Resumen */}
+          {/* Resumen — clic para filtrar la tabla */}
           <div className="flex gap-4">
-            <div className="rounded-xl bg-green-50 border border-green-200 px-5 py-3 text-center flex-1">
-              <div className="text-2xl font-bold text-green-700">{promovidos}</div>
-              <div className="text-sm text-green-600">Promovidos</div>
-            </div>
-            <div className="rounded-xl bg-red-50 border border-red-200 px-5 py-3 text-center flex-1">
-              <div className="text-2xl font-bold text-red-700">{repiten}</div>
-              <div className="text-sm text-red-600">Repiten</div>
-            </div>
+            <button
+              onClick={() => setFiltro(f => f === 'PROMOVIDO' ? 'TODOS' : 'PROMOVIDO')}
+              className={`rounded-xl border px-5 py-3 text-center flex-1 transition-colors ${
+                filtro === 'PROMOVIDO' ? 'bg-green-100 border-green-400 dark:bg-green-950/50' : 'bg-green-50 dark:bg-green-950/30 border-green-200 hover:border-green-400'
+              }`}
+            >
+              <div className="text-2xl font-bold text-green-700 dark:text-green-400">{promovidos}</div>
+              <div className="text-sm text-green-600 dark:text-green-400">Promovidos</div>
+            </button>
+            <button
+              onClick={() => setFiltro(f => f === 'REPITE' ? 'TODOS' : 'REPITE')}
+              className={`rounded-xl border px-5 py-3 text-center flex-1 transition-colors ${
+                filtro === 'REPITE' ? 'bg-red-100 border-red-400 dark:bg-red-950/50' : 'bg-red-50 dark:bg-red-950/30 border-red-200 hover:border-red-400'
+              }`}
+            >
+              <div className="text-2xl font-bold text-red-700 dark:text-red-400">{repiten}</div>
+              <div className="text-sm text-red-600 dark:text-red-400">No promovidos</div>
+            </button>
             <div className="rounded-xl bg-bg border border-border px-5 py-3 text-center flex-1">
               <div className="text-2xl font-bold text-fg">{data.length}</div>
               <div className="text-sm text-fg-muted">Total</div>
             </div>
           </div>
+          {filtro !== 'TODOS' && (
+            <button onClick={() => setFiltro('TODOS')} className="text-xs text-blue-600 hover:underline">
+              × Quitar filtro ({filtro === 'PROMOVIDO' ? 'Promovidos' : 'No promovidos'})
+            </button>
+          )}
 
           {/* Tabla */}
           <div className="rounded-xl border border-border bg-surface overflow-hidden">
@@ -100,7 +116,7 @@ export default function PromocionAnualPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
-                {data.map(est => {
+                {(filtro === 'TODOS' ? data : data.filter(e => e.resultado_final === filtro)).map(est => {
                   const key = est.estudiante.codigo
                   const avgByTrim = [1, 2, 3].map(t => {
                     const vals = est.notas_por_materia.map(n => t === 1 ? n.t1 : t === 2 ? n.t2 : n.t3).filter((v): v is number => v !== null)

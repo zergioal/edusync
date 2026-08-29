@@ -49,10 +49,19 @@ enum EstadoAsistencia {
   LICENCIA
 }
 
-enum EstadoMatricula {
+enum EstadoEstudiante {
+  PREINSCRITO
   ACTIVO
   RETIRADO
   TRASLADADO
+  EGRESADO
+}
+
+enum ResultadoMatricula {
+  SIN_DEFINIR
+  EN_CURSO
+  PROMOVIDO
+  NO_PROMOVIDO
 }
 
 enum Sexo {
@@ -137,6 +146,7 @@ model Usuario {
   mensajes_recibidos  Mensaje[]           @relation("MensajesRecibidos")
   notificaciones      Notificacion[]
   certificados_emitidos CertificadoEmitido[] @relation("CertificadosEmitidosPor")
+  cambios_estado_estudiante HistorialEstadoEstudiante[]
 
   @@map("usuarios")
 }
@@ -156,14 +166,18 @@ model Docente {
 }
 
 model Estudiante {
-  id                String    @id @default(uuid())
-  usuario_id        String    @unique
+  id                String           @id @default(uuid())
+  usuario_id        String           @unique
   codigo            String
   nivel_id          String
-  becado            Boolean   @default(false)
-  motivo_beca       String?   @db.VarChar(255)
+  becado            Boolean          @default(false)
+  motivo_beca       String?          @db.VarChar(255)
   fecha_nacimiento  DateTime?
   sexo              Sexo?
+  estado            EstadoEstudiante @default(ACTIVO)
+  estado_motivo     String?          @db.Text
+  estado_fecha      DateTime?
+  institucion_destino String?        @db.VarChar(255)
 
   usuario             Usuario              @relation(fields: [usuario_id], references: [id], onDelete: Cascade)
   nivel               Nivel                @relation(fields: [nivel_id], references: [id])
@@ -175,9 +189,9 @@ model Estudiante {
   asistencias_diarias AsistenciaDiaria[]
   observaciones       ObservacionInicial[]
   resultados_finales  ResultadoFinal[]
-  promociones         Promocion[]
   documentos          DocumentoEstudiante[]
   certificados        CertificadoEmitido[]
+  historial_estado    HistorialEstadoEstudiante[]
 
   @@map("estudiantes")
 }
@@ -244,12 +258,12 @@ model Paralelo {
 }
 
 model Matricula {
-  id            String          @id @default(uuid())
+  id            String             @id @default(uuid())
   estudiante_id String
   paralelo_id   String
   gestion_id    String
-  lleva_tecnica Boolean         @default(true)
-  estado        EstadoMatricula @default(ACTIVO)
+  lleva_tecnica Boolean            @default(true)
+  resultado     ResultadoMatricula @default(EN_CURSO)
 
   estudiante Estudiante @relation(fields: [estudiante_id], references: [id], onDelete: Cascade)
   paralelo   Paralelo   @relation(fields: [paralelo_id], references: [id])
@@ -311,7 +325,6 @@ model Gestion {
   asignaciones       Asignacion[]
   tarifas_pension    TarifaPension[]
   resultados_finales ResultadoFinal[]
-  promociones        Promocion[]
 
   @@unique([institucion_id, anno])
   @@map("gestiones")
@@ -690,20 +703,6 @@ model ResultadoFinal {
   @@map("resultados_finales")
 }
 
-model Promocion {
-  id            String  @id @default(uuid())
-  estudiante_id String
-  gestion_id    String
-  promovido     Boolean
-  observacion   String? @db.Text
-
-  estudiante Estudiante @relation(fields: [estudiante_id], references: [id], onDelete: Cascade)
-  gestion    Gestion    @relation(fields: [gestion_id], references: [id])
-
-  @@unique([estudiante_id, gestion_id])
-  @@map("promociones")
-}
-
 // ─── Documentos y certificados (Secretaría) ───────────────────────────────────
 
 model DocumentoEstudiante {
@@ -732,6 +731,21 @@ model CertificadoEmitido {
   emitido_por Usuario    @relation("CertificadosEmitidosPor", fields: [emitido_por_id], references: [id])
 
   @@map("certificados_emitidos")
+}
+
+model HistorialEstadoEstudiante {
+  id              String            @id @default(uuid())
+  estudiante_id   String
+  estado_anterior EstadoEstudiante?
+  estado_nuevo    EstadoEstudiante
+  motivo          String?           @db.Text
+  usuario_id      String
+  creado_en       DateTime          @default(now())
+
+  estudiante Estudiante @relation(fields: [estudiante_id], references: [id], onDelete: Cascade)
+  usuario    Usuario    @relation(fields: [usuario_id], references: [id])
+
+  @@map("historial_estado_estudiante")
 }
 
 // ─── Auditoría ────────────────────────────────────────────────────────────────

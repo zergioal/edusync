@@ -2,6 +2,17 @@ import { prisma } from '@edusync/database'
 import { AppError } from '../middlewares/errorHandler'
 import { getSupabaseAdmin } from '../lib/supabase'
 import { updateAuthEmail } from '../lib/supabaseSync'
+import type { EstadoEstudiante } from '@edusync/types'
+
+/** Transiciones permitidas para el estado general del estudiante (vía edición manual).
+ *  EGRESADO no aparece como destino aquí: solo lo asigna el cierre de gestión. */
+const TRANSICIONES_VALIDAS: Record<string, string[]> = {
+  PREINSCRITO: ['ACTIVO'],
+  ACTIVO:      ['RETIRADO', 'TRASLADADO'],
+  RETIRADO:    [],
+  TRASLADADO:  [],
+  EGRESADO:    [],
+}
 
 const EST_INCLUDE = {
   usuario: { select: { nombre: true, apellido: true, email: true, activo: true } },
@@ -52,8 +63,13 @@ async function createSupabaseUser(email: string, password: string): Promise<stri
 }
 
 export class EstudiantesService {
-  async findAll(institucion_id: string, filters: { gestion_id?: string; paralelo_id?: string; buscar?: string }) {
-    const { gestion_id, paralelo_id, buscar } = filters
+  async findAll(institucion_id: string, filters: { gestion_id?: string; paralelo_id?: string; buscar?: string; estado?: string }) {
+    const { gestion_id, paralelo_id, buscar, estado } = filters
+    // Una lista de curso (paralelo_id) sin filtro explícito de estado solo debe mostrar
+    // estudiantes activos — el resto (retirados, trasladados, egresados, preinscritos)
+    // se consulta a propósito. 'TODOS' es el valor explícito para quitar el filtro
+    // (ej. el selector de estado en la lista de secretaría).
+    const estadoFiltro = estado === 'TODOS' ? undefined : (estado ?? (paralelo_id ? 'ACTIVO' : undefined))
     return prisma.estudiante.findMany({
       where: {
         usuario: {
@@ -65,6 +81,7 @@ export class EstudiantesService {
             ],
           } : {}),
         },
+        ...(estadoFiltro ? { estado: estadoFiltro as EstadoEstudiante } : {}),
         ...(gestion_id || paralelo_id ? {
           matriculas: {
             some: {
@@ -208,15 +225,19 @@ export class EstudiantesService {
   async update(
     id: string,
     data: {
-      nombre?:           string
-      apellido?:         string
-      email?:            string
-      activo?:           boolean
-      becado?:           boolean
-      motivo_beca?:      string | null
-      fecha_nacimiento?: string | null
-      sexo?:             'M' | 'F' | null
+      nombre?:               string
+      apellido?:             string
+      email?:                string
+      activo?:               boolean
+      becado?:               boolean
+      motivo_beca?:          string | null
+      fecha_nacimiento?:     string | null
+      sexo?:                 'M' | 'F' | null
+      estado?:               EstadoEstudiante
+      estado_motivo?:        string
+      institucion_destino?:  string
     },
+    actorUsuarioId: string,
   ) {
     const est = await this.findOne(id)
 
@@ -245,14 +266,50 @@ export class EstudiantesService {
       estData.fecha_nacimiento = data.fecha_nacimiento ? new Date(data.fecha_nacimiento) : null
     }
 
+    // Cambio de estado general — valida la transición y deja rastro en el historial
+    let estadoAnterior: EstadoEstudiante | null = null
+    if (data.estado !== undefined && data.estado !== est.estado) {
+      const permitidos = TRANSICIONES_VALIDAS[est.estado as EstadoEstudiante] ?? []
+      if (!permitidos.includes(data.estado)) {
+        throw new AppError(422, `No se puede cambiar el estado de ${est.estado} a ${data.estado}`, 'TRANSICION_INVALIDA')
+      }
+      if ((data.estado === 'RETIRADO' || data.estado === 'TRASLADADO') && !data.estado_motivo?.trim()) {
+        throw new AppError(422, 'Debes indicar el motivo del cambio de estado', 'VALIDATION')
+      }
+      estadoAnterior = est.estado as EstadoEstudiante
+      estData.estado               = data.estado
+      estData.estado_motivo        = data.estado_motivo?.trim() || null
+      estData.estado_fecha         = new Date()
+      estData.institucion_destino  = data.estado === 'TRASLADADO' ? (data.institucion_destino?.trim() || null) : null
+    }
+
     await prisma.$transaction(async tx => {
       if (Object.keys(usuarioData).length > 0)
         await tx.usuario.update({ where: { id: est.usuario_id }, data: usuarioData })
       if (Object.keys(estData).length > 0)
         await tx.estudiante.update({ where: { id }, data: estData })
+      if (estadoAnterior !== null) {
+        await tx.historialEstadoEstudiante.create({
+          data: {
+            estudiante_id:   id,
+            estado_anterior: estadoAnterior,
+            estado_nuevo:    data.estado!,
+            motivo:          (estData.estado_motivo as string | null) ?? null,
+            usuario_id:      actorUsuarioId,
+          },
+        })
+      }
     })
 
     return this.findOne(id)
+  }
+
+  async getHistorialEstado(estudiante_id: string) {
+    return prisma.historialEstadoEstudiante.findMany({
+      where:   { estudiante_id },
+      include: { usuario: { select: { nombre: true, apellido: true } } },
+      orderBy: { creado_en: 'desc' },
+    })
   }
 
   async linkPadre(

@@ -1,6 +1,5 @@
 import { prisma } from '@edusync/database'
 import { AppError } from '../middlewares/errorHandler'
-import { EstadoMatricula } from '@edusync/types'
 
 export class MatriculasService {
   async findAll(filters: { gestion_id?: string; paralelo_id?: string }) {
@@ -34,18 +33,6 @@ export class MatriculasService {
       where: { id: matricula.id },
       data:  { lleva_tecnica },
       select: { id: true, estudiante_id: true, gestion_id: true, lleva_tecnica: true },
-    })
-  }
-
-  async updateEstado(estudiante_id: string, gestion_id: string, estado: EstadoMatricula) {
-    const matricula = await prisma.matricula.findFirst({
-      where: { estudiante_id, gestion_id },
-    })
-    if (!matricula) throw new AppError(404, 'Matrícula no encontrada', 'NOT_FOUND')
-    return prisma.matricula.update({
-      where: { id: matricula.id },
-      data:  { estado },
-      select: { id: true, estudiante_id: true, gestion_id: true, estado: true },
     })
   }
 

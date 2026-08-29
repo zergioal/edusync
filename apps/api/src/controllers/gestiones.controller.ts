@@ -40,7 +40,7 @@ export class GestionesController {
 
   cerrar = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const data = await this.service.cerrar(req.params['id']!, req.auth!.institucion_id)
+      const data = await this.service.cerrar(req.params['id']!, req.auth!.institucion_id, req.auth!.usuario_id)
       res.json({ data })
     } catch (e) { next(e) }
   }

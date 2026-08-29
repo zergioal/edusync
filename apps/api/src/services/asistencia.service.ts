@@ -6,6 +6,18 @@ interface RegistroAsistencia {
   estado: 'PRESENTE' | 'AUSENTE' | 'TARDANZA' | 'LICENCIA'
 }
 
+/** Descarta silenciosamente registros de estudiantes que no estén ACTIVO — protección
+ *  adicional detrás de los rosters, que ya no deberían ofrecerlos como opción. */
+async function filtrarSoloActivos<T extends RegistroAsistencia>(registros: T[]): Promise<T[]> {
+  if (registros.length === 0) return registros
+  const activos = await prisma.estudiante.findMany({
+    where:  { id: { in: registros.map(r => r.estudiante_id) }, estado: 'ACTIVO' },
+    select: { id: true },
+  })
+  const activosSet = new Set(activos.map(e => e.id))
+  return registros.filter(r => activosSet.has(r.estudiante_id))
+}
+
 export class AsistenciaService {
 
   // ── Vistas estudiante/padre ────────────────────────────────────────────────
@@ -40,6 +52,8 @@ export class AsistenciaService {
     if (asignacion.docente.usuario_id !== docente_usuario_id) {
       throw new AppError(403, 'Solo el docente asignado puede registrar asistencia', 'FORBIDDEN')
     }
+
+    registros = await filtrarSoloActivos(registros)
 
     const fechaDate = new Date(fecha)
 
@@ -117,6 +131,8 @@ export class AsistenciaService {
     fecha: string,
     registros: RegistroAsistencia[],
   ) {
+    registros = await filtrarSoloActivos(registros)
+
     const fechaDate = new Date(fecha)
 
     await prisma.$transaction(
@@ -370,7 +386,7 @@ export class AsistenciaService {
 
   async getEstudiantesParalelo(paralelo_id: string, gestion_id: string) {
     const matriculas = await prisma.matricula.findMany({
-      where:   { paralelo_id, gestion_id },
+      where:   { paralelo_id, gestion_id, estudiante: { estado: 'ACTIVO' } },
       include: {
         estudiante: {
           include: { usuario: { select: { nombre: true, apellido: true } } },

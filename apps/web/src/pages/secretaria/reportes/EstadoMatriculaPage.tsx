@@ -8,15 +8,25 @@ interface EstRow {
   nivel: string; grado: string; paralelo: string; estado: string
 }
 interface Data {
-  resumen: { ACTIVO: number; RETIRADO: number; TRASLADADO: number }
+  resumen: { PREINSCRITO: number; ACTIVO: number; RETIRADO: number; TRASLADADO: number; EGRESADO: number }
   estudiantes: EstRow[]
 }
 
-const ESTADOS = ['', 'ACTIVO', 'RETIRADO', 'TRASLADADO'] as const
-const ESTADO_LABEL: Record<string, string> = { '': 'Todos', ACTIVO: 'Activos', RETIRADO: 'Retirados', TRASLADADO: 'Trasladados' }
-const ESTADO_BADGE: Record<string, string> = {
-  ACTIVO: 'bg-emerald-100 text-emerald-700', RETIRADO: 'bg-rose-100 text-rose-700', TRASLADADO: 'bg-amber-100 text-amber-700',
+const ESTADOS = ['', 'PREINSCRITO', 'ACTIVO', 'RETIRADO', 'TRASLADADO', 'EGRESADO'] as const
+const ESTADO_LABEL: Record<string, string> = {
+  '': 'Todos', PREINSCRITO: 'Preinscritos', ACTIVO: 'Activos', RETIRADO: 'Retirados', TRASLADADO: 'Trasladados', EGRESADO: 'Egresados',
 }
+const ESTADO_BADGE: Record<string, string> = {
+  PREINSCRITO: 'bg-sky-100 text-sky-700', ACTIVO: 'bg-emerald-100 text-emerald-700',
+  RETIRADO: 'bg-rose-100 text-rose-700', TRASLADADO: 'bg-amber-100 text-amber-700', EGRESADO: 'bg-slate-200 text-slate-700',
+}
+const RESUMEN_CARDS = [
+  { key: 'PREINSCRITO' as const, label: 'Preinscritos', bg: 'bg-sky-50 border-sky-200',     num: 'text-sky-700',     txt: 'text-sky-600'     },
+  { key: 'ACTIVO'      as const, label: 'Activos',      bg: 'bg-green-50 border-green-200', num: 'text-green-700',   txt: 'text-green-600'   },
+  { key: 'RETIRADO'    as const, label: 'Retirados',    bg: 'bg-red-50 border-red-200',     num: 'text-red-700',     txt: 'text-red-600'     },
+  { key: 'TRASLADADO'  as const, label: 'Trasladados',  bg: 'bg-amber-50 border-amber-200', num: 'text-amber-700',   txt: 'text-amber-600'   },
+  { key: 'EGRESADO'    as const, label: 'Egresados',    bg: 'bg-bg border-border',          num: 'text-fg',          txt: 'text-fg-muted'    },
+]
 
 export default function EstadoMatriculaPage() {
   const [gestionId, setGestionId] = useState('')
@@ -43,7 +53,7 @@ export default function EstadoMatriculaPage() {
   async function descargar(tipo: 'pdf' | 'xlsx') {
     if (!gestionId || !data) return
     setDlState(tipo)
-    try { await apiDownload(`/reportes/estado-matricula/${tipo}?${qs()}`, `estado_matricula.${tipo === 'pdf' ? 'pdf' : 'xlsx'}`) }
+    try { await apiDownload(`/reportes/estado-matricula/${tipo}?${qs()}`, `estado_estudiante.${tipo === 'pdf' ? 'pdf' : 'xlsx'}`) }
     finally { setDlState('idle') }
   }
 
@@ -51,8 +61,9 @@ export default function EstadoMatriculaPage() {
     <div className="space-y-5">
       <div className="flex items-center gap-3">
         <Link to=".." className="text-sm text-blue-600 hover:underline">← Reportes</Link>
-        <h1 className="text-xl font-bold text-fg">🎒 Estudiantes Activos, Retirados y Trasladados</h1>
+        <h1 className="text-xl font-bold text-fg">🎒 Estado del Estudiante</h1>
       </div>
+      <p className="text-sm text-fg-muted -mt-3">Preinscritos, activos, retirados, trasladados y egresados de la gestión seleccionada.</p>
 
       <div className="rounded-xl border border-border bg-surface p-5">
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
@@ -78,18 +89,12 @@ export default function EstadoMatriculaPage() {
       {data && (
         <div className="space-y-4">
           <div className="flex gap-4 flex-wrap">
-            <div className="rounded-xl bg-green-50 border border-green-200 px-5 py-3 text-center flex-1 min-w-[120px]">
-              <div className="text-2xl font-bold text-green-700">{data.resumen.ACTIVO}</div>
-              <div className="text-sm text-green-600">Activos</div>
-            </div>
-            <div className="rounded-xl bg-red-50 border border-red-200 px-5 py-3 text-center flex-1 min-w-[120px]">
-              <div className="text-2xl font-bold text-red-700">{data.resumen.RETIRADO}</div>
-              <div className="text-sm text-red-600">Retirados</div>
-            </div>
-            <div className="rounded-xl bg-amber-50 border border-amber-200 px-5 py-3 text-center flex-1 min-w-[120px]">
-              <div className="text-2xl font-bold text-amber-700">{data.resumen.TRASLADADO}</div>
-              <div className="text-sm text-amber-600">Trasladados</div>
-            </div>
+            {RESUMEN_CARDS.map(c => (
+              <div key={c.key} className={`rounded-xl border px-5 py-3 text-center flex-1 min-w-[110px] ${c.bg}`}>
+                <div className={`text-2xl font-bold ${c.num}`}>{data.resumen[c.key]}</div>
+                <div className={`text-sm ${c.txt}`}>{c.label}</div>
+              </div>
+            ))}
           </div>
 
           <div className="rounded-xl border border-border bg-surface p-5 space-y-4">
@@ -126,7 +131,7 @@ export default function EstadoMatriculaPage() {
                       <td className="px-3 py-2">{e.grado}</td>
                       <td className="px-3 py-2 text-center">{e.paralelo}</td>
                       <td className="px-3 py-2 text-center">
-                        <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${ESTADO_BADGE[e.estado] ?? ''}`}>{e.estado}</span>
+                        <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${ESTADO_BADGE[e.estado] ?? ''}`}>{ESTADO_LABEL[e.estado] ?? e.estado}</span>
                       </td>
                     </tr>
                   ))}

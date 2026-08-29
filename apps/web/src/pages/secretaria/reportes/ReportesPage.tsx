@@ -13,7 +13,7 @@ import ReporteAsistenciaPage from '../../regente/ReporteAsistenciaPage'
 const CARDS = [
   { to: 'nomina',              icon: '🧾', title: 'Nómina de Estudiantes',        desc: 'Lista de estudiantes inscritos, con filtros por gestión, nivel, grado y paralelo.' },
   { to: 'ficha',                icon: '🪪', title: 'Ficha Individual',              desc: 'Datos personales, académicos y del tutor de un estudiante específico.' },
-  { to: 'estado-matricula',     icon: '🎒', title: 'Estado de Matrícula',           desc: 'Estudiantes activos, retirados y trasladados.' },
+  { to: 'estado-matricula',     icon: '🎒', title: 'Estado del Estudiante',         desc: 'Preinscritos, activos, retirados, trasladados y egresados.' },
   { to: 'documentacion',        icon: '📂', title: 'Documentación Pendiente',       desc: 'Identifica expedientes incompletos por estudiante.' },
   { to: 'estadistica',          icon: '📈', title: 'Estadística de Matrícula',      desc: 'Cantidad de estudiantes por nivel, grado, paralelo y sexo.' },
   { to: 'calificaciones',       icon: '📊', title: 'Calificaciones por Curso',      desc: 'Centralizador de notas: todas las materias en una misma hoja por paralelo y trimestre.' },

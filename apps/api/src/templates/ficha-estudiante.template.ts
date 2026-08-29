@@ -8,10 +8,11 @@ export interface DatosFichaEstudiante {
     nombre: string; apellido: string; email: string; telefono: string | null
     codigo: string; fecha_nacimiento: Date | string | null; sexo: string | null
     becado: boolean; motivo_beca: string | null
+    estado: string; estado_motivo: string | null; estado_fecha: Date | string | null
   }
   matriculas: Array<{
     anno: number; nivel: string; grado: string; paralelo: string
-    estado: string; lleva_tecnica: boolean
+    resultado: string; lleva_tecnica: boolean
   }>
   tutores: Array<{ nombre: string; apellido: string; email: string; telefono: string | null }>
 }
@@ -30,7 +31,7 @@ export function generarHTMLFichaEstudiante(d: DatosFichaEstudiante): string {
   const matriculaActual = d.matriculas[0]
 
   const filasMatriculas = d.matriculas.map(m =>
-    `<tr><td style="padding:4px;font-size:9px;">${m.anno}</td><td style="padding:4px;font-size:9px;">${m.nivel}</td><td style="padding:4px;font-size:9px;">${m.grado}</td><td style="padding:4px;font-size:9px;text-align:center;">${m.paralelo}</td><td style="padding:4px;font-size:9px;text-align:center;">${m.estado}</td></tr>`
+    `<tr><td style="padding:4px;font-size:9px;">${m.anno}</td><td style="padding:4px;font-size:9px;">${m.nivel}</td><td style="padding:4px;font-size:9px;">${m.grado}</td><td style="padding:4px;font-size:9px;text-align:center;">${m.paralelo}</td><td style="padding:4px;font-size:9px;text-align:center;">${m.resultado}</td></tr>`
   ).join('')
 
   const filasTutores = d.tutores.length > 0
@@ -66,6 +67,7 @@ ${encabezadoConLogo(d.institucion, `
   ${fila('Fecha de nacimiento', fmtFecha(p.fecha_nacimiento))}
   ${fila('Sexo', p.sexo === 'M' ? 'Masculino' : p.sexo === 'F' ? 'Femenino' : '—')}
   ${fila('Becado', p.becado ? `Sí${p.motivo_beca ? ' — ' + p.motivo_beca : ''}` : 'No')}
+  ${fila('Estado', p.estado + (p.estado_motivo ? ` — ${p.estado_motivo}` : '') + (p.estado_fecha ? ` (${fmtFecha(p.estado_fecha)})` : ''))}
 </table>
 
 <h2>Datos académicos${matriculaActual ? ` — Gestión actual: ${matriculaActual.nivel} ${matriculaActual.grado} "${matriculaActual.paralelo}"` : ''}</h2>
@@ -75,7 +77,7 @@ ${encabezadoConLogo(d.institucion, `
     <th style="background:${AZUL};color:#fff;padding:4px;font-size:9px;">Nivel</th>
     <th style="background:${AZUL};color:#fff;padding:4px;font-size:9px;">Grado</th>
     <th style="background:${AZUL};color:#fff;padding:4px;font-size:9px;">Paralelo</th>
-    <th style="background:${AZUL};color:#fff;padding:4px;font-size:9px;">Estado</th>
+    <th style="background:${AZUL};color:#fff;padding:4px;font-size:9px;">Resultado</th>
   </tr></thead>
   <tbody>${filasMatriculas || `<tr><td colspan="5" style="text-align:center;padding:8px;color:#999;font-size:9px;">Sin matrículas registradas</td></tr>`}</tbody>
 </table>

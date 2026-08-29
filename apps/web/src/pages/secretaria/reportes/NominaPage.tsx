@@ -13,9 +13,11 @@ interface EstRow {
 interface Data { anno: number; estudiantes: EstRow[] }
 
 const ESTADO_BADGE: Record<string, string> = {
-  ACTIVO:     'bg-emerald-100 text-emerald-700',
-  RETIRADO:   'bg-rose-100 text-rose-700',
-  TRASLADADO: 'bg-amber-100 text-amber-700',
+  PREINSCRITO: 'bg-sky-100 text-sky-700',
+  ACTIVO:      'bg-emerald-100 text-emerald-700',
+  RETIRADO:    'bg-rose-100 text-rose-700',
+  TRASLADADO:  'bg-amber-100 text-amber-700',
+  EGRESADO:    'bg-slate-200 text-slate-700',
 }
 
 export default function NominaPage() {

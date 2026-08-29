@@ -11,4 +11,3 @@ const canManageTecnica = requireRol(Rol.ADMIN_SISTEMA, Rol.DIRECTOR, Rol.COORDIN
 matriculasRouter.get('/',  ctrl.findAll)
 matriculasRouter.post('/', ctrl.create)
 matriculasRouter.patch('/:estudiante_id/:gestion_id/tecnica', canManageTecnica, ctrl.toggleTecnica)
-matriculasRouter.patch('/:estudiante_id/:gestion_id/estado',  canManageTecnica, ctrl.updateEstado)

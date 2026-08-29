@@ -45,10 +45,19 @@ export enum TipoGaleria {
   VIDEO = 'VIDEO',
 }
 
-export enum EstadoMatricula {
+export enum EstadoEstudiante {
+  PREINSCRITO = 'PREINSCRITO',
   ACTIVO = 'ACTIVO',
   RETIRADO = 'RETIRADO',
   TRASLADADO = 'TRASLADADO',
+  EGRESADO = 'EGRESADO',
+}
+
+export enum ResultadoMatricula {
+  SIN_DEFINIR = 'SIN_DEFINIR',
+  EN_CURSO = 'EN_CURSO',
+  PROMOVIDO = 'PROMOVIDO',
+  NO_PROMOVIDO = 'NO_PROMOVIDO',
 }
 
 export enum Sexo {

@@ -55,7 +55,7 @@ export class GestionesService {
 
   // ── Cierre de gestión ───────────────────────────────────────────────────────
 
-  async cerrar(id: string, institucion_id: string) {
+  async cerrar(id: string, institucion_id: string, actorUsuarioId: string) {
     const gestion = await prisma.gestion.findUnique({
       where:   { id },
       include: { trimestres: { orderBy: { numero: 'asc' } } },
@@ -74,6 +74,7 @@ export class GestionesService {
       include: {
         paralelo: {
           include: {
+            grado: { include: { nivel: true } },
             asignaciones: {
               where: { gestion_id: id },
               include: {
@@ -142,20 +143,58 @@ export class GestionesService {
     // Guardar resultados
     await prisma.resultadoFinal.createMany({ data: resultadosData, skipDuplicates: true })
 
-    // Calcular y guardar promociones
+    // Calcular resultado de promoción por estudiante y guardarlo en su matrícula de esta gestión
     const aprobMap = new Map<string, boolean[]>()
     for (const r of resultadosData) {
       if (!aprobMap.has(r.estudiante_id)) aprobMap.set(r.estudiante_id, [])
       aprobMap.get(r.estudiante_id)!.push(r.aprobado)
     }
 
-    const promocionesData = Array.from(aprobMap.entries()).map(([estudiante_id, aprobaciones]) => ({
-      estudiante_id,
-      gestion_id: id,
-      promovido:  aprobaciones.every(a => a),
-    }))
+    const resultadosPorEstudiante = new Map(
+      Array.from(aprobMap.entries()).map(([estudiante_id, aprobaciones]) =>
+        [estudiante_id, aprobaciones.every(a => a) ? 'PROMOVIDO' as const : 'NO_PROMOVIDO' as const]
+      ),
+    )
 
-    await prisma.promocion.createMany({ data: promocionesData, skipDuplicates: true })
+    await Promise.all(
+      Array.from(resultadosPorEstudiante.entries()).map(([estudiante_id, resultado]) =>
+        prisma.matricula.update({
+          where: { estudiante_id_gestion_id: { estudiante_id, gestion_id: id } },
+          data:  { resultado },
+        }),
+      ),
+    )
+
+    // Egreso automático: promovido en el último curso (mayor orden) de Secundaria
+    const ultimoGrado = await prisma.grado.findFirst({
+      where:   { nivel: { institucion_id, nombre: 'SECUNDARIA' } },
+      orderBy: { orden: 'desc' },
+    })
+
+    if (ultimoGrado) {
+      const egresados = matriculas.filter(m =>
+        m.paralelo.grado_id === ultimoGrado.id && resultadosPorEstudiante.get(m.estudiante_id) === 'PROMOVIDO'
+      )
+      for (const m of egresados) {
+        const actual = await prisma.estudiante.findUnique({ where: { id: m.estudiante_id }, select: { estado: true } })
+        if (actual?.estado !== 'ACTIVO') continue // ya no está activo (retirado/trasladado antes del cierre) — no se egresa
+        await prisma.$transaction([
+          prisma.estudiante.update({
+            where: { id: m.estudiante_id },
+            data:  { estado: 'EGRESADO', estado_motivo: 'Egreso por promoción del último curso de Secundaria', estado_fecha: new Date() },
+          }),
+          prisma.historialEstadoEstudiante.create({
+            data: {
+              estudiante_id:   m.estudiante_id,
+              estado_anterior: 'ACTIVO',
+              estado_nuevo:    'EGRESADO',
+              motivo:          'Egreso por promoción del último curso de Secundaria',
+              usuario_id:      actorUsuarioId,
+            },
+          }),
+        ])
+      }
+    }
 
     // Notificar a todos los usuarios de la institución
     const usuarios = await prisma.usuario.findMany({
@@ -175,7 +214,7 @@ export class GestionesService {
 
     return {
       resultados_calculados: resultadosData.length,
-      promociones_calculadas: promocionesData.length,
+      promociones_calculadas: resultadosPorEstudiante.size,
     }
   }
 

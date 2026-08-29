@@ -81,6 +81,10 @@ export class NotasService {
     }
 
     if (puntaje !== null) {
+      const estudiante = await prisma.estudiante.findUnique({ where: { id: estudiante_id }, select: { estado: true } })
+      if (estudiante?.estado !== 'ACTIVO') {
+        throw new AppError(422, 'El estudiante no está activo — no se pueden registrar calificaciones', 'ESTUDIANTE_NO_ACTIVO')
+      }
       if (puntaje < 1) throw new AppError(400, 'La nota mínima es 1', 'INVALID_NOTA')
       if (puntaje > indicador.dimension.puntaje_max) {
         throw new AppError(

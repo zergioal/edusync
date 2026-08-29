@@ -13,12 +13,13 @@ import type { DimensionPlanilla, EstudiantePlanilla } from '../../hooks/usePlani
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-type EstadoMatricula = 'ACTIVO' | 'RETIRADO' | 'TRASLADADO'
+type EstadoEstudiante = 'PREINSCRITO' | 'ACTIVO' | 'RETIRADO' | 'TRASLADADO' | 'EGRESADO'
+type ResultadoMatricula = 'SIN_DEFINIR' | 'EN_CURSO' | 'PROMOVIDO' | 'NO_PROMOVIDO'
 
 interface Matricula {
   id:            string
   lleva_tecnica: boolean
-  estado:        EstadoMatricula
+  resultado:     ResultadoMatricula
   gestion:       { id: string; anno: number; activa: boolean }
   paralelo:      { letra: string; grado: { nombre: string; nivel: { nombre: string } } }
 }
@@ -28,6 +29,10 @@ interface Estudiante {
   codigo:  string
   nivel:   { nombre: string }
   usuario: { nombre: string; apellido: string; email: string; activo: boolean }
+  estado:               EstadoEstudiante
+  estado_motivo:        string | null
+  estado_fecha:         string | null
+  institucion_destino:  string | null
   matriculas:       Matricula[]
   relaciones_padre: { padre: { nombre: string; apellido: string; email: string; telefono: string | null } }[]
 }
@@ -55,11 +60,110 @@ function GestionTrimestreSelector({
 
 // ─── Tab: Datos ───────────────────────────────────────────────────────────────
 
-const ESTADO_MATRICULA_LABEL: Record<EstadoMatricula, string> = {
-  ACTIVO: 'Activo', RETIRADO: 'Retirado', TRASLADADO: 'Trasladado',
+const ESTADO_LABEL: Record<EstadoEstudiante, string> = {
+  PREINSCRITO: 'Preinscrito', ACTIVO: 'Activo', RETIRADO: 'Retirado', TRASLADADO: 'Trasladado', EGRESADO: 'Egresado',
 }
-const ESTADO_MATRICULA_BADGE: Record<EstadoMatricula, 'success' | 'danger' | 'warning'> = {
-  ACTIVO: 'success', RETIRADO: 'danger', TRASLADADO: 'warning',
+const ESTADO_BADGE: Record<EstadoEstudiante, 'success' | 'danger' | 'warning' | 'default' | 'info'> = {
+  PREINSCRITO: 'info', ACTIVO: 'success', RETIRADO: 'danger', TRASLADADO: 'warning', EGRESADO: 'default',
+}
+/** Transiciones permitidas desde cada estado — espejo de estudiantes.service.ts.
+ *  EGRESADO no aparece como destino: solo lo asigna el cierre de gestión. */
+const TRANSICIONES: Record<EstadoEstudiante, EstadoEstudiante[]> = {
+  PREINSCRITO: ['ACTIVO'],
+  ACTIVO:      ['RETIRADO', 'TRASLADADO'],
+  RETIRADO:    [],
+  TRASLADADO:  [],
+  EGRESADO:    [],
+}
+
+const RESULTADO_LABEL: Record<ResultadoMatricula, string> = {
+  SIN_DEFINIR: 'Sin definir', EN_CURSO: 'En curso', PROMOVIDO: 'Promovido', NO_PROMOVIDO: 'No promovido',
+}
+const RESULTADO_BADGE: Record<ResultadoMatricula, 'success' | 'danger' | 'warning' | 'default'> = {
+  SIN_DEFINIR: 'default', EN_CURSO: 'warning', PROMOVIDO: 'success', NO_PROMOVIDO: 'danger',
+}
+
+function CambiarEstadoModal({
+  estadoDestino, onClose, onConfirm, saving,
+}: {
+  estadoDestino: EstadoEstudiante
+  onClose:       () => void
+  onConfirm:     (motivo: string, institucionDestino: string) => void
+  saving:        boolean
+}) {
+  const [motivo, setMotivo] = useState('')
+  const [institucionDestino, setInstitucionDestino] = useState('')
+  const requiereMotivo = estadoDestino === 'RETIRADO' || estadoDestino === 'TRASLADADO'
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+      <div className="w-full max-w-md rounded-2xl bg-surface p-6 shadow-xl space-y-4">
+        <h2 className="text-lg font-bold text-fg">Cambiar estado a "{ESTADO_LABEL[estadoDestino]}"</h2>
+        {requiereMotivo && (
+          <label className="flex flex-col gap-1">
+            <span className="text-xs font-semibold text-fg-muted uppercase tracking-wide">Motivo *</span>
+            <textarea required value={motivo} onChange={e => setMotivo(e.target.value)} rows={3}
+              placeholder={estadoDestino === 'RETIRADO' ? 'Ej: Cambio de ciudad, decisión familiar…' : 'Ej: Traslado por mudanza'}
+              className="rounded-xl border border-border px-3 py-2 text-sm focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-200" />
+          </label>
+        )}
+        {estadoDestino === 'TRASLADADO' && (
+          <label className="flex flex-col gap-1">
+            <span className="text-xs font-semibold text-fg-muted uppercase tracking-wide">Institución de destino (opcional)</span>
+            <input value={institucionDestino} onChange={e => setInstitucionDestino(e.target.value)}
+              placeholder="Nombre de la unidad educativa"
+              className="rounded-xl border border-border px-3 py-2 text-sm focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-200" />
+          </label>
+        )}
+        <div className="flex justify-end gap-2 pt-2">
+          <Button type="button" variant="ghost" onClick={onClose} disabled={saving}>Cancelar</Button>
+          <Button type="button" onClick={() => onConfirm(motivo, institucionDestino)}
+            disabled={saving || (requiereMotivo && !motivo.trim())}>
+            {saving ? '…' : 'Confirmar'}
+          </Button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+interface HistorialEstadoRow {
+  id: string; estado_anterior: EstadoEstudiante | null; estado_nuevo: EstadoEstudiante
+  motivo: string | null; creado_en: string
+  usuario: { nombre: string; apellido: string }
+}
+
+function HistorialEstado({ estudianteId }: { estudianteId: string }) {
+  const [rows, setRows] = useState<HistorialEstadoRow[] | null>(null)
+
+  useEffect(() => {
+    api.get<HistorialEstadoRow[]>(`/estudiantes/${estudianteId}/historial-estado`)
+      .then(setRows)
+      .catch(() => setRows([]))
+  }, [estudianteId])
+
+  if (rows === null) return null
+  if (rows.length === 0) return null
+
+  return (
+    <div className="rounded-xl border border-border bg-surface shadow-sm p-6">
+      <h2 className="text-sm font-semibold uppercase tracking-wide text-fg-muted mb-4">Historial de estado</h2>
+      <div className="space-y-3">
+        {rows.map(r => (
+          <div key={r.id} className="text-sm border-l-2 border-border pl-3">
+            <p className="font-medium text-fg">
+              {r.estado_anterior ? `${ESTADO_LABEL[r.estado_anterior]} → ` : ''}{ESTADO_LABEL[r.estado_nuevo]}
+            </p>
+            {r.motivo && <p className="text-fg-muted mt-0.5">{r.motivo}</p>}
+            <p className="text-xs text-fg-muted mt-0.5">
+              {new Date(r.creado_en).toLocaleDateString('es-BO', { day: '2-digit', month: 'short', year: 'numeric' })}
+              {' · '}{r.usuario.apellido}, {r.usuario.nombre}
+            </p>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
 }
 
 function DatosTab({
@@ -68,11 +172,12 @@ function DatosTab({
   est: Estudiante
   canManageTecnica: boolean
   onMatriculaUpdate: (matriculaId: string, lleva_tecnica: boolean) => void
-  onEstadoUpdate:    (matriculaId: string, estado: EstadoMatricula) => void
+  onEstadoUpdate:    (estado: EstadoEstudiante, estado_motivo: string | null, institucion_destino: string | null) => void
 }) {
   const matriculaActiva = est.matriculas.find(m => m.gestion.activa) ?? est.matriculas[0]
   const [toggleLoading, setToggleLoading] = useState(false)
   const [estadoLoading, setEstadoLoading] = useState(false)
+  const [estadoModal,   setEstadoModal]   = useState<EstadoEstudiante | null>(null)
 
   const handleToggleTecnica = useCallback(async () => {
     if (!matriculaActiva) return
@@ -85,15 +190,22 @@ function DatosTab({
     finally { setToggleLoading(false) }
   }, [matriculaActiva, est.id, onMatriculaUpdate])
 
-  const handleEstadoChange = useCallback(async (estado: EstadoMatricula) => {
-    if (!matriculaActiva) return
+  const confirmarCambioEstado = useCallback(async (motivo: string, institucionDestino: string) => {
+    if (!estadoModal) return
     setEstadoLoading(true)
     try {
-      await api.patch(`/matriculas/${est.id}/${matriculaActiva.gestion.id}/estado`, { estado })
-      onEstadoUpdate(matriculaActiva.id, estado)
+      await api.patch(`/estudiantes/${est.id}`, {
+        estado: estadoModal,
+        ...(motivo.trim() ? { estado_motivo: motivo.trim() } : {}),
+        ...(institucionDestino.trim() ? { institucion_destino: institucionDestino.trim() } : {}),
+      })
+      onEstadoUpdate(estadoModal, motivo.trim() || null, institucionDestino.trim() || null)
+      setEstadoModal(null)
     } catch { /* ignore */ }
     finally { setEstadoLoading(false) }
-  }, [matriculaActiva, est.id, onEstadoUpdate])
+  }, [estadoModal, est.id, onEstadoUpdate])
+
+  const opcionesEstado = TRANSICIONES[est.estado] ?? []
 
   // Show lleva_tecnica toggle for students in 5° or 6° Secundaria
   const esTTE = matriculaActiva
@@ -127,23 +239,29 @@ function DatosTab({
             <div><span className="text-fg-muted">Gestión:</span>{' '}
               <span className="font-medium">{matriculaActiva.gestion.anno}</span>
             </div>
-            <div className="flex items-center gap-2">
-              <span className="text-fg-muted">Estado de matrícula:</span>
-              {canManageTecnica ? (
+            <div className="col-span-2 flex items-center gap-2 flex-wrap">
+              <span className="text-fg-muted">Estado del estudiante:</span>
+              {canManageTecnica && opcionesEstado.length > 0 ? (
                 <select
-                  value={matriculaActiva.estado}
-                  onChange={e => handleEstadoChange(e.target.value as EstadoMatricula)}
+                  value=""
+                  onChange={e => { if (e.target.value) setEstadoModal(e.target.value as EstadoEstudiante) }}
                   disabled={estadoLoading}
                   className="rounded-lg border border-border px-2 py-1 text-sm font-medium focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand disabled:opacity-50"
                 >
-                  {(Object.keys(ESTADO_MATRICULA_LABEL) as EstadoMatricula[]).map(e => (
-                    <option key={e} value={e}>{ESTADO_MATRICULA_LABEL[e]}</option>
+                  <option value="">{ESTADO_LABEL[est.estado]} — cambiar a…</option>
+                  {opcionesEstado.map(e => (
+                    <option key={e} value={e}>{ESTADO_LABEL[e]}</option>
                   ))}
                 </select>
               ) : (
-                <Badge variant={ESTADO_MATRICULA_BADGE[matriculaActiva.estado]}>
-                  {ESTADO_MATRICULA_LABEL[matriculaActiva.estado]}
-                </Badge>
+                <Badge variant={ESTADO_BADGE[est.estado]}>{ESTADO_LABEL[est.estado]}</Badge>
+              )}
+              {est.estado !== 'ACTIVO' && est.estado_motivo && (
+                <span className="text-xs text-fg-muted">
+                  — {est.estado_motivo}
+                  {est.institucion_destino ? ` (destino: ${est.institucion_destino})` : ''}
+                  {est.estado_fecha ? ` · ${new Date(est.estado_fecha).toLocaleDateString('es-BO')}` : ''}
+                </span>
               )}
             </div>
             {esTTE && (
@@ -203,7 +321,7 @@ function DatosTab({
               <thead>
                 <tr className="text-left text-xs text-fg-muted border-b border-border">
                   <th className="pb-2">Gestión</th><th className="pb-2">Grado</th>
-                  <th className="pb-2">Paralelo</th><th className="pb-2">Estado</th>
+                  <th className="pb-2">Paralelo</th><th className="pb-2">Período</th><th className="pb-2">Resultado</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
@@ -216,12 +334,24 @@ function DatosTab({
                       ? <Badge variant="success">Activa</Badge>
                       : <Badge variant="default">Finalizada</Badge>}
                     </td>
+                    <td className="py-2"><Badge variant={RESULTADO_BADGE[m.resultado]}>{RESULTADO_LABEL[m.resultado]}</Badge></td>
                   </tr>
                 ))}
               </tbody>
             </table>
         }
       </div>
+
+      <HistorialEstado estudianteId={est.id} />
+
+      {estadoModal && (
+        <CambiarEstadoModal
+          estadoDestino={estadoModal}
+          saving={estadoLoading}
+          onClose={() => setEstadoModal(null)}
+          onConfirm={confirmarCambioEstado}
+        />
+      )}
     </div>
   )
 }
@@ -969,16 +1099,10 @@ export default function PerfilEstudiantePage({
     })
   }, [])
 
-  const handleEstadoUpdate = useCallback((matriculaId: string, estado: EstadoMatricula) => {
-    setEst(prev => {
-      if (!prev) return prev
-      return {
-        ...prev,
-        matriculas: prev.matriculas.map(m =>
-          m.id === matriculaId ? { ...m, estado } : m
-        ),
-      }
-    })
+  const handleEstadoUpdate = useCallback((
+    estado: EstadoEstudiante, estado_motivo: string | null, institucion_destino: string | null,
+  ) => {
+    setEst(prev => prev ? { ...prev, estado, estado_motivo, institucion_destino, estado_fecha: new Date().toISOString() } : prev)
   }, [])
 
   if (loading) return <div className="flex justify-center py-16"><Spinner /></div>

@@ -1,6 +1,6 @@
 import { prisma } from '@edusync/database'
 import { AppError } from '../middlewares/errorHandler'
-import type { EstadoMatricula } from '@edusync/types'
+import type { EstadoEstudiante } from '@edusync/types'
 import {
   calcularEscala, calcNotasEstudiante, calcularPromedioAnual, determinarResultado,
   type DimInfo,
@@ -351,7 +351,11 @@ export class ReportesService {
         }
       })
 
-      const resultado_final = determinarResultado(notas_por_materia.map(n => n.promedio_anual))
+      // Si la gestión ya se cerró oficialmente, la matrícula ya tiene un resultado persistido —
+      // se muestra ese en vez de recalcularlo (evita una "vista previa" después del cierre oficial).
+      const resultado_final = m.resultado === 'PROMOVIDO' || m.resultado === 'NO_PROMOVIDO'
+        ? (m.resultado === 'PROMOVIDO' ? 'PROMOVIDO' as const : 'REPITE' as const)
+        : determinarResultado(notas_por_materia.map(n => n.promedio_anual))
       const materias_reprobadas = notas_por_materia
         .filter(n => n.resultado === 'REPROBADO')
         .map(n => n.materia)
@@ -406,7 +410,7 @@ export class ReportesService {
         nivel:    m.paralelo.grado.nivel.nombre,
         grado:    m.paralelo.grado.nombre,
         paralelo: m.paralelo.letra,
-        estado:   m.estado,
+        estado:   m.estudiante.estado,
       })),
     }
   }
@@ -439,13 +443,16 @@ export class ReportesService {
         sexo:             estudiante.sexo,
         becado:           estudiante.becado,
         motivo_beca:      estudiante.motivo_beca,
+        estado:           estudiante.estado,
+        estado_motivo:    estudiante.estado_motivo,
+        estado_fecha:     estudiante.estado_fecha,
       },
       matriculas: estudiante.matriculas.map(m => ({
         anno:          m.gestion.anno,
         nivel:         m.paralelo.grado.nivel.nombre,
         grado:         m.paralelo.grado.nombre,
         paralelo:      m.paralelo.letra,
-        estado:        m.estado,
+        resultado:     m.resultado,
         lleva_tecnica: m.lleva_tecnica,
       })),
       tutores: estudiante.relaciones_padre.map(r => ({
@@ -544,11 +551,11 @@ export class ReportesService {
     return filas
   }
 
-  async getEstudiantesPorEstado(institucion_id: string, gestion_id: string, estado?: EstadoMatricula) {
+  async getEstudiantesPorEstado(institucion_id: string, gestion_id: string, estado?: EstadoEstudiante) {
     await verificarGestion(gestion_id, institucion_id)
 
     const matriculas = await prisma.matricula.findMany({
-      where: { gestion_id, ...(estado ? { estado } : {}) },
+      where: { gestion_id, ...(estado ? { estudiante: { estado } } : {}) },
       include: {
         estudiante: { include: { usuario: { select: { nombre: true, apellido: true } } } },
         paralelo:   { include: { grado: { include: { nivel: true } } } },
@@ -556,9 +563,10 @@ export class ReportesService {
       orderBy: [{ estudiante: { usuario: { apellido: 'asc' } } }],
     })
 
-    const resumen: Record<EstadoMatricula, number> = { ACTIVO: 0, RETIRADO: 0, TRASLADADO: 0 } as Record<EstadoMatricula, number>
+    const resumen: Record<string, number> = { PREINSCRITO: 0, ACTIVO: 0, RETIRADO: 0, TRASLADADO: 0, EGRESADO: 0 }
     const estudiantes = matriculas.map(m => {
-      resumen[m.estado] = (resumen[m.estado] ?? 0) + 1
+      const estadoEst = m.estudiante.estado
+      resumen[estadoEst] = (resumen[estadoEst] ?? 0) + 1
       return {
         estudiante_id: m.estudiante_id,
         nombre:        m.estudiante.usuario.nombre,
@@ -567,7 +575,7 @@ export class ReportesService {
         nivel:         m.paralelo.grado.nivel.nombre,
         grado:         m.paralelo.grado.nombre,
         paralelo:      m.paralelo.letra,
-        estado:        m.estado,
+        estado:        estadoEst,
       }
     })
     return { resumen, estudiantes }
