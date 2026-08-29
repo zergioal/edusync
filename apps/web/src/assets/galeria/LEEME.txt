@@ -1,0 +1,35 @@
+GALERÍA — instrucciones
+=========================
+
+Copia aquí las fotos (y videos, si quieres) que se mostrarán en la
+sección "Galería" de la página de inicio y en la página completa de
+Galería (/galeria).
+
+CÓMO SE ORDENAN
+----------------
+Por nombre de archivo. Si quieres un orden específico, numéralos:
+
+  01-inauguracion.jpg
+  02-feria-ciencias.jpg
+  03-acto-civico.jpg
+  ...
+
+Si no te importa el orden, simplemente copia las fotos con el nombre
+que ya tienen (ej. IMG_1234.jpg) — igual van a aparecer todas.
+
+FORMATOS ACEPTADOS
+-------------------
+  Fotos:  .jpg  .jpeg  .png  .webp
+  Video:  .mp4
+
+Si tu foto viene de un iPhone como .HEIC, conviértela a .jpg antes de
+copiarla aquí (compartirla por WhatsApp a otro dispositivo ya la
+convierte automáticamente).
+
+DESPUÉS DE COPIAR LOS ARCHIVOS
+--------------------------------
+Si la página ya estaba abierta en el navegador, recárgala (F5). Si estás
+usando "pnpm dev" y no aparecen los cambios, reinicia el servidor.
+
+Puedes agregar, borrar o reemplazar fotos cuando quieras — la galería se
+actualiza sola con lo que encuentre en esta carpeta.

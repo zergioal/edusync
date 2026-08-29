@@ -1,0 +1,45 @@
+CARRUSEL DE INICIO — instrucciones
+===================================
+
+Copia aquí los archivos que quieres mostrar en el carrusel grande de la
+página de inicio (arriba de todo, lo primero que ve un visitante).
+
+CÓMO SE ORDENAN
+----------------
+Los archivos se muestran en orden alfabético/numérico por nombre. Para
+controlar el orden, numera los archivos:
+
+  00-video-bienvenida.mp4
+  01-fachada.jpg
+  02-acto-civico.jpg
+  03-laboratorio.jpg
+  ...
+
+Recomendación: que el archivo "00-..." sea el video, así aparece primero
+y da la mejor primera impresión.
+
+FORMATOS ACEPTADOS
+-------------------
+  Video:  .mp4  (recomendado, se reproduce en todos los navegadores)
+  Fotos:  .jpg  .jpeg  .png  .webp
+
+Si tu foto o video viene de un iPhone como .HEIC o .MOV, conviértelo a
+.jpg o .mp4 antes de copiarlo aquí (por ejemplo compartiéndolo por
+WhatsApp a otro celular/computadora, eso ya lo convierte automáticamente).
+
+RECOMENDACIONES PARA QUE LA PÁGINA CARGUE RÁPIDO
+--------------------------------------------------
+  - Video: idealmente menos de 15-20 MB, unos 10-20 segundos de duración,
+    orientación horizontal (apaisado).
+  - Fotos: idealmente menos de 1-2 MB cada una (la mayoría de celulares
+    ya las genera en ese rango).
+
+DESPUÉS DE COPIAR LOS ARCHIVOS
+--------------------------------
+Si la página ya estaba abierta en el navegador, recárgala (F5). Si estás
+usando "pnpm dev" y no aparecen los cambios, reinicia el servidor. Al
+publicar la página (build de producción) los archivos se incluyen
+automáticamente, no hace falta tocar ningún código.
+
+Puedes borrar o reemplazar estos archivos cuando quieras — el carrusel
+se actualiza solo con lo que encuentre en esta carpeta.

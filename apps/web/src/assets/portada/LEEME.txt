@@ -1,0 +1,27 @@
+PORTADA — instrucciones
+=========================
+
+Copia aquí UN solo video, horizontal (apaisado, formato 16:9 — el que
+se graba normalmente con el celular en posición horizontal). Se muestra
+como una gran portada de video debajo del encabezado principal.
+
+Si copias más de uno, se usa el primero en orden alfabético.
+
+FORMATO ACEPTADO
+------------------
+  .mp4  (recomendado)
+
+Si el video viene de un iPhone como .MOV, conviértelo a .mp4 antes de
+copiarlo aquí (compartirlo por WhatsApp a otro dispositivo ya lo
+convierte automáticamente).
+
+RECOMENDACIONES
+-----------------
+  - Orientación horizontal (ancho > alto). Un video vertical se verá
+    recortado por los costados.
+  - Idealmente menos de 20-30 MB para que cargue rápido.
+
+DESPUÉS DE COPIAR EL ARCHIVO
+-------------------------------
+Si la página ya estaba abierta en el navegador, recárgala (F5). Si estás
+usando "pnpm dev" y no aparece, reinicia el servidor.

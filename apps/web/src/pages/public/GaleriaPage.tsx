@@ -1,16 +1,6 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { getTenantHeaders } from '../../config/tenant'
-
-interface GaleriaItem {
-  id:          string
-  url:         string
-  descripcion: string | null
-  tipo:        'FOTO' | 'VIDEO'
-  publicado_en: string
-}
-
-const API_BASE = (import.meta as unknown as { env: Record<string, string> }).env?.VITE_API_URL ?? '/api/v1'
+import { galeriaEstatica, type MediaItem } from '../../lib/mediaEstatico'
 
 function isYouTube(url: string) {
   return url.includes('youtube.com') || url.includes('youtu.be')
@@ -22,17 +12,9 @@ function youtubeId(url: string) {
 }
 
 export default function GaleriaPage() {
-  const [items,     setItems]     = useState<GaleriaItem[]>([])
-  const [loading,   setLoading]   = useState(true)
+  const items = galeriaEstatica
   const [filtro,    setFiltro]    = useState<'TODOS' | 'FOTO' | 'VIDEO'>('TODOS')
-  const [lightbox,  setLightbox]  = useState<GaleriaItem | null>(null)
-
-  useEffect(() => {
-    fetch(`${API_BASE}/public/galeria`, { headers: getTenantHeaders() })
-      .then(r => r.json() as Promise<{ data: GaleriaItem[] }>)
-      .then(b => { setItems(b.data); setLoading(false) })
-      .catch(() => setLoading(false))
-  }, [])
+  const [lightbox,  setLightbox]  = useState<MediaItem | null>(null)
 
   const visibles = filtro === 'TODOS' ? items : items.filter(i => i.tipo === filtro)
 
@@ -69,14 +51,10 @@ export default function GaleriaPage() {
           </div>
         </div>
 
-        {loading ? (
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-            {Array.from({ length: 12 }).map((_, i) => (
-              <div key={i} className="aspect-square bg-surface-2 rounded-xl animate-pulse" />
-            ))}
+        {visibles.length === 0 ? (
+          <div className="text-center py-24 text-fg-muted">
+            Sin elementos en la galería. Copia tus fotos y videos en <code className="font-mono">apps/web/src/assets/galeria</code>.
           </div>
-        ) : visibles.length === 0 ? (
-          <div className="text-center py-24 text-fg-muted">Sin elementos en la galería</div>
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
             {visibles.map(item => (
@@ -88,11 +66,14 @@ export default function GaleriaPage() {
                   />
                 ) : (
                   <div className="w-full h-full bg-gray-900 flex items-center justify-center relative">
-                    {isYouTube(item.url) && (
+                    {isYouTube(item.url) ? (
                       <img
                         src={`https://img.youtube.com/vi/${youtubeId(item.url)}/mqdefault.jpg`}
                         alt="" className="absolute inset-0 w-full h-full object-cover opacity-60"
                       />
+                    ) : (
+                      <video src={item.url} muted playsInline preload="metadata"
+                        className="absolute inset-0 w-full h-full object-cover opacity-60" />
                     )}
                     <div className="relative z-10 w-14 h-14 rounded-full bg-red-600 flex items-center justify-center shadow-lg">
                       <svg className="w-7 h-7 text-white ml-1" fill="currentColor" viewBox="0 0 24 24">
