@@ -2,6 +2,7 @@ import type { Request, Response, NextFunction } from 'express'
 import { PensionesService } from '../services/pensiones.service'
 import { prisma } from '@edusync/database'
 import type { Rol } from '@edusync/types'
+import { AppError } from '../middlewares/errorHandler'
 
 export class PensionesController {
   private service = new PensionesService()
@@ -62,6 +63,30 @@ export class PensionesController {
   anular = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const data = await this.service.anular(req.params['id']!, req.auth!.usuario_id)
+      res.json({ data })
+    } catch (e) { next(e) }
+  }
+
+  getGrid = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const { paralelo_id, gestion_id, mes } = req.query as Record<string, string>
+      if (!paralelo_id || !gestion_id || !mes) throw new AppError(400, 'paralelo_id, gestion_id y mes son requeridos', 'MISSING_PARAM')
+      const data = await this.service.getGridParalelo(req.auth!.institucion_id, paralelo_id, gestion_id, Number(mes))
+      res.json({ data })
+    } catch (e) { next(e) }
+  }
+
+  guardarLote = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const { paralelo_id, gestion_id, mes, pagos, fecha_pago, comprobante } = req.body as {
+        paralelo_id: string; gestion_id: string; mes: number
+        pagos: Array<{ estudiante_id: string; pagado: boolean }>
+        fecha_pago: string; comprobante: string
+      }
+      const data = await this.service.guardarLote(req.auth!.institucion_id, {
+        paralelo_id, gestion_id, mes: Number(mes), pagos, fecha_pago, comprobante,
+        registrado_por: req.auth!.usuario_id,
+      })
       res.json({ data })
     } catch (e) { next(e) }
   }

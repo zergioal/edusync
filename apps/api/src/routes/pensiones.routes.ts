@@ -16,6 +16,8 @@ pensionesRouter.get('/morosidad',                         STAFF_FIN,  ctrl.moros
 pensionesRouter.get('/estado-cuenta/:estudiante_id',      STAFF_FIN,  ctrl.estadoCuenta)
 pensionesRouter.get('/preview-mes',                       STAFF_FIN,  ctrl.previewMes)
 pensionesRouter.post('/generar-mes',                      STAFF_FIN,  ctrl.generarMes)
+pensionesRouter.get('/grid',                              STAFF_FIN,  ctrl.getGrid)
+pensionesRouter.post('/grid',                             CONTADOR,   ctrl.guardarLote)
 pensionesRouter.get('/',                                  STAFF_FIN,  ctrl.findAll)
 pensionesRouter.put('/:id/pagar',                         CONTADOR,   ctrl.pagar)
 pensionesRouter.put('/:id/anular',                        ANULADOR,   ctrl.anular)

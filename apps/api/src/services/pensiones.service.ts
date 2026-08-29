@@ -15,6 +15,14 @@ function diasMora(mes: number, anno: number): number {
   return Math.floor((hoy.getTime() - inicio.getTime()) / 86_400_000)
 }
 
+/** Una pensión vence el día 15 de su mes — "vencida" desde ese día en adelante (fecha, sin hora). */
+function estaVencida(mes: number, anno: number): boolean {
+  const vencimiento = new Date(anno, mes - 1, 15)
+  const hoy = new Date()
+  hoy.setHours(0, 0, 0, 0)
+  return vencimiento <= hoy
+}
+
 // ─── Tipos internos ───────────────────────────────────────────────────────────
 
 interface ResumenNivel {
@@ -317,6 +325,105 @@ export class PensionesService {
     })
   }
 
+  // ── Grilla de registro por curso (estilo lista de asistencia) ─────────────────
+
+  async getGridParalelo(institucion_id: string, paralelo_id: string, gestion_id: string, mes: number) {
+    const gestion = await prisma.gestion.findFirst({ where: { id: gestion_id, institucion_id } })
+    if (!gestion) throw new AppError(404, 'Gestión no encontrada', 'NOT_FOUND')
+
+    const matriculas = await prisma.matricula.findMany({
+      where: { paralelo_id, gestion_id, estudiante: { estado: 'ACTIVO' } },
+      include: {
+        estudiante: {
+          include: { usuario: { select: { nombre: true, apellido: true } } },
+        },
+      },
+      orderBy: { estudiante: { usuario: { apellido: 'asc' } } },
+    })
+
+    const estudianteIds = matriculas.map(m => m.estudiante_id)
+    const pensiones = estudianteIds.length > 0
+      ? await prisma.pension.findMany({ where: { estudiante_id: { in: estudianteIds }, gestion_id, mes } })
+      : []
+    const pensionPorEstudiante = new Map(pensiones.map(p => [p.estudiante_id, p]))
+
+    return matriculas.map(m => {
+      const pension = pensionPorEstudiante.get(m.estudiante_id)
+      return {
+        estudiante_id: m.estudiante_id,
+        nombre:        m.estudiante.usuario.nombre,
+        apellido:      m.estudiante.usuario.apellido,
+        becado:        m.estudiante.becado,
+        pagado:        pension?.pagado ?? false,
+        pension_id:    pension?.id ?? null,
+      }
+    })
+  }
+
+  async guardarLote(
+    institucion_id: string,
+    datos: {
+      paralelo_id: string; gestion_id: string; mes: number
+      pagos: Array<{ estudiante_id: string; pagado: boolean }>
+      fecha_pago: string; comprobante: string; registrado_por: string
+    },
+  ) {
+    const gestion = await prisma.gestion.findFirst({ where: { id: datos.gestion_id, institucion_id } })
+    if (!gestion) throw new AppError(404, 'Gestión no encontrada', 'NOT_FOUND')
+
+    const paralelo = await prisma.paralelo.findUnique({
+      where: { id: datos.paralelo_id },
+      include: { grado: true },
+    })
+    if (!paralelo) throw new AppError(404, 'Paralelo no encontrado', 'NOT_FOUND')
+
+    const tarifa = await prisma.tarifaPension.findUnique({
+      where: { gestion_id_nivel_id: { gestion_id: datos.gestion_id, nivel_id: paralelo.grado.nivel_id } },
+    })
+
+    let pagadas = 0
+    let anuladas = 0
+    const sinCambio: string[] = []
+
+    for (const p of datos.pagos) {
+      const existente = await prisma.pension.findUnique({
+        where: { estudiante_id_gestion_id_mes: { estudiante_id: p.estudiante_id, gestion_id: datos.gestion_id, mes: datos.mes } },
+      })
+
+      if (p.pagado) {
+        if (existente?.pagado) { sinCambio.push(p.estudiante_id); continue }
+        if (!existente && !tarifa) {
+          throw new AppError(400, 'No hay tarifa configurada para este nivel — configúrala antes de registrar pagos.', 'TARIFAS_REQUERIDAS')
+        }
+        const pension = existente ?? await prisma.pension.create({
+          data: {
+            estudiante_id: p.estudiante_id, gestion_id: datos.gestion_id, mes: datos.mes,
+            nivel_id: paralelo.grado.nivel_id, monto: tarifa!.monto,
+          },
+        })
+        await prisma.$transaction([
+          prisma.pension.update({
+            where: { id: pension.id },
+            data:  { pagado: true, fecha_pago: new Date(datos.fecha_pago), comprobante: datos.comprobante, anulado_por: null, anulado_en: null },
+          }),
+          prisma.pago.create({
+            data: { pension_id: pension.id, registrado_por: datos.registrado_por, fecha: new Date(datos.fecha_pago), comprobante: datos.comprobante },
+          }),
+        ])
+        pagadas++
+      } else {
+        if (!existente?.pagado) { sinCambio.push(p.estudiante_id); continue }
+        await prisma.pension.update({
+          where: { id: existente.id },
+          data:  { pagado: false, fecha_pago: null, comprobante: null, anulado_por: datos.registrado_por, anulado_en: new Date() },
+        })
+        anuladas++
+      }
+    }
+
+    return { pagadas, anuladas, sin_cambio: sinCambio.length }
+  }
+
   // ── Estado de cuenta ─────────────────────────────────────────────────────────
 
   async estadoCuenta(estudiante_id: string, gestion_id?: string) {
@@ -385,9 +492,7 @@ export class PensionesService {
     const total_pendiente  = meses.filter(m => !m.pagado).reduce((s, m) => s + m.monto, 0)
     const meses_pagados    = meses.filter(m => m.pagado).length
     const meses_pendientes = meses.filter(m => !m.pagado).length
-    const mesActual        = new Date().getMonth() + 1
-    const pensionMes       = pensiones.find(p => p.mes === mesActual)
-    const al_dia           = pensionMes ? pensionMes.pagado : true
+    const al_dia = !pensiones.some(p => !p.pagado && estaVencida(p.mes, gestion.anno))
 
     return {
       becado:  false,
@@ -520,17 +625,15 @@ export class PensionesService {
 
     if (estudianteIds.length === 0) return { ...baseResp, mensaje: 'Sin estudiantes vinculados' }
 
-    const pensiones = await prisma.pension.findMany({
-      where: {
-        estudiante_id: { in: estudianteIds },
-        gestion_id:    gestion.id,
-        mes:           mesActual,
-        pagado:        false,
-      },
+    // Todas las pensiones impagas de la gestión — el bloqueo mira todo lo vencido,
+    // no solo el mes calendario actual (un pago reciente no "tapa" una mora anterior).
+    const pensionesImpagas = await prisma.pension.findMany({
+      where: { estudiante_id: { in: estudianteIds }, gestion_id: gestion.id, pagado: false },
     })
+    const vencidas = pensionesImpagas.filter(p => estaVencida(p.mes, gestion.anno))
 
-    const deuda_pendiente = pensiones.reduce((s, p) => s + Number(p.monto), 0)
-    const bloqueado = pensiones.length > 0
+    const deuda_pendiente = vencidas.reduce((s, p) => s + Number(p.monto), 0)
+    const bloqueado = vencidas.length > 0
 
     const hijos = await Promise.all(
       estudianteIds.map(async estId => {
@@ -539,14 +642,14 @@ export class PensionesService {
           include: { usuario: { select: { nombre: true, apellido: true } } },
         })
         const esBecado = est?.becado ?? false
-        const pension  = !esBecado ? pensiones.find(p => p.estudiante_id === estId) : undefined
+        const vencidasEst = !esBecado ? vencidas.filter(p => p.estudiante_id === estId) : []
         return {
           id:              estId,
           nombre:          est?.usuario.nombre  ?? '',
           apellido:        est?.usuario.apellido ?? '',
-          bloqueado:       !esBecado && !!pension,
+          bloqueado:       !esBecado && vencidasEst.length > 0,
           becado:          esBecado,
-          monto_pendiente: pension ? Number(pension.monto) : 0,
+          monto_pendiente: vencidasEst.reduce((s, p) => s + Number(p.monto), 0),
         }
       })
     )
@@ -557,7 +660,7 @@ export class PensionesService {
       mes_activo:      mesActual,
       deuda_pendiente,
       mensaje:         bloqueado
-        ? `Tiene pensiones pendientes del mes de ${MES_NOMBRES[mesActual - 1] ?? ''}. Regularice para acceder al sistema académico.`
+        ? `Tiene ${vencidas.length} pensión(es) vencida(s) sin pagar. Regularice para acceder al sistema académico.`
         : '¡Sus pagos están al día!',
       qr_pago_url:     institucion?.qr_url   ?? null,
       whatsapp:        institucion?.whatsapp  ?? null,

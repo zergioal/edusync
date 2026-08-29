@@ -19,6 +19,7 @@ const PensionesPage        = lazy(() => import('../contador/PensionesPage'))
 const MorosidadPage        = lazy(() => import('../contador/MorosidadPage'))
 const EstadoCuentaPage     = lazy(() => import('../contador/EstadoCuentaPage'))
 const TarifasPage          = lazy(() => import('../contador/TarifasPage'))
+const RegistrarPensionesPage = lazy(() => import('../contador/RegistrarPensionesPage'))
 const ConfiguracionPage    = lazy(() => import('../admin/ConfiguracionPage'))
 const InstitucionesPage    = lazy(() => import('../admin/InstitucionesPage'))
 const AuditoriaPage        = lazy(() => import('../admin/AuditoriaPage'))
@@ -174,6 +175,7 @@ export default function AdminDashboard() {
         <Route path="finanzas"                      element={<PensionesPage />} />
         <Route path="finanzas/morosidad"             element={<MorosidadPage />} />
         <Route path="finanzas/tarifas"               element={<TarifasPage />} />
+        <Route path="finanzas/registrar"             element={<RegistrarPensionesPage />} />
         <Route path="finanzas/estudiante/:id"        element={<EstadoCuentaPage />} />
 
         {/* Docentes y Padres */}

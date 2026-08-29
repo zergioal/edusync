@@ -180,6 +180,10 @@ export default function PensionesPage() {
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-fg">Pensiones escolares</h1>
         <div className="flex items-center gap-3">
+          <Link to="/dashboard/admin/finanzas/registrar"
+            className="text-sm text-green-600 hover:underline font-medium">
+            Registrar pensiones →
+          </Link>
           <Link to="/dashboard/admin/finanzas/tarifas"
             className="text-sm text-indigo-600 hover:underline font-medium">
             Tarifas →

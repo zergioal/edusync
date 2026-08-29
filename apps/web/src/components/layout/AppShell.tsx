@@ -3,6 +3,7 @@ import type { ReactNode } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { getNavGroup, getRolDashboardPath } from '../../lib/roleRoutes'
+import { Rol } from '@edusync/types'
 import { Sidebar } from './Sidebar'
 import { NotificacionesBell } from '../ui/NotificacionesBell'
 import { ThemeToggle } from '../ui/ThemeToggle'
@@ -14,9 +15,14 @@ interface AppShellProps {
 }
 
 export function AppShell({ children }: AppShellProps) {
-  const { user, logout } = useAuth()
+  const { user, logout, estadoFinanciero } = useAuth()
   const navigate = useNavigate()
-  const navItems    = user ? getNavGroup(user.rol) : []
+  const baseNavItems = user ? getNavGroup(user.rol) : []
+  // Estudiante bloqueado por mora: se ocultan las secciones académicas del sidebar
+  // (el resto — perfil, comunicados, mensajes — sigue disponible normalmente).
+  const navItems = (user?.rol === Rol.ESTUDIANTE && estadoFinanciero?.bloqueado)
+    ? baseNavItems.filter(item => !/\/(notas|boletin|asistencia)$/.test(item.to))
+    : baseNavItems
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [menuOpen,   setMenuOpen]   = useState(false)
   const [loggingOut, setLoggingOut] = useState(false)
