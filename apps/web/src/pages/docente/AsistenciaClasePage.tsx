@@ -281,7 +281,7 @@ export default function AsistenciaClasePage() {
                 <thead>
                   {/* Date row */}
                   <tr className="bg-bg border-b border-border">
-                    <th className="sticky left-0 z-10 bg-bg px-4 py-2 text-left text-xs font-semibold text-fg-muted border-r border-border w-48 min-w-[12rem]">
+                    <th className="sticky left-0 z-10 bg-bg px-2 sm:px-4 py-2 text-left text-xs font-semibold text-fg-muted border-r border-border w-24 sm:w-48 min-w-[6rem] sm:min-w-[12rem]">
                       Estudiante
                     </th>
 
@@ -323,8 +323,8 @@ export default function AsistenciaClasePage() {
 
                   {/* "Mark all" row */}
                   <tr className="border-b border-border bg-bg/50">
-                    <td className="sticky left-0 z-10 bg-bg px-4 py-1 text-[10px] text-fg-muted font-medium border-r border-border">
-                      Marcar columna →
+                    <td className="sticky left-0 z-10 bg-bg px-2 sm:px-4 py-1 text-[10px] text-fg-muted font-medium border-r border-border">
+                      Marcar →
                     </td>
                     {schoolDays.map(fecha => {
                       const isFut = fecha > today
@@ -358,8 +358,8 @@ export default function AsistenciaClasePage() {
                         className={`border-b border-border hover:bg-surface-2 transition-colors ${idx % 2 === 0 ? '' : 'bg-bg/60'}`}
                       >
                         {/* Name (sticky) */}
-                        <td className={`sticky left-0 z-10 px-4 py-2 font-medium text-fg border-r border-border whitespace-nowrap ${idx % 2 === 0 ? 'bg-surface' : 'bg-surface-2'}`}>
-                          <span className="text-fg-muted mr-1.5 text-[10px]">{idx + 1}.</span>
+                        <td className={`sticky left-0 z-10 px-2 sm:px-4 py-2 font-medium text-fg border-r border-border whitespace-normal sm:whitespace-nowrap break-words leading-tight ${idx % 2 === 0 ? 'bg-surface' : 'bg-surface-2'}`}>
+                          <span className="text-fg-muted mr-1 text-[10px]">{idx + 1}.</span>
                           {est.apellido}, {est.nombre}
                         </td>
 
