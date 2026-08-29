@@ -99,6 +99,14 @@ export class PensionesController {
     } catch (e) { next(e) }
   }
 
+  estadoCuentaHijo = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const { gestion_id } = req.query as { gestion_id?: string }
+      const data = await this.service.estadoCuentaHijo(req.auth!.usuario_id, req.params['estudiante_id']!, gestion_id)
+      res.json({ data })
+    } catch (e) { next(e) }
+  }
+
   morosidad = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const { gestion_id, paralelo_id } = req.query as Record<string, string>

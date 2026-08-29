@@ -31,9 +31,9 @@ function fmtFecha(s: string) {
   return new Date(s).toLocaleDateString('es-BO', { weekday: 'long', day: 'numeric', month: 'long' })
 }
 
-interface Props { estudianteId?: string }
+interface Props { estudianteId?: string; nombreHijo?: string }
 
-export default function MiControlDiarioPage({ estudianteId }: Props) {
+export default function MiControlDiarioPage({ estudianteId, nombreHijo }: Props) {
   const [observaciones, setObservaciones] = useState<Observacion[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -62,7 +62,9 @@ export default function MiControlDiarioPage({ estudianteId }: Props) {
   return (
     <div className="space-y-5">
       <div>
-        <h1 className="text-xl font-bold text-fg">{estudianteId ? 'Control diario' : 'Mi Control Diario'}</h1>
+        <h1 className="text-xl font-bold text-fg">
+          {estudianteId ? `Control diario — ${nombreHijo ?? 'estudiante'}` : 'Mi Control Diario'}
+        </h1>
         <p className="text-sm text-fg-muted mt-0.5">Observaciones registradas por los profesores, de todas las materias.</p>
       </div>
 

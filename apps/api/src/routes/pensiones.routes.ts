@@ -12,6 +12,7 @@ const ANULADOR  = requireRol(Rol.DIRECTOR, Rol.ADMIN_SISTEMA, Rol.CONTADOR)
 
 // mi-estado-financiero va primero para que no colisione con /:id/*
 pensionesRouter.get('/mi-estado-financiero',              ctrl.miEstadoFinanciero)
+pensionesRouter.get('/hijo/:estudiante_id',               requireRol(Rol.PADRE_TUTOR), ctrl.estadoCuentaHijo)
 pensionesRouter.get('/morosidad',                         STAFF_FIN,  ctrl.morosidad)
 pensionesRouter.get('/estado-cuenta/:estudiante_id',      STAFF_FIN,  ctrl.estadoCuenta)
 pensionesRouter.get('/preview-mes',                       STAFF_FIN,  ctrl.previewMes)

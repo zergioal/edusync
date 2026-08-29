@@ -135,6 +135,7 @@ export const NAV_POR_ROL: Record<string, NavItem[]> = {
     { to: '/dashboard/padre/boletin',             label: 'Boletín',       icon: 'folder'   },
     { to: '/dashboard/padre/control-diario',      label: 'Control diario', icon: 'tasks'   },
     { to: '/dashboard/padre/pensiones',           label: 'Pensiones',     icon: 'cash'     },
+    { to: '/dashboard/padre/calendario',          label: 'Calendario',    icon: 'calendar' },
     { to: '/dashboard/padre/anuncios',            label: 'Comunicados',   icon: 'bell'     },
     { to: '/dashboard/padre/mensajes',            label: 'Mensajes',      icon: 'users'    },
   ],

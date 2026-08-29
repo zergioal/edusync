@@ -509,6 +509,15 @@ export class PensionesService {
     }
   }
 
+  /** Igual que estadoCuenta, pero para el padre/tutor — verifica que el estudiante sea realmente su hijo. */
+  async estadoCuentaHijo(padre_usuario_id: string, estudiante_id: string, gestion_id?: string) {
+    const rel = await prisma.relacionPadreHijo.findFirst({
+      where: { padre_id: padre_usuario_id, estudiante_id },
+    })
+    if (!rel) throw new AppError(403, 'Sin acceso', 'FORBIDDEN')
+    return this.estadoCuenta(estudiante_id, gestion_id)
+  }
+
   // ── Morosidad ────────────────────────────────────────────────────────────────
 
   async morosidad(institucion_id: string, filters: { gestion_id?: string; paralelo_id?: string }) {

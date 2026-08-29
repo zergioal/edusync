@@ -15,7 +15,8 @@ export default function ControlDiarioHijoPage() {
     )
   }
 
-  const activeId = hijoId || hijos[0]!.id
+  const activeId   = hijoId || hijos[0]!.id
+  const hijoActual = hijos.find(h => h.id === activeId)
 
   return (
     <div className="space-y-5">
@@ -34,7 +35,10 @@ export default function ControlDiarioHijoPage() {
         </div>
       )}
 
-      <MiControlDiarioPage estudianteId={activeId} />
+      <MiControlDiarioPage
+        estudianteId={activeId}
+        {...(hijoActual ? { nombreHijo: `${hijoActual.nombre} ${hijoActual.apellido}` } : {})}
+      />
     </div>
   )
 }
