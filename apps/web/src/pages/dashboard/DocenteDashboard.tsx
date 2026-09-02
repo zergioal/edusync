@@ -11,6 +11,7 @@ import { AvatarDisplay, AvatarPickerModal, useAvatar } from '../../components/ui
 import { EditarPerfilModal } from '../../components/EditarPerfilModal'
 
 const MisMateriasPage          = lazy(() => import('../docente/MisMateriasPage'))
+const MisAreasPage             = lazy(() => import('../docente/MisAreasPage'))
 const PlanillaPage             = lazy(() => import('../docente/PlanillaPage'))
 const CentralizadorAsignacionPage = lazy(() => import('../docente/CentralizadorAsignacionPage'))
 const ObservacionesInicialPage = lazy(() => import('../docente/ObservacionesInicialPage'))
@@ -208,7 +209,7 @@ export default function DocenteDashboard() {
     <DashboardLayout>
       <Routes>
         <Route index                              element={<DocenteHome />} />
-        <Route path="asignaciones"              element={<MisMateriasPage />} />
+        <Route path="asignaciones"              element={<MisAreasPage />} />
         <Route path="planilla/:asignacion_id"   element={<PlanillaPage />} />
         <Route path="planilla/:asignacion_id/centralizador" element={<CentralizadorAsignacionPage />} />
         <Route path="inicial/:asignacion_id"    element={<ObservacionesInicialPage />} />
