@@ -40,6 +40,12 @@ export class AsignacionesController {
     } catch (e) { next(e) }
   }
 
+  misCursosAsesor = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      res.json({ data: await this.service.misCursosAsesor(req.auth!.usuario_id) })
+    } catch (e) { next(e) }
+  }
+
   remove = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       await this.service.remove(req.params['id']!)

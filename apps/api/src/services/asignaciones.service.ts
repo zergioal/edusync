@@ -100,13 +100,32 @@ export class AsignacionesService {
     })
 
     return Promise.all(
-      asignaciones.map(async a => ({
-        ...a,
-        n_estudiantes: await prisma.matricula.count({
-          where: { paralelo_id: a.paralelo_id, gestion_id: a.gestion_id },
-        }),
-      }))
+      asignaciones.map(async a => {
+        const carga = await prisma.cargaHorariaMateria.findUnique({
+          where: { materia_id_grado_id: { materia_id: a.materia_id, grado_id: a.paralelo.grado_id } },
+        })
+        const horas_mes = carga?.horas_mes ?? (a.materia.horas_semanales ?? 0) * 4
+
+        return {
+          ...a,
+          horas_mes,
+          n_estudiantes: await prisma.matricula.count({
+            where: { paralelo_id: a.paralelo_id, gestion_id: a.gestion_id },
+          }),
+        }
+      })
     )
+  }
+
+  async misCursosAsesor(usuario_id: string) {
+    const docente = await prisma.docente.findUnique({ where: { usuario_id } })
+    if (!docente) throw new AppError(404, 'Perfil de docente no encontrado', 'NOT_FOUND')
+
+    return prisma.paralelo.findMany({
+      where:   { asesor_id: docente.id, activo: true },
+      include: { grado: { include: { nivel: true } } },
+      orderBy: { grado: { orden: 'asc' } },
+    })
   }
 
   async remove(id: string) {

@@ -8,7 +8,8 @@ const ctrl = new AsignacionesController()
 
 const canManage = requireRol(Rol.COORDINADOR, Rol.DIRECTOR, Rol.ADMIN_SISTEMA)
 
-asignacionesRouter.get('/mias',   requireRol(Rol.DOCENTE), ctrl.findMias)
+asignacionesRouter.get('/mias',              requireRol(Rol.DOCENTE), ctrl.findMias)
+asignacionesRouter.get('/mis-cursos-asesor', requireRol(Rol.DOCENTE), ctrl.misCursosAsesor)
 asignacionesRouter.get('/:id',    ctrl.findOne)
 asignacionesRouter.get('/',       canManage, ctrl.findAll)
 asignacionesRouter.post('/',      canManage, ctrl.create)
