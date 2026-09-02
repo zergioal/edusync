@@ -20,14 +20,20 @@ const ROL_BADGE_COLORS: Record<string, string> = {
 interface SidebarProps {
   navItems: NavItem[]
   onClose?: () => void
+  /** Escritorio: se reduce a solo íconos y se expande al pasar el mouse encima. */
+  collapsible?: boolean
 }
 
-export function Sidebar({ navItems, onClose }: SidebarProps) {
+export function Sidebar({ navItems, onClose, collapsible }: SidebarProps) {
   const { user, logout } = useAuth()
   const navigate = useNavigate()
   const [quickOpen, setQuickOpen] = useState(false)
+  const [hovered,   setHovered]   = useState(false)
   const badgeClass = user?.rol ? (ROL_BADGE_COLORS[user.rol] ?? 'bg-white/10 text-white/70') : ''
   const basePath = user ? getRolDashboardPath(user.rol) : ''
+
+  // Sin collapsible (drawer móvil) siempre se ve expandido.
+  const expanded = !collapsible || hovered
 
   function goTo(path: string) {
     setQuickOpen(false)
@@ -36,7 +42,13 @@ export function Sidebar({ navItems, onClose }: SidebarProps) {
   }
 
   return (
-    <aside className="relative flex h-screen w-64 flex-col bg-[#0f172a] text-white select-none overflow-hidden">
+    <aside
+      onMouseEnter={() => collapsible && setHovered(true)}
+      onMouseLeave={() => collapsible && setHovered(false)}
+      className={`relative flex h-screen flex-col bg-[#0f172a] text-white select-none overflow-hidden transition-[width] duration-300 ease-in-out ${
+        expanded ? 'w-64' : 'w-20'
+      }`}
+    >
 
       {/* Patrón de circuito de fondo — muy sutil, puramente decorativo */}
       <div
@@ -49,10 +61,10 @@ export function Sidebar({ navItems, onClose }: SidebarProps) {
       />
 
       {/* ── Branding ─────────────────────────────────────── */}
-      <div className="relative flex items-center gap-3 px-5 py-5 border-b border-white/8">
+      <div className={`relative flex items-center gap-3 py-5 border-b border-white/8 transition-[padding] duration-300 ${expanded ? 'px-5' : 'px-0 justify-center'}`}>
         {/* Accent line izquierda */}
         <div className="absolute left-0 top-0 bottom-0 w-1 rounded-r-full bg-gradient-to-b from-indigo-400 to-indigo-600" />
-        <div className="relative">
+        <div className="relative flex-shrink-0">
           <img
             src={logo}
             alt="Pío XII"
@@ -60,9 +72,9 @@ export function Sidebar({ navItems, onClose }: SidebarProps) {
           />
           <span className="absolute -bottom-1 -right-1 h-3 w-3 rounded-full bg-emerald-400 ring-2 ring-[#0f172a]" />
         </div>
-        <div className="flex-1 min-w-0">
-          <p className="text-sm font-bold leading-tight text-white truncate">U.E. Pío XII</p>
-          <p className="text-[10px] text-slate-400 leading-none mt-0.5 font-medium tracking-wide">EDUSYNC · Sistema</p>
+        <div className={`min-w-0 overflow-hidden transition-all duration-200 ${expanded ? 'flex-1 opacity-100' : 'w-0 opacity-0'}`}>
+          <p className="text-sm font-bold leading-tight text-white truncate whitespace-nowrap">U.E. Pío XII</p>
+          <p className="text-[10px] text-slate-400 leading-none mt-0.5 font-medium tracking-wide whitespace-nowrap">EDUSYNC · Sistema</p>
         </div>
         {onClose && (
           <button
@@ -79,15 +91,17 @@ export function Sidebar({ navItems, onClose }: SidebarProps) {
       </div>
 
       {/* ── Navegación ───────────────────────────────────── */}
-      <nav className="relative flex-1 overflow-y-auto px-3 py-4 space-y-0.5">
+      <nav className="relative flex-1 overflow-y-auto overflow-x-hidden px-3 py-4 space-y-0.5">
         {navItems.map(item => (
           <NavLink
             key={item.to}
             to={item.to}
             end={item.to.split('/').length <= 3}
+            title={expanded ? undefined : item.label}
             className={({ isActive }) =>
               [
-                'glow-on-hover sidebar-nav-item group relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition-all duration-150',
+                'glow-on-hover sidebar-nav-item group relative flex items-center rounded-xl px-3 py-2.5 text-sm transition-all duration-150',
+                expanded ? 'gap-3 justify-start' : 'gap-0 justify-center',
                 isActive
                   ? 'bg-indigo-600/20 text-white font-medium'
                   : 'text-slate-400 hover:bg-white/6 hover:text-slate-100',
@@ -105,7 +119,9 @@ export function Sidebar({ navItems, onClose }: SidebarProps) {
                   icon={item.icon}
                   className={`h-[18px] w-[18px] flex-shrink-0 transition-colors ${isActive ? 'text-indigo-300' : 'text-slate-500 group-hover:text-slate-300'}`}
                 />
-                <span className="truncate">{item.label}</span>
+                <span className={`truncate whitespace-nowrap overflow-hidden transition-all duration-200 ${expanded ? 'max-w-[160px] opacity-100' : 'max-w-0 opacity-0'}`}>
+                  {item.label}
+                </span>
               </>
             )}
           </NavLink>
@@ -114,33 +130,36 @@ export function Sidebar({ navItems, onClose }: SidebarProps) {
 
       {/* ── Perfil + Logout ──────────────────────────────── */}
       <div className="relative border-t border-white/8 p-3 space-y-1">
-        <div className="rounded-xl bg-white/5 px-3 py-3">
+        <div className={`rounded-xl bg-white/5 py-3 transition-[padding] duration-300 ${expanded ? 'px-3' : 'px-0'}`}>
           <button
             type="button"
             onClick={() => setQuickOpen(o => !o)}
-            className="w-full flex items-center gap-2.5 hover:opacity-90 transition-opacity"
+            title={expanded ? undefined : `${user?.nombre ?? ''} ${user?.apellido ?? ''}`}
+            className={`w-full flex items-center gap-2.5 hover:opacity-90 transition-opacity ${expanded ? '' : 'justify-center'}`}
           >
             <div className="relative h-9 w-9 flex-shrink-0">
-              <div className={`absolute inset-0 rounded-full bg-gradient-to-br from-indigo-400 to-fuchsia-500 transition-all duration-500 ${quickOpen ? 'opacity-100 blur-[6px] scale-110' : 'opacity-0 blur-0 scale-100'}`} />
+              <div className={`absolute inset-0 rounded-full bg-gradient-to-br from-indigo-400 to-fuchsia-500 transition-all duration-500 ${quickOpen && expanded ? 'opacity-100 blur-[6px] scale-110' : 'opacity-0 blur-0 scale-100'}`} />
               <div className="relative h-9 w-9 rounded-full bg-indigo-600 flex items-center justify-center text-sm font-bold text-white shadow">
                 {user?.nombre?.charAt(0)}{user?.apellido?.charAt(0)}
               </div>
             </div>
-            <div className="flex-1 min-w-0 text-left">
-              <p className="text-sm font-semibold text-white truncate leading-tight">
+            <div className={`min-w-0 overflow-hidden text-left transition-all duration-200 ${expanded ? 'flex-1 opacity-100' : 'w-0 opacity-0'}`}>
+              <p className="text-sm font-semibold text-white truncate whitespace-nowrap leading-tight">
                 {user?.nombre} {user?.apellido}
               </p>
-              <span className={`inline-block mt-0.5 rounded-full px-2 py-px text-[10px] font-semibold leading-none ${badgeClass}`}>
+              <span className={`inline-block mt-0.5 rounded-full px-2 py-px text-[10px] font-semibold leading-none whitespace-nowrap ${badgeClass}`}>
                 {user?.rol ? ROL_LABELS[user.rol] : ''}
               </span>
             </div>
-            <svg className={`h-3.5 w-3.5 text-slate-400 flex-shrink-0 transition-transform duration-300 ${quickOpen ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-            </svg>
+            {expanded && (
+              <svg className={`h-3.5 w-3.5 text-slate-400 flex-shrink-0 transition-transform duration-300 ${quickOpen ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            )}
           </button>
 
           {/* Accesos rápidos: se "funden" hacia afuera al abrir */}
-          <div className={`grid transition-all duration-300 ease-out ${quickOpen ? 'grid-rows-[1fr] opacity-100 mt-2.5' : 'grid-rows-[0fr] opacity-0 mt-0'}`}>
+          <div className={`grid transition-all duration-300 ease-out ${quickOpen && expanded ? 'grid-rows-[1fr] opacity-100 mt-2.5' : 'grid-rows-[0fr] opacity-0 mt-0'}`}>
             <div className="flex gap-2 overflow-hidden min-h-0">
               <button
                 type="button"
@@ -166,13 +185,16 @@ export function Sidebar({ navItems, onClose }: SidebarProps) {
         <button
           type="button"
           onClick={logout}
-          className="glow-on-hover flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-sm text-slate-400 hover:bg-white/6 hover:text-slate-200 transition-colors"
+          title={expanded ? undefined : 'Cerrar sesión'}
+          className={`glow-on-hover flex w-full items-center rounded-xl px-3 py-2 text-sm text-slate-400 hover:bg-white/6 hover:text-slate-200 transition-colors ${expanded ? 'gap-2.5 justify-start' : 'gap-0 justify-center'}`}
         >
           <svg className="h-4 w-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
               d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
           </svg>
-          Cerrar sesión
+          <span className={`truncate whitespace-nowrap overflow-hidden transition-all duration-200 ${expanded ? 'max-w-[160px] opacity-100' : 'max-w-0 opacity-0'}`}>
+            Cerrar sesión
+          </span>
         </button>
       </div>
     </aside>

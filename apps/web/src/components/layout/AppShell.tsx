@@ -64,7 +64,7 @@ export function AppShell({ children }: AppShellProps) {
 
       {/* ── Sidebar desktop ─────────────────────────────── */}
       <div className="hidden md:flex md:flex-shrink-0">
-        <Sidebar navItems={navItems} />
+        <Sidebar navItems={navItems} collapsible />
       </div>
 
       {/* ── Drawer móvil + overlay ───────────────────────── */}
