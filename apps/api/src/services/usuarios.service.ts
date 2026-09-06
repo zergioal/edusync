@@ -1,6 +1,7 @@
 import { prisma } from '@edusync/database'
 import type { Rol } from '@edusync/types'
 import { AppError } from '../middlewares/errorHandler'
+import { getSupabaseAdmin } from '../lib/supabase'
 
 export class UsuariosService {
   findAll(institucion_id: string, filters: { rol?: string; buscar?: string } = {}) {
@@ -48,5 +49,15 @@ export class UsuariosService {
   async remove(id: string) {
     await this.findOne(id)
     return prisma.usuario.delete({ where: { id } })
+  }
+
+  async resetPassword(id: string, newPassword: string) {
+    const usuario = await this.findOne(id)
+    if (usuario.rol !== 'ESTUDIANTE' && usuario.rol !== 'PADRE_TUTOR') {
+      throw new AppError(403, 'Solo se puede restablecer la contraseña de estudiantes o padres/tutores', 'FORBIDDEN')
+    }
+    const { error } = await getSupabaseAdmin().auth.admin.updateUserById(usuario.supabase_auth_id, { password: newPassword })
+    if (error) throw new AppError(500, `No se pudo restablecer la contraseña: ${error.message}`, 'SUPABASE_ERROR')
+    return { ok: true }
   }
 }

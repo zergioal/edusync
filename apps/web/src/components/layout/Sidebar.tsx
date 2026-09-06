@@ -4,6 +4,7 @@ import type { NavItem } from '../../lib/roleRoutes'
 import { NavIcon } from '../ui/NavIcon'
 import { useAuth } from '../../context/AuthContext'
 import { ROL_LABELS, getRolDashboardPath } from '../../lib/roleRoutes'
+import { ChangePasswordModal } from '../ChangePasswordModal'
 import logo from '../../assets/logo-pio-xii.png'
 
 const ROL_BADGE_COLORS: Record<string, string> = {
@@ -29,6 +30,7 @@ export function Sidebar({ navItems, onClose, collapsible }: SidebarProps) {
   const navigate = useNavigate()
   const [quickOpen, setQuickOpen] = useState(false)
   const [hovered,   setHovered]   = useState(false)
+  const [changePwdOpen, setChangePwdOpen] = useState(false)
   const badgeClass = user?.rol ? (ROL_BADGE_COLORS[user.rol] ?? 'bg-white/10 text-white/70') : ''
   const basePath = user ? getRolDashboardPath(user.rol) : ''
 
@@ -179,6 +181,18 @@ export function Sidebar({ navItems, onClose, collapsible }: SidebarProps) {
                 <NavIcon icon="home" className="h-3.5 w-3.5" />
                 Panel
               </button>
+              <button
+                type="button"
+                onClick={() => { setQuickOpen(false); setChangePwdOpen(true) }}
+                style={{ transitionDelay: quickOpen ? '180ms' : '0ms' }}
+                className={`goo-pop flex-1 flex items-center justify-center gap-1.5 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-200 text-xs font-semibold py-2 ${quickOpen ? 'goo-pop-in' : 'goo-pop-out'}`}
+              >
+                <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                    d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
+                </svg>
+                Clave
+              </button>
             </div>
           </div>
         </div>
@@ -197,6 +211,8 @@ export function Sidebar({ navItems, onClose, collapsible }: SidebarProps) {
           </span>
         </button>
       </div>
+
+      {changePwdOpen && <ChangePasswordModal onClose={() => setChangePwdOpen(false)} />}
     </aside>
   )
 }

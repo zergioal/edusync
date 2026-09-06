@@ -8,11 +8,13 @@ import { SelectGestion } from '../../components/select/SelectGestion'
 import { NuevoEstudianteModal } from './NuevoEstudianteModal'
 import { TutorField, type TutorMatch } from '../../components/TutorField'
 import { useGestionActiva } from '../../hooks/useGestionActiva'
+import { ResetPasswordModal } from '../../components/ResetPasswordModal'
 import { Rol } from '@edusync/types'
 
 const BASE_PATHS_CON_REPORTES = new Set(['/dashboard/coordinador', '/dashboard/director'])
 
 const CAN_MANAGE_ROLES: string[] = [Rol.ADMIN_SISTEMA, Rol.DIRECTOR, Rol.COORDINADOR, Rol.SECRETARIA]
+const CAN_RESET_PASSWORD_ROLES: string[] = [Rol.ADMIN_SISTEMA, Rol.DIRECTOR, Rol.COORDINADOR, Rol.CONTADOR, Rol.SECRETARIA]
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -30,6 +32,7 @@ interface Estudiante {
   id:               string
   codigo:           string
   becado:           boolean
+  media_beca:       boolean
   motivo_beca:      string | null
   fecha_nacimiento: string | null
   sexo:             'M' | 'F' | null
@@ -37,7 +40,7 @@ interface Estudiante {
   estado_motivo:        string | null
   estado_fecha:         string | null
   institucion_destino:  string | null
-  usuario:          { nombre: string; apellido: string; email: string; activo: boolean }
+  usuario:          { id: string; nombre: string; apellido: string; email: string; activo: boolean }
   matriculas:       { paralelo: Paralelo }[]
   relaciones_padre: { padre: PadreRef }[]
 }
@@ -214,7 +217,7 @@ function EditarEstudianteModal({ estudiante, onClose, onSaved }: EditModalProps)
     fecha_nacimiento: estudiante.fecha_nacimiento
       ? new Date(estudiante.fecha_nacimiento).toISOString().split('T')[0]
       : '',
-    becado:      estudiante.becado,
+    becaTipo:    (estudiante.becado ? 'completa' : estudiante.media_beca ? 'media' : 'ninguna') as 'ninguna' | 'media' | 'completa',
     motivo_beca: estudiante.motivo_beca ?? '',
     sexo:        estudiante.sexo ?? '',
     estado:               estudiante.estado,
@@ -254,8 +257,9 @@ function EditarEstudianteModal({ estudiante, onClose, onSaved }: EditModalProps)
         email:            form.email,
         activo:           form.activo,
         fecha_nacimiento: form.fecha_nacimiento || null,
-        becado:           form.becado,
-        motivo_beca:      form.becado ? (form.motivo_beca || null) : null,
+        becado:           form.becaTipo === 'completa',
+        media_beca:       form.becaTipo === 'media',
+        motivo_beca:      form.becaTipo !== 'ninguna' ? (form.motivo_beca || null) : null,
         sexo:             form.sexo || null,
         ...(estadoCambiado ? {
           estado: form.estado,
@@ -392,13 +396,28 @@ function EditarEstudianteModal({ estudiante, onClose, onSaved }: EditModalProps)
           </div>
 
           <div className="rounded-xl border border-border bg-bg p-3 space-y-2">
-            <label className="flex items-center gap-2 cursor-pointer select-none">
-              <input type="checkbox" checked={form.becado}
-                onChange={e => setForm(f => ({ ...f, becado: e.target.checked }))}
-                className="h-4 w-4 rounded border-border text-indigo-600 focus:ring-indigo-500" />
-              <span className="text-sm font-medium text-fg">Estudiante becado</span>
-            </label>
-            {form.becado && (
+            <span className="text-xs font-semibold text-fg-muted uppercase tracking-wide">Beca</span>
+            <div className="grid grid-cols-3 gap-2">
+              {([
+                { value: 'ninguna',  label: 'Sin beca' },
+                { value: 'media',    label: 'Media beca' },
+                { value: 'completa', label: 'Beca completa' },
+              ] as const).map(opt => (
+                <button
+                  key={opt.value}
+                  type="button"
+                  onClick={() => setForm(f => ({ ...f, becaTipo: opt.value }))}
+                  className={`rounded-lg border-2 px-2 py-1.5 text-xs font-medium transition-colors ${
+                    form.becaTipo === opt.value
+                      ? 'border-indigo-500 bg-indigo-50 text-indigo-700'
+                      : 'border-border text-fg-muted hover:border-gray-400'
+                  }`}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+            {form.becaTipo !== 'ninguna' && (
               <label className="flex flex-col gap-1">
                 <span className="text-xs font-semibold text-fg-muted uppercase tracking-wide">Motivo de beca</span>
                 <input value={form.motivo_beca} onChange={setField('motivo_beca')} maxLength={255}
@@ -479,6 +498,7 @@ export default function EstudiantesPage({ basePath = '/dashboard/admin' }: { bas
   toastRef.current = toast
   const { user }  = useAuth()
   const canManage = user?.rol ? CAN_MANAGE_ROLES.includes(user.rol) : false
+  const canResetPassword = user?.rol ? CAN_RESET_PASSWORD_ROLES.includes(user.rol) : false
   const { id: gestionActivaId, trimestres } = useGestionActiva()
   const puedeVerReportes = BASE_PATHS_CON_REPORTES.has(basePath)
 
@@ -493,6 +513,7 @@ export default function EstudiantesPage({ basePath = '/dashboard/admin' }: { bas
   const [loading,      setLoading]      = useState(false)
   const [modalNuevo,   setModalNuevo]   = useState(false)
   const [editTarget,   setEditTarget]   = useState<Estudiante | null>(null)
+  const [resetPwdTarget, setResetPwdTarget] = useState<Estudiante | null>(null)
   const [gestionId,    setGestionId]    = useState('')
   const [buscar,       setBuscar]       = useState('')
   const [buscarInput,  setBuscarInput]  = useState('')
@@ -754,6 +775,11 @@ export default function EstudiantesPage({ basePath = '/dashboard/admin' }: { bas
                         BECA
                       </span>
                     )}
+                    {est.media_beca && (
+                      <span className="inline-flex items-center rounded-full bg-amber-50 px-2 py-0.5 text-xs font-bold text-amber-600 border border-amber-200">
+                        MEDIA BECA
+                      </span>
+                    )}
                   </div>
                   <div className="text-xs text-fg-muted truncate max-w-[180px]">{est.usuario.email}</div>
                 </td>
@@ -794,6 +820,11 @@ export default function EstudiantesPage({ basePath = '/dashboard/admin' }: { bas
                         </Button>
                       </>
                     )}
+                    {canResetPassword && (
+                      <Button variant="ghost" size="sm" onClick={() => setResetPwdTarget(est)}>
+                        Restablecer contraseña
+                      </Button>
+                    )}
                   </div>
                 </td>
               </tr>
@@ -812,6 +843,12 @@ export default function EstudiantesPage({ basePath = '/dashboard/admin' }: { bas
           estudiante={editTarget}
           onClose={() => setEditTarget(null)}
           onSaved={load}
+        />
+      )}
+      {resetPwdTarget && (
+        <ResetPasswordModal
+          target={{ id: resetPwdTarget.usuario.id, nombre: resetPwdTarget.usuario.nombre, apellido: resetPwdTarget.usuario.apellido }}
+          onClose={() => setResetPwdTarget(null)}
         />
       )}
     </div>

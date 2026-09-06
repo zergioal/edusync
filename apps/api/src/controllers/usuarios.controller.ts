@@ -65,4 +65,16 @@ export class UsuariosController {
       res.status(204).send()
     } catch (e) { next(e) }
   }
+
+  resetPassword = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const { password } = req.body as { password?: string }
+      if (!password || password.length < 6) {
+        res.status(400).json({ error: true, code: 'VALIDATION_ERROR', message: 'La contraseña debe tener al menos 6 caracteres' })
+        return
+      }
+      const data = await this.service.resetPassword(req.params['id']!, password)
+      res.json({ data })
+    } catch (e) { next(e) }
+  }
 }

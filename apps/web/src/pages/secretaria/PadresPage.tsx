@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { api, ApiError } from '../../lib/api'
 import { useToast } from '../../components/ui/Toast'
 import { Button, Badge, Spinner } from '@edusync/ui'
+import { ResetPasswordModal } from '../../components/ResetPasswordModal'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -173,6 +174,7 @@ export default function PadresPage() {
   const [padres,      setPadres]      = useState<Padre[]>([])
   const [loading,     setLoading]     = useState(false)
   const [modal,       setModal]       = useState<'new' | Padre | null>(null)
+  const [resetPwdTarget, setResetPwdTarget] = useState<Padre | null>(null)
   const [buscarInput, setBuscarInput] = useState('')
   const [buscar,      setBuscar]      = useState('')
 
@@ -399,6 +401,9 @@ export default function PadresPage() {
                 <td className="px-4 py-3 text-right">
                   <div className="flex items-center justify-end gap-1.5 flex-nowrap">
                     <Button variant="ghost" size="sm" onClick={() => setModal(p)}>Editar</Button>
+                    <Button variant="ghost" size="sm" onClick={() => setResetPwdTarget(p)}>
+                      Restablecer contraseña
+                    </Button>
                     <Button variant="ghost" size="sm"
                       className="text-red-500 hover:text-red-700"
                       onClick={() => handleDelete(p)}>
@@ -417,6 +422,12 @@ export default function PadresPage() {
           padre={modal === 'new' ? null : modal}
           onClose={() => setModal(null)}
           onSaved={load}
+        />
+      )}
+      {resetPwdTarget && (
+        <ResetPasswordModal
+          target={{ id: resetPwdTarget.id, nombre: resetPwdTarget.nombre, apellido: resetPwdTarget.apellido }}
+          onClose={() => setResetPwdTarget(null)}
         />
       )}
     </div>
