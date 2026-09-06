@@ -92,7 +92,7 @@ export class EstudiantesService {
         } : {}),
       },
       include: {
-        usuario:  { select: { nombre: true, apellido: true, email: true, activo: true } },
+        usuario:  { select: { id: true, nombre: true, apellido: true, email: true, activo: true } },
         matriculas: {
           ...(gestion_id ? { where: { gestion_id } } : {}),
           include: { paralelo: { include: { grado: { include: { nivel: true } } } } },
@@ -134,6 +134,7 @@ export class EstudiantesService {
       crear_cuenta_tutor:   boolean
       tutor1_existing_id?:  string
       becado?:              boolean
+      media_beca?:          boolean
       motivo_beca?:         string
       fecha_nacimiento?:    string
       sexo?:                'M' | 'F'
@@ -165,7 +166,8 @@ export class EstudiantesService {
         codigo,
         nivel:       { connect: { id: paralelo.grado.nivel.id } },
         becado:      data.becado ?? false,
-        ...(data.becado && data.motivo_beca ? { motivo_beca: data.motivo_beca } : {}),
+        media_beca:  data.media_beca ?? false,
+        ...((data.becado || data.media_beca) && data.motivo_beca ? { motivo_beca: data.motivo_beca } : {}),
         ...(data.fecha_nacimiento ? { fecha_nacimiento: new Date(data.fecha_nacimiento) } : {}),
         ...(data.sexo ? { sexo: data.sexo } : {}),
         usuario: {
@@ -230,6 +232,7 @@ export class EstudiantesService {
       email?:                string
       activo?:               boolean
       becado?:               boolean
+      media_beca?:           boolean
       motivo_beca?:          string | null
       fecha_nacimiento?:     string | null
       sexo?:                 'M' | 'F' | null
@@ -260,6 +263,7 @@ export class EstudiantesService {
 
     const estData: Record<string, unknown> = {}
     if (data.becado      !== undefined) estData.becado      = data.becado
+    if (data.media_beca  !== undefined) estData.media_beca  = data.media_beca
     if (data.motivo_beca !== undefined) estData.motivo_beca = data.motivo_beca ?? null
     if (data.sexo        !== undefined) estData.sexo        = data.sexo ?? null
     if (data.fecha_nacimiento !== undefined) {

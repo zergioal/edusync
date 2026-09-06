@@ -184,6 +184,7 @@ model Estudiante {
   codigo            String
   nivel_id          String
   becado            Boolean          @default(false)
+  media_beca        Boolean          @default(false)
   motivo_beca       String?          @db.VarChar(255)
   fecha_nacimiento  DateTime?
   sexo              Sexo?

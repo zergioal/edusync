@@ -34,6 +34,7 @@ export interface EstadoFinanciero {
     apellido:        string
     bloqueado:       boolean
     becado:          boolean
+    media_beca:      boolean
     monto_pendiente: number
   }>
 }

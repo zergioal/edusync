@@ -59,7 +59,7 @@ export class PensionesService {
       where:   { gestion_id },
       include: {
         paralelo:  { include: { grado: { include: { nivel: true } } } },
-        estudiante: { select: { id: true, becado: true } },
+        estudiante: { select: { id: true, becado: true, media_beca: true } },
       },
     })
 
@@ -81,6 +81,8 @@ export class PensionesService {
       const tarifa     = tarifaMap.get(nivel_id)
       if (!tarifa) continue // sin tarifa para ese nivel → skip silencioso
 
+      const monto = m.estudiante.media_beca ? Number(tarifa.monto) / 2 : Number(tarifa.monto)
+
       try {
         await prisma.pension.create({
           data: {
@@ -88,12 +90,12 @@ export class PensionesService {
             gestion_id,
             mes,
             nivel_id,
-            monto: tarifa.monto,
+            monto,
           },
         })
         creadas++
         const nr = porNivel[nivelNombre]
-        if (nr) { nr.cantidad++; nr.total += Number(tarifa.monto) }
+        if (nr) { nr.cantidad++; nr.total += monto }
       } catch {
         omitidas_duplicadas++
       }
@@ -129,7 +131,7 @@ export class PensionesService {
       where:   { gestion_id },
       include: {
         paralelo:   { include: { grado: { include: { nivel: true } } } },
-        estudiante: { select: { id: true, becado: true } },
+        estudiante: { select: { id: true, becado: true, media_beca: true } },
       },
     })
 
@@ -148,8 +150,9 @@ export class PensionesService {
       const nivelNombre = m.paralelo.grado.nivel.nombre
       const tarifa      = tarifaMap.get(nivel_id)
       if (!tarifa) continue
+      const monto = m.estudiante.media_beca ? Number(tarifa.monto) / 2 : Number(tarifa.monto)
       const nr = porNivel[nivelNombre]
-      if (nr) { nr.cantidad++; nr.total += Number(tarifa.monto) }
+      if (nr) { nr.cantidad++; nr.total += monto }
     }
 
     const monto_total = Object.values(porNivel).reduce((s, r) => s + r.total, 0)
@@ -354,6 +357,7 @@ export class PensionesService {
         nombre:        m.estudiante.usuario.nombre,
         apellido:      m.estudiante.usuario.apellido,
         becado:        m.estudiante.becado,
+        media_beca:    m.estudiante.media_beca,
         pagado:        pension?.pagado ?? false,
         pension_id:    pension?.id ?? null,
       }
@@ -381,6 +385,12 @@ export class PensionesService {
       where: { gestion_id_nivel_id: { gestion_id: datos.gestion_id, nivel_id: paralelo.grado.nivel_id } },
     })
 
+    const estudiantes = await prisma.estudiante.findMany({
+      where:  { id: { in: datos.pagos.map(p => p.estudiante_id) } },
+      select: { id: true, media_beca: true },
+    })
+    const mediaBecaPorEstudiante = new Map(estudiantes.map(e => [e.id, e.media_beca]))
+
     let pagadas = 0
     let anuladas = 0
     const sinCambio: string[] = []
@@ -395,10 +405,11 @@ export class PensionesService {
         if (!existente && !tarifa) {
           throw new AppError(400, 'No hay tarifa configurada para este nivel — configúrala antes de registrar pagos.', 'TARIFAS_REQUERIDAS')
         }
+        const monto = mediaBecaPorEstudiante.get(p.estudiante_id) ? Number(tarifa!.monto) / 2 : tarifa!.monto
         const pension = existente ?? await prisma.pension.create({
           data: {
             estudiante_id: p.estudiante_id, gestion_id: datos.gestion_id, mes: datos.mes,
-            nivel_id: paralelo.grado.nivel_id, monto: tarifa!.monto,
+            nivel_id: paralelo.grado.nivel_id, monto,
           },
         })
         await prisma.$transaction([
@@ -495,7 +506,8 @@ export class PensionesService {
     const al_dia = !pensiones.some(p => !p.pagado && estaVencida(p.mes, gestion.anno))
 
     return {
-      becado:  false,
+      becado:     false,
+      media_beca: estudiante.media_beca,
       estudiante: {
         id:       estudiante.id,
         nombre:   estudiante.usuario.nombre,
@@ -658,6 +670,7 @@ export class PensionesService {
           apellido:        est?.usuario.apellido ?? '',
           bloqueado:       !esBecado && vencidasEst.length > 0,
           becado:          esBecado,
+          media_beca:      est?.media_beca ?? false,
           monto_pendiente: vencidasEst.reduce((s, p) => s + Number(p.monto), 0),
         }
       })

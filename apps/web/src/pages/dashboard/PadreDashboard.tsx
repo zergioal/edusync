@@ -154,11 +154,16 @@ function PadreHome() {
                 className="w-full flex items-center justify-between px-5 py-3 hover:bg-surface-2 transition-colors"
               >
                 <span className="text-sm font-medium text-fg">{h.apellido}, {h.nombre}</span>
-                {h.becado
-                  ? <Badge variant="info">Becado</Badge>
-                  : h.bloqueado
-                    ? <Badge variant="danger">Bs {h.monto_pendiente.toFixed(2)} pendiente</Badge>
-                    : <Badge variant="success">Al día</Badge>}
+                <div className="flex items-center gap-1.5">
+                  {h.becado ? (
+                    <Badge variant="info">Becado</Badge>
+                  ) : h.bloqueado ? (
+                    <Badge variant="danger">Bs {h.monto_pendiente.toFixed(2)} pendiente</Badge>
+                  ) : (
+                    <Badge variant="success">Al día</Badge>
+                  )}
+                  {!h.becado && h.media_beca && <Badge variant="warning">Media beca</Badge>}
+                </div>
               </button>
             ))}
           </div>

@@ -29,11 +29,16 @@ export default function MisHijosPage() {
                 </div>
                 <div className="min-w-0">
                   <p className="font-semibold text-fg truncate">{h.apellido}, {h.nombre}</p>
-                  {h.becado
-                    ? <Badge variant="info">Becado</Badge>
-                    : h.bloqueado
-                      ? <Badge variant="danger">Pensión pendiente</Badge>
-                      : <Badge variant="success">Al día</Badge>}
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    {h.becado ? (
+                      <Badge variant="info">Becado</Badge>
+                    ) : h.bloqueado ? (
+                      <Badge variant="danger">Pensión pendiente</Badge>
+                    ) : (
+                      <Badge variant="success">Al día</Badge>
+                    )}
+                    {!h.becado && h.media_beca && <Badge variant="warning">Media beca</Badge>}
+                  </div>
                 </div>
               </div>
               <p className="mt-3 text-xs text-blue-600 font-medium">Ver notas y asistencia →</p>

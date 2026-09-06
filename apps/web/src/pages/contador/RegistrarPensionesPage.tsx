@@ -6,7 +6,7 @@ import { SelectParalelo } from '../../components/select/SelectParalelo'
 import { Spinner, Button } from '@edusync/ui'
 
 interface EstFila {
-  estudiante_id: string; nombre: string; apellido: string; becado: boolean; pagado: boolean
+  estudiante_id: string; nombre: string; apellido: string; becado: boolean; media_beca: boolean; pagado: boolean
 }
 
 const PENSIONES = [2, 3, 4, 5, 6, 7, 8, 9, 10, 11] // Febrero..Noviembre
@@ -169,7 +169,14 @@ export default function RegistrarPensionesPage() {
               {lista.map((est, idx) => (
                 <tr key={est.estudiante_id} className="hover:bg-surface-2 transition-colors">
                   <td className="px-5 py-3 text-fg-muted text-xs">{idx + 1}</td>
-                  <td className="px-5 py-3 font-medium text-fg">{est.apellido}, {est.nombre}</td>
+                  <td className="px-5 py-3 font-medium text-fg">
+                    {est.apellido}, {est.nombre}
+                    {est.media_beca && !est.becado && (
+                      <span className="ml-2 rounded-full bg-amber-50 border border-amber-200 px-2 py-0.5 text-[10px] font-semibold text-amber-600 align-middle">
+                        MEDIA BECA
+                      </span>
+                    )}
+                  </td>
                   <td className="px-5 py-3 text-center">
                     {est.becado ? (
                       <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-700">Becado</span>

@@ -43,7 +43,7 @@ export function NuevoEstudianteModal({ isOpen, onClose, onSuccess }: Props) {
   const [fechaNacimiento, setFechaNacimiento] = useState("");
   const [sexo, setSexo] = useState<"" | "M" | "F">("");
   const [email, setEmail] = useState("");
-  const [becado, setBecado] = useState(false);
+  const [becaTipo, setBecaTipo] = useState<"ninguna" | "media" | "completa">("ninguna");
   const [motivoBeca, setMotivoBeca] = useState("");
 
   // Step 2 — tutor data
@@ -78,7 +78,7 @@ export function NuevoEstudianteModal({ isOpen, onClose, onSuccess }: Props) {
     setFechaNacimiento("");
     setSexo("");
     setEmail("");
-    setBecado(false);
+    setBecaTipo("ninguna");
     setMotivoBeca("");
     setTutor1Nombre("");
     setTutor1Tel("");
@@ -123,10 +123,11 @@ export function NuevoEstudianteModal({ isOpen, onClose, onSuccess }: Props) {
         nombre,
         apellido,
         email,
-        becado,
+        becado: becaTipo === "completa",
+        media_beca: becaTipo === "media",
         fecha_nacimiento: fechaNacimiento || undefined,
         sexo: sexo || undefined,
-        motivo_beca: becado ? motivoBeca || undefined : undefined,
+        motivo_beca: becaTipo !== "ninguna" ? motivoBeca || undefined : undefined,
         paralelo_id: paraleloId,
         gestion_id: gestionId,
         tutor1_existing_id: tutor1Existing?.id,
@@ -328,21 +329,35 @@ export function NuevoEstudianteModal({ isOpen, onClose, onSuccess }: Props) {
           </div>
 
           <div className="border-t border-border pt-3 space-y-3">
-            <label className="flex items-center gap-2.5 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={becado}
-                onChange={(e) => setBecado(e.target.checked)}
-                className="rounded border-border text-amber-500 focus:ring-amber-500 h-4 w-4"
-              />
-              <span className="text-sm font-medium text-fg">
-                Estudiante becado{" "}
-                <span className="text-xs font-normal text-fg-muted">
-                  (exento del pago de pensiones)
-                </span>
-              </span>
-            </label>
-            {becado && (
+            <label className="text-sm font-medium text-fg">Beca</label>
+            <div className="grid grid-cols-3 gap-2">
+              {(
+                [
+                  { value: "ninguna", label: "Sin beca", hint: "" },
+                  { value: "media", label: "Media beca", hint: "paga el 50%" },
+                  { value: "completa", label: "Beca completa", hint: "exento" },
+                ] as const
+              ).map((opt) => (
+                <button
+                  key={opt.value}
+                  type="button"
+                  onClick={() => setBecaTipo(opt.value)}
+                  className={`rounded-lg border-2 px-3 py-2 text-center text-sm font-medium transition-colors ${
+                    becaTipo === opt.value
+                      ? "border-amber-500 bg-amber-50 text-amber-800"
+                      : "border-border text-fg-muted hover:border-gray-400"
+                  }`}
+                >
+                  {opt.label}
+                  {opt.hint && (
+                    <span className="block text-xs font-normal opacity-80">
+                      ({opt.hint})
+                    </span>
+                  )}
+                </button>
+              ))}
+            </div>
+            {becaTipo !== "ninguna" && (
               <div className="flex flex-col gap-1 pl-6">
                 <label className="text-sm font-medium text-fg">
                   Motivo de la beca

@@ -19,6 +19,7 @@ interface TarifasResponse {
   tarifas:               TarifaRow[]
   sugeridas:             boolean
   becados_count?:        number
+  media_beca_count?:     number
   gestion_anno_sugerida: number | null
 }
 
@@ -193,6 +194,15 @@ export default function TarifasPage() {
                 <span className="inline-flex items-center rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-medium text-amber-700">BECA</span>
                 <p className="text-sm text-amber-700">
                   {data.becados_count} estudiante{data.becados_count !== 1 ? 's' : ''} becado{data.becados_count !== 1 ? 's' : ''} — exento{data.becados_count !== 1 ? 's' : ''} del pago de pensiones
+                </p>
+              </div>
+            )}
+
+            {data && !data.sugeridas && data.media_beca_count !== undefined && data.media_beca_count > 0 && (
+              <div className="border-t border-border px-5 py-3 bg-amber-50/60 flex items-center gap-2">
+                <span className="inline-flex items-center rounded-full bg-amber-50 border border-amber-200 px-2.5 py-0.5 text-xs font-medium text-amber-600">MEDIA BECA</span>
+                <p className="text-sm text-amber-700">
+                  {data.media_beca_count} estudiante{data.media_beca_count !== 1 ? 's' : ''} con media beca — paga{data.media_beca_count !== 1 ? 'n' : ''} el 50% de la pensión
                 </p>
               </div>
             )}

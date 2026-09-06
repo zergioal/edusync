@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { api } from '../../lib/api'
 import { useAuth } from '../../context/AuthContext'
+import { Icon } from '../../components/ui/Icon'
 
 interface MesCuenta {
   id:          string
@@ -15,6 +16,7 @@ interface MesCuenta {
 
 interface EstadoCuenta {
   becado:      boolean
+  media_beca?: boolean
   motivo_beca?: string | null
   mensaje?:    string
   estudiante:  { id: string; nombre: string; apellido: string; codigo: string; paralelo: string | null }
@@ -69,13 +71,23 @@ export default function PagosHijoPage() {
 
       {!loading && !error && cuenta?.becado && (
         <div className="rounded-xl border border-blue-200 bg-blue-50 p-6 text-center">
-          <p className="font-semibold text-blue-800">🎓 Estudiante becado</p>
+          <p className="flex items-center justify-center gap-2 font-semibold text-blue-800">
+            <Icon name="graduation-cap" className="h-5 w-5" />
+            Estudiante becado
+          </p>
           <p className="text-sm text-blue-600 mt-1">{cuenta.mensaje}</p>
         </div>
       )}
 
       {!loading && !error && cuenta && !cuenta.becado && (
         <>
+          {cuenta.media_beca && (
+            <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-2.5 flex items-center gap-2 text-sm font-medium text-amber-800">
+              <Icon name="graduation-cap" className="h-4 w-4" />
+              Media beca — paga el 50% de la pensión regular.
+            </div>
+          )}
+
           {/* Alerta deuda */}
           {hijoActual?.bloqueado && (
             <div className="rounded-xl bg-red-50 border border-red-200 p-4 flex items-center justify-between flex-wrap gap-3">

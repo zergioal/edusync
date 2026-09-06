@@ -63,19 +63,26 @@ export function BloqueoScreen() {
               {ef.hijos.map(h => (
                 <div key={h.id} className="flex items-center justify-between rounded-lg border px-3 py-2">
                   <span className="text-sm text-fg">{h.apellido} {h.nombre}</span>
-                  {h.becado ? (
-                    <span className="text-xs font-medium text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full">
-                      BECADO
-                    </span>
-                  ) : h.bloqueado ? (
-                    <span className="text-xs font-medium text-red-600 bg-red-50 px-2 py-0.5 rounded-full">
-                      Bs. {h.monto_pendiente.toFixed(2)} pendiente
-                    </span>
-                  ) : (
-                    <span className="text-xs font-medium text-green-600 bg-green-50 px-2 py-0.5 rounded-full">
-                      Al día
-                    </span>
-                  )}
+                  <div className="flex items-center gap-1.5">
+                    {h.becado ? (
+                      <span className="text-xs font-medium text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full">
+                        BECADO
+                      </span>
+                    ) : h.bloqueado ? (
+                      <span className="text-xs font-medium text-red-600 bg-red-50 px-2 py-0.5 rounded-full">
+                        Bs. {h.monto_pendiente.toFixed(2)} pendiente
+                      </span>
+                    ) : (
+                      <span className="text-xs font-medium text-green-600 bg-green-50 px-2 py-0.5 rounded-full">
+                        Al día
+                      </span>
+                    )}
+                    {!h.becado && h.media_beca && (
+                      <span className="text-xs font-medium text-amber-600 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full">
+                        MEDIA BECA
+                      </span>
+                    )}
+                  </div>
                 </div>
               ))}
             </div>

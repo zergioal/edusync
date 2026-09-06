@@ -41,6 +41,9 @@ export class TarifasService {
     const becadosCount  = await prisma.estudiante.count({
       where: { becado: true, matriculas: { some: { gestion_id } } },
     })
+    const mediaBecaCount = await prisma.estudiante.count({
+      where: { media_beca: true, matriculas: { some: { gestion_id } } },
+    })
 
     return {
       tarifas:    tarifas.map(t => ({
@@ -49,6 +52,7 @@ export class TarifasService {
       })),
       sugeridas:     false,
       becados_count: becadosCount,
+      media_beca_count: mediaBecaCount,
       gestion_anno_sugerida: null,
     }
   }
