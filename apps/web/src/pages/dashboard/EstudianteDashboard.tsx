@@ -16,27 +16,18 @@ const MisTareasPage         = lazy(() => import('../estudiante/MisTareasPage'))
 const AnunciosInternosPage  = lazy(() => import('../shared/AnunciosInternosPage'))
 const MensajesPage          = lazy(() => import('../shared/MensajesPage'))
 
-type Escala = 'ED' | 'DA' | 'DO' | 'DP'
 interface HomeStats {
-  nivel:         string
-  promedio:      number | null
-  materias_bajo: number
-  faltas:        number
-}
-
-const ESCALA_LABEL: Record<Escala, string> = {
-  ED: 'En Desarrollo', DA: 'Debe Alcanzar',
-  DO: 'Desarrollado',  DP: 'Destacado',
-}
-const ESCALA_COLOR: Record<Escala, string> = {
-  ED: 'bg-red-100 text-red-700',     DA: 'bg-orange-100 text-orange-700',
-  DO: 'bg-green-100 text-green-700', DP: 'bg-emerald-100 text-emerald-700',
+  nivel:          string
+  grado:          string
+  paralelo:       string
+  total_materias: number
+  materias_bajo:  number
+  faltas:         number
 }
 
 function EstudianteHome() {
   const { user, estadoFinanciero } = useAuth()
   const [stats, setStats] = useState<HomeStats | null>(null)
-  const [escala, setEscala] = useState<Escala | null>(null)
   const estId = estadoFinanciero?.hijos?.[0]?.id
   const { trimestreActual } = useGestionActiva()
   const { avatarId, showPicker, openPicker, closePicker, onSaved } = useAvatar(user?.id ?? '')
@@ -47,24 +38,28 @@ function EstudianteHome() {
 
     api.get<{
       tipo: 'REGULAR' | 'INICIAL'
-      estudiante: { nivel: string }
+      estudiante: { nivel: string; grado: string; paralelo: string }
       materias?: Array<{ total: number }>
-      promedio_general?: number
-      escala_general?: Escala
+      materias_inicial?: unknown[]
       total_faltas: number
     }>(`/boletines/${estId}?trimestre_id=${trimestreActual.id}`)
       .then(boletin => {
         if (cancelled) return
+        const { nivel, grado, paralelo } = boletin.estudiante
         if (boletin.tipo === 'REGULAR') {
           setStats({
-            nivel:         boletin.estudiante.nivel,
-            promedio:      boletin.promedio_general ?? null,
-            materias_bajo: (boletin.materias ?? []).filter(m => m.total <= 50).length,
-            faltas:        boletin.total_faltas,
+            nivel, grado, paralelo,
+            total_materias: (boletin.materias ?? []).length,
+            materias_bajo:  (boletin.materias ?? []).filter(m => m.total <= 50).length,
+            faltas:         boletin.total_faltas,
           })
-          setEscala(boletin.escala_general ?? null)
         } else {
-          setStats({ nivel: boletin.estudiante.nivel, promedio: null, materias_bajo: 0, faltas: boletin.total_faltas })
+          setStats({
+            nivel, grado, paralelo,
+            total_materias: (boletin.materias_inicial ?? []).length,
+            materias_bajo:  0,
+            faltas:         boletin.total_faltas,
+          })
         }
       })
       .catch(() => {})
@@ -77,6 +72,7 @@ function EstudianteHome() {
     PRIMARIA: 'bg-sky-100 text-sky-700',
     SECUNDARIA: 'bg-violet-100 text-violet-700',
   }
+  const cursoColor = stats?.nivel ? (nivelColors[stats.nivel] ?? 'bg-surface-2 text-fg-muted') : 'bg-surface-2 text-fg-muted'
 
   return (
     <div className="space-y-4">
@@ -99,14 +95,9 @@ function EstudianteHome() {
           <p className="text-sm text-fg-muted mt-0.5 truncate">{user?.email}</p>
           <div className="mt-2 flex flex-wrap items-center gap-2">
             <Badge variant="default">Estudiante</Badge>
-            {stats?.nivel && (
-              <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${nivelColors[stats.nivel] ?? 'bg-surface-2 text-fg-muted'}`}>
-                {stats.nivel}
-              </span>
-            )}
-            {escala && (
-              <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${ESCALA_COLOR[escala]}`}>
-                {ESCALA_LABEL[escala]}
+            {stats?.grado && (
+              <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${cursoColor}`}>
+                {stats.grado} {stats.paralelo ? `"${stats.paralelo}"` : ''}
               </span>
             )}
           </div>
@@ -120,10 +111,10 @@ function EstudianteHome() {
         </h2>
         <div className="grid grid-cols-3 gap-2 sm:gap-4">
           <StatCard
-            label="Promedio general"
-            value={stats?.promedio != null ? String(stats.promedio) : '—'}
-            icon="chart"
-            color="green"
+            label="Total de materias"
+            value={stats != null ? String(stats.total_materias) : '—'}
+            icon="book"
+            color="blue"
           />
           <StatCard
             label="Materias por mejorar"
