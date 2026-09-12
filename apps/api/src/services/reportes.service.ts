@@ -43,7 +43,7 @@ async function loadParaleloData(
     prisma.asignacion.findMany({
       where:   { paralelo_id, gestion_id },
       include: {
-        materia:     { include: { campo: true } },
+        materia:     { include: { campo: true, parent_materia: { select: { nombre: true } } } },
         docente:     { include: { usuario: { select: { nombre: true, apellido: true } } } },
         indicadores: { where: { trimestre_id }, select: { id: true, dimension_id: true } },
       },
@@ -412,6 +412,70 @@ export class ReportesService {
         paralelo: m.paralelo.letra,
         estado:   m.estudiante.estado,
       })),
+    }
+  }
+
+  // ── Reportes de BTH ───────────────────────────────────────────────────────
+
+  async getListaTecnica(paralelo_id: string, gestion_id: string, institucion_id: string) {
+    await verificarGestion(gestion_id, institucion_id)
+
+    const paralelo = await prisma.paralelo.findUnique({
+      where: { id: paralelo_id }, include: { grado: { include: { nivel: true } } },
+    })
+    if (!paralelo) throw new AppError(404, 'Paralelo no encontrado', 'NOT_FOUND')
+
+    const matriculas = await prisma.matricula.findMany({
+      where:   { paralelo_id, gestion_id },
+      include: { estudiante: { include: { usuario: { select: { nombre: true, apellido: true } } } } },
+      orderBy: [{ estudiante: { usuario: { apellido: 'asc' } } }],
+    })
+
+    const toRow = (m: (typeof matriculas)[number]) => ({
+      id:       m.estudiante_id,
+      codigo:   m.estudiante.codigo,
+      apellido: m.estudiante.usuario.apellido,
+      nombre:   m.estudiante.usuario.nombre,
+    })
+
+    return {
+      curso: `${paralelo.grado.nivel.nombre} · ${paralelo.grado.nombre} "${paralelo.letra}"`,
+      cursan:    matriculas.filter(m => m.lleva_tecnica).map(toRow),
+      no_cursan: matriculas.filter(m => !m.lleva_tecnica).map(toRow),
+    }
+  }
+
+  async getNotasSubareas(paralelo_id: string, trimestre_id: string, institucion_id: string) {
+    const { paralelo, dimensiones, asignaciones, matriculas, notasIndex } =
+      await loadParaleloData(paralelo_id, trimestre_id, institucion_id)
+
+    const subareas = asignaciones.filter(a => a.materia.es_subarea_de_id !== null)
+
+    const estudiantes = matriculas
+      .filter(m => m.lleva_tecnica)
+      .map(m => {
+        const mapa = notasIndex.get(m.estudiante_id) ?? new Map()
+        const notasSubareas = subareas.map(asig => {
+          const { total } = calcNotasEstudiante(asig.indicadores, mapa, dimensiones)
+          return { nombre: asig.materia.nombre, total }
+        })
+        const promedio = notasSubareas.length > 0
+          ? Math.round(notasSubareas.reduce((s, n) => s + n.total, 0) / notasSubareas.length)
+          : 0
+
+        return {
+          codigo:   m.estudiante.codigo,
+          apellido: m.estudiante.usuario.apellido,
+          nombre:   m.estudiante.usuario.nombre,
+          notasSubareas,
+          promedio,
+        }
+      })
+
+    return {
+      curso:    `${paralelo.grado.nivel.nombre} · ${paralelo.grado.nombre} "${paralelo.letra}"`,
+      subareas: subareas.map(a => a.materia.nombre),
+      estudiantes,
     }
   }
 

@@ -4,7 +4,7 @@ import { api } from '../../lib/api'
 export interface Paralelo {
   id:    string
   letra: string
-  grado: { nombre: string; nivel: { id: string; nombre: string } }
+  grado: { nombre: string; orden: number; nivel: { id: string; nombre: string } }
 }
 
 interface Props {
@@ -16,11 +16,18 @@ interface Props {
   label?:              string
   disabled?:           boolean
   placeholder?:        string
+  /** Si viene con elementos, solo se muestran paralelos de esos niveles (ej.
+   *  coordinador con alcance restringido). La seguridad real la da el backend —
+   *  esto es solo para no ofrecer opciones que igual serían rechazadas. */
+  nivelesPermitidos?: string[] | undefined
+  /** Si viene con elementos, solo se muestran paralelos cuyo grado.orden esté en la lista
+   *  (ej. reportes exclusivos de BTH, que solo aplican a 5to y 6to). */
+  gradoOrdenes?: number[] | undefined
 }
 
 export function SelectParalelo({
   value, onChange, onParaleloChange, gradoId,
-  required, label = 'Paralelo', disabled, placeholder,
+  required, label = 'Paralelo', disabled, placeholder, nivelesPermitidos, gradoOrdenes,
 }: Props) {
   const [options, setOptions] = useState<Paralelo[]>([])
   const [loading, setLoading] = useState(false)
@@ -56,9 +63,13 @@ export function SelectParalelo({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [gradoId])
 
+  const displayOptions = options
+    .filter(p => !nivelesPermitidos?.length || nivelesPermitidos.includes(p.grado.nivel.nombre))
+    .filter(p => !gradoOrdenes?.length || gradoOrdenes.includes(p.grado.orden))
+
   const handleChange = (id: string) => {
     onChange(id)
-    if (onParaleloChange) onParaleloChange(options.find(p => p.id === id) ?? null)
+    if (onParaleloChange) onParaleloChange(displayOptions.find(p => p.id === id) ?? null)
   }
 
   const showOnlyLetra = Boolean(gradoId)
@@ -74,9 +85,9 @@ export function SelectParalelo({
         className="rounded-lg border border-border px-3 py-2 text-sm shadow-sm focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand disabled:bg-bg"
       >
         <option value="">
-          {loading ? 'Cargando…' : options.length === 0 && gradoId ? 'Sin paralelos' : (placeholder ?? '— Seleccionar —')}
+          {loading ? 'Cargando…' : displayOptions.length === 0 && gradoId ? 'Sin paralelos' : (placeholder ?? '— Seleccionar —')}
         </option>
-        {options.map(p => (
+        {displayOptions.map(p => (
           <option key={p.id} value={p.id}>
             {showOnlyLetra ? p.letra : `${p.grado.nivel.nombre} · ${p.grado.nombre} "${p.letra}"`}
           </option>

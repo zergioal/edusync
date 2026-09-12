@@ -49,6 +49,8 @@ export const NAV_POR_ROL: Record<string, NavItem[]> = {
     { to: '/dashboard/director/anuncios',         label: 'Comunicados',          icon: 'bell'     },
     { to: '/dashboard/director/mensajes',         label: 'Mensajes',             icon: 'folder'   },
     { to: '/dashboard/director/auditoria',        label: 'Auditoría',            icon: 'settings' },
+    { to: '/dashboard/director/personal', label: 'Personal', icon: 'teacher' },
+    { to: '/dashboard/director/proyectos-bth', label: 'Proyectos BTH', icon: 'book' },
   ],
   regente: [
     { to: '/dashboard/regente',                   label: 'Panel',                icon: 'home'     },
@@ -71,6 +73,7 @@ export const NAV_POR_ROL: Record<string, NavItem[]> = {
     { to: '/dashboard/coordinador/reportes',          label: 'Reportes Académicos',  icon: 'chart'    },
     { to: '/dashboard/coordinador/anuncios',          label: 'Comunicados',          icon: 'bell'     },
     { to: '/dashboard/coordinador/mensajes',          label: 'Mensajes',             icon: 'folder'   },
+    { to: '/dashboard/coordinador/proyectos-bth',     label: 'Proyectos BTH',        icon: 'book'     },
   ],
   admin: [
     { to: '/dashboard/admin',                label: 'Panel',             icon: 'home'     },
@@ -89,6 +92,8 @@ export const NAV_POR_ROL: Record<string, NavItem[]> = {
     { to: '/dashboard/admin/mensajes',       label: 'Mensajes',          icon: 'folder'   },
     { to: '/dashboard/admin/auditoria',      label: 'Auditoría',         icon: 'settings' },
     { to: '/dashboard/admin/configuracion',  label: 'Configuración',     icon: 'settings' },
+    { to: '/dashboard/admin/personal',       label: 'Personal',          icon: 'teacher'  },
+    { to: '/dashboard/admin/proyectos-bth',  label: 'Proyectos BTH',     icon: 'book'     },
   ],
   secretaria: [
     { to: '/dashboard/admin',                label: 'Panel',          icon: 'home'     },
@@ -128,6 +133,7 @@ export const NAV_POR_ROL: Record<string, NavItem[]> = {
     { to: '/dashboard/estudiante/horario',        label: 'Mi Horario',    icon: 'clock'    },
     { to: '/dashboard/estudiante/anuncios',       label: 'Comunicados',   icon: 'bell'     },
     { to: '/dashboard/estudiante/mensajes',       label: 'Mensajes',      icon: 'users'    },
+    { to: '/dashboard/estudiante/proyecto-bth',   label: 'Proyecto BTH',  icon: 'book'     },
   ],
   padre: [
     { to: '/dashboard/padre',                     label: 'Mi Panel',      icon: 'home'     },
@@ -138,6 +144,7 @@ export const NAV_POR_ROL: Record<string, NavItem[]> = {
     { to: '/dashboard/padre/calendario',          label: 'Calendario',    icon: 'calendar' },
     { to: '/dashboard/padre/anuncios',            label: 'Comunicados',   icon: 'bell'     },
     { to: '/dashboard/padre/mensajes',            label: 'Mensajes',      icon: 'users'    },
+    { to: '/dashboard/padre/proyecto-bth',        label: 'Proyecto BTH',  icon: 'book'     },
   ],
 }
 

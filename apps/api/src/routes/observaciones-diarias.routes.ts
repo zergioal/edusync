@@ -1,6 +1,7 @@
 import { Router } from 'express'
 import { ObservacionesDiariasController } from '../controllers/observaciones-diarias.controller'
 import { requireRol } from '../middlewares/requireRol'
+import { checkAlcanceCoordinador } from '../middlewares/checkAlcanceCoordinador'
 import { Rol } from '@edusync/types'
 
 export const observacionesDiariasRouter = Router()
@@ -16,5 +17,5 @@ observacionesDiariasRouter.delete('/:id',                isDocente, ctrl.elimina
 observacionesDiariasRouter.get('/mia',                   requireRol(Rol.ESTUDIANTE),  ctrl.getMia)
 observacionesDiariasRouter.get('/hijo/:estudiante_id',    requireRol(Rol.PADRE_TUTOR), ctrl.getHijo)
 
-observacionesDiariasRouter.get('/reporte',                puedeVer, ctrl.reporte)
-observacionesDiariasRouter.get('/reporte/pdf',             puedeVer, ctrl.reportePdf)
+observacionesDiariasRouter.get('/reporte',                puedeVer, checkAlcanceCoordinador, ctrl.reporte)
+observacionesDiariasRouter.get('/reporte/pdf',             puedeVer, checkAlcanceCoordinador, ctrl.reportePdf)

@@ -130,6 +130,7 @@ model Institucion {
   tarifas_pension  TarifaPension[]
   config_horario   ConfigHorario?
   turnos           Turno[]
+  proyectos_bth    ProyectoBTH[]
 
   @@map("instituciones")
 }
@@ -159,6 +160,7 @@ model Usuario {
   notificaciones      Notificacion[]
   certificados_emitidos CertificadoEmitido[] @relation("CertificadosEmitidosPor")
   cambios_estado_estudiante HistorialEstadoEstudiante[]
+  alcance_niveles     CoordinadorNivel[]
 
   @@map("usuarios")
 }
@@ -207,6 +209,7 @@ model Estudiante {
   documentos          DocumentoEstudiante[]
   certificados        CertificadoEmitido[]
   historial_estado    HistorialEstadoEstudiante[]
+  proyectos_bth       ProyectoBTHEstudiante[]
 
   @@map("estudiantes")
 }
@@ -235,9 +238,28 @@ model Nivel {
   tarifas_pension  TarifaPension[]
   pensiones        Pension[]
   horarios_nivel   HorarioNivelTurno[]
+  coordinadores    CoordinadorNivel[]
 
   @@unique([institucion_id, nombre])
   @@map("niveles")
+}
+
+// Alcance de un coordinador: a qué nivel(es) puede generar reportes académicos.
+// Sin ninguna fila = sin restricción (compatibilidad con coordinadores existentes).
+model CoordinadorNivel {
+  id         String  @id @default(uuid())
+  usuario_id String
+  nivel_id   String
+  // Solo tiene sentido cuando el nivel de esta fila es SECUNDARIA: habilita el
+  // acceso a los reportes exclusivos de BTH (coordinador BTH = coordinador de
+  // Secundaria + este flag).
+  es_bth     Boolean @default(false)
+
+  usuario Usuario @relation(fields: [usuario_id], references: [id], onDelete: Cascade)
+  nivel   Nivel   @relation(fields: [nivel_id], references: [id], onDelete: Cascade)
+
+  @@unique([usuario_id, nivel_id])
+  @@map("coordinador_niveles")
 }
 
 model Grado {
@@ -341,6 +363,7 @@ model Gestion {
   asignaciones       Asignacion[]
   tarifas_pension    TarifaPension[]
   resultados_finales ResultadoFinal[]
+  proyectos_bth      ProyectoBTH[]
 
   @@unique([institucion_id, anno])
   @@map("gestiones")
@@ -800,4 +823,43 @@ model AuditoriaLog {
   creado_en      DateTime @default(now())
 
   @@map("auditoria_log")
+}
+
+// ─── BTH: proyectos de 6to de Secundaria ────────────────────────────────────────
+
+enum EstadoDefensaBTH {
+  PENDIENTE
+  APROBADO
+  NO_APROBADO
+}
+
+model ProyectoBTH {
+  id                String           @id @default(uuid())
+  institucion_id    String
+  gestion_id        String
+  nombre            String
+  porcentaje_avance Int              @default(0)
+  estado_defensa    EstadoDefensaBTH @default(PENDIENTE)
+  created_at        DateTime         @default(now())
+
+  institucion Institucion             @relation(fields: [institucion_id], references: [id], onDelete: Cascade)
+  gestion     Gestion                 @relation(fields: [gestion_id], references: [id])
+  estudiantes ProyectoBTHEstudiante[]
+
+  @@map("proyectos_bth")
+}
+
+// Un estudiante solo puede estar en un proyecto BTH activo por gestión
+// (gestion_id es una copia de proyecto.gestion_id, para poder aplicar el @@unique).
+model ProyectoBTHEstudiante {
+  id            String @id @default(uuid())
+  proyecto_id   String
+  estudiante_id String
+  gestion_id    String
+
+  proyecto   ProyectoBTH @relation(fields: [proyecto_id], references: [id], onDelete: Cascade)
+  estudiante Estudiante  @relation(fields: [estudiante_id], references: [id], onDelete: Cascade)
+
+  @@unique([estudiante_id, gestion_id])
+  @@map("proyecto_bth_estudiantes")
 }

@@ -10,6 +10,7 @@ import { api } from '../../lib/api'
 import { AvatarDisplay, AvatarPickerModal, useAvatar } from '../../components/ui/AvatarSelector'
 const CalificacionesHijoPage = lazy(() => import('../padre/CalificacionesHijoPage'))
 const BoletinHijoPage        = lazy(() => import('../padre/BoletinHijoPage'))
+const ProyectoBTHHijoPage    = lazy(() => import('../padre/ProyectoBTHHijoPage'))
 const PagosHijoPage          = lazy(() => import('../padre/PagosHijoPage'))
 const AsistenciaHijoPage     = lazy(() => import('../padre/AsistenciaHijoPage'))
 const ControlDiarioHijoPage  = lazy(() => import('../padre/ControlDiarioHijoPage'))
@@ -197,6 +198,7 @@ export default function PadreDashboard() {
         <Route path="hijo/:id"  element={<HijoDetallePage />} />
         <Route path="notas"     element={<CalificacionesHijoPage />} />
         <Route path="boletin"   element={<BoletinHijoPage />} />
+        <Route path="proyecto-bth" element={<ProyectoBTHHijoPage />} />
         <Route path="pensiones"  element={<PagosHijoPage />} />
         <Route path="asistencia" element={<AsistenciaHijoPage />} />
         <Route path="control-diario" element={<ControlDiarioHijoPage />} />

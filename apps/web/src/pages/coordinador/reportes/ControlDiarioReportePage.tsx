@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { api, apiDownload } from '../../../lib/api'
+import { useAuth } from '../../../context/AuthContext'
 import { SelectGestion }   from '../../../components/select/SelectGestion'
 import { SelectTrimestre } from '../../../components/select/SelectTrimestre'
 import { SelectParalelo }  from '../../../components/select/SelectParalelo'
@@ -20,6 +21,7 @@ interface Resultado { curso: string; periodo: string; observaciones: FilaObserva
 function mesActual() { return new Date().toISOString().slice(0, 7) }
 
 export default function ControlDiarioReportePage() {
+  const { user } = useAuth()
   const [paraleloId,  setParaleloId]  = useState('')
   const [modo,        setModo]        = useState<Modo>('mes')
   const [mes,         setMes]         = useState(mesActual())
@@ -74,7 +76,7 @@ export default function ControlDiarioReportePage() {
 
       <div className="rounded-xl border border-border bg-surface p-5 space-y-4">
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-          <SelectParalelo value={paraleloId} onChange={setParaleloId} label="Curso" />
+          <SelectParalelo value={paraleloId} onChange={setParaleloId} label="Curso" nivelesPermitidos={user?.alcance_niveles} />
 
           <div className="flex flex-col gap-1">
             <label className="text-sm font-medium text-fg">Período</label>

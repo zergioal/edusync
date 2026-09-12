@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { api } from '../../../lib/api'
+import { useAuth } from '../../../context/AuthContext'
 import { SelectGestion }   from '../../../components/select/SelectGestion'
 import { SelectTrimestre } from '../../../components/select/SelectTrimestre'
 import { SelectParalelo }  from '../../../components/select/SelectParalelo'
@@ -18,6 +19,7 @@ interface DocenteRow {
 }
 
 export default function ParcialesPage() {
+  const { user } = useAuth()
   const [gestionId,   setGestionId]   = useState('')
   const [trimestreId, setTrimestreId] = useState('')
   const [paraleloId,  setParaleloId]  = useState('')
@@ -49,7 +51,7 @@ export default function ParcialesPage() {
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-4">
           <SelectGestion   value={gestionId}   onChange={id => { setGestionId(id); setTrimestreId('') }} />
           <SelectTrimestre value={trimestreId} onChange={setTrimestreId} gestionId={gestionId} />
-          <SelectParalelo  value={paraleloId}  onChange={setParaleloId} />
+          <SelectParalelo  value={paraleloId}  onChange={setParaleloId} nivelesPermitidos={user?.alcance_niveles} />
           <div className="flex items-end">
             <button
               onClick={cargar}

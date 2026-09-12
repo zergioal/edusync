@@ -73,7 +73,7 @@ export class UsuariosController {
         res.status(400).json({ error: true, code: 'VALIDATION_ERROR', message: 'La contraseña debe tener al menos 6 caracteres' })
         return
       }
-      const data = await this.service.resetPassword(req.params['id']!, password)
+      const data = await this.service.resetPassword(req.params['id']!, password, req.auth!.rol)
       res.json({ data })
     } catch (e) { next(e) }
   }

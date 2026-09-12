@@ -35,6 +35,8 @@ import { padresRouter }         from './padres.routes'
 import { documentosRouter }     from './documentos.routes'
 import { certificadosRouter }   from './certificados.routes'
 import { observacionesDiariasRouter } from './observaciones-diarias.routes'
+import { personalRouter }       from './personal.routes'
+import { proyectosBTHRouter }   from './proyectos-bth.routes'
 
 export const apiRouter: ExpressRouter = Router()
 
@@ -48,6 +50,8 @@ apiRouter.use(authMiddleware)
 
 apiRouter.use('/instituciones', institucionesRouter)
 apiRouter.use('/usuarios',      usuariosRouter)
+apiRouter.use('/personal',      personalRouter)
+apiRouter.use('/proyectos-bth', proyectosBTHRouter)
 apiRouter.use('/estudiantes',   estudiantesRouter)
 apiRouter.use('/gestiones',     gestionesRouter)
 apiRouter.use('/niveles',       nivelesRouter)

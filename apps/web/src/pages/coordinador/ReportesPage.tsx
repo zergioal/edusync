@@ -1,11 +1,14 @@
 import { Routes, Route, Link } from 'react-router-dom'
 import { Icon, type IconName } from '../../components/ui/Icon'
+import { useAuth } from '../../context/AuthContext'
 import CuadroHonorPage    from './reportes/CuadroHonorPage'
 import CentralizadorPage  from './reportes/CentralizadorPage'
 import ParcialesPage      from './reportes/ParcialesPage'
 import CarpetasPage       from './reportes/CarpetasPage'
 import PromocionAnualPage from './reportes/PromocionAnualPage'
 import ControlDiarioReportePage from './reportes/ControlDiarioReportePage'
+import ListaBTHPage       from './reportes/ListaBTHPage'
+import NotasSubareasPage  from './reportes/NotasSubareasPage'
 
 const CARDS: { to: string; icon: IconName; title: string; desc: string }[] = [
   { to: 'cuadro-honor',   icon: 'trophy',           title: 'Cuadro de Honor',          desc: 'Ranking de estudiantes por promedio general del trimestre.' },
@@ -16,7 +19,15 @@ const CARDS: { to: string; icon: IconName; title: string; desc: string }[] = [
   { to: 'control-diario', icon: 'notebook',         title: 'Control Diario',           desc: 'Observaciones de conducta por curso — filtra por mes, trimestre o año y exporta a PDF.' },
 ]
 
+const CARDS_BTH: { to: string; icon: IconName; title: string; desc: string }[] = [
+  { to: 'bth/lista-tecnica',   icon: 'user-check',    title: 'Lista de estudiantes BTH', desc: 'Quiénes cursan y quiénes no cursan BTH, por curso (5to y 6to de Secundaria).' },
+  { to: 'bth/notas-subareas',  icon: 'document-list', title: 'Notas de Subáreas',        desc: 'Notas finales de cada subárea de técnica especializada y su promedio. Exporta a PDF y Excel.' },
+]
+
 function ReportesMenu() {
+  const { user } = useAuth()
+  const esCoordinadorSinBTH = user?.rol === 'COORDINADOR' && user.acceso_bth === false
+  const cards = esCoordinadorSinBTH ? CARDS : [...CARDS, ...CARDS_BTH]
   return (
     <div className="space-y-6">
       <div>
@@ -24,7 +35,7 @@ function ReportesMenu() {
         <p className="mt-1 text-sm text-fg-muted">Selecciona el tipo de reporte a generar.</p>
       </div>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
-        {CARDS.map(c => (
+        {cards.map(c => (
           <Link
             key={c.to}
             to={c.to}
@@ -57,6 +68,8 @@ export default function ReportesPage() {
       <Route path="carpetas"      element={<CarpetasPage />} />
       <Route path="promocion"     element={<PromocionAnualPage />} />
       <Route path="control-diario" element={<ControlDiarioReportePage />} />
+      <Route path="bth/lista-tecnica"  element={<ListaBTHPage />} />
+      <Route path="bth/notas-subareas" element={<NotasSubareasPage />} />
     </Routes>
   )
 }

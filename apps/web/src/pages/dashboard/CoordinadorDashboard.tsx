@@ -20,6 +20,7 @@ const PerfilEstudiantePage = lazy(() => import('../secretaria/PerfilEstudiantePa
 const AnunciosInternosPage = lazy(() => import('../shared/AnunciosInternosPage'))
 const MensajesPage         = lazy(() => import('../shared/MensajesPage'))
 const PadresPage           = lazy(() => import('../secretaria/PadresPage'))
+const ProyectosBTHPage     = lazy(() => import('../coordinador/ProyectosBTHPage'))
 
 // ─── Panel principal ──────────────────────────────────────────────────────────
 
@@ -109,6 +110,7 @@ export default function CoordinadorDashboard() {
         <Route path="asignaciones"     element={<AsignacionesPage />} />
         <Route path="horarios"         element={<HorariosPage />} />
         <Route path="reportes/*"       element={<ReportesPage />} />
+        <Route path="proyectos-bth"    element={<ProyectosBTHPage />} />
         <Route path="gestiones"        element={<GestionesPage />} />
         <Route path="docentes"         element={<DocentesPage />} />
         <Route path="padres"           element={<PadresPage />} />

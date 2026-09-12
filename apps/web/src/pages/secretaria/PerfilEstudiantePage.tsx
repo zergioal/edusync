@@ -381,7 +381,7 @@ function escalaColor(e: string) {
 
 interface MateriaPlanillaStaff {
   asignacion_id: string
-  materia:       { nombre: string; campo: string }
+  materia:       { nombre: string; campo: string; materia_padre: string | null }
   observacion:   string | null
   dimensiones:   DimensionPlanilla[]
   estudiante:    EstudiantePlanilla | null
@@ -400,7 +400,11 @@ function CalificacionesTab({ estudianteId }: { estudianteId: string }) {
   const [planilla,     setPlanilla]     = useState<MateriaPlanillaStaff[]>([])
   const [loading,      setLoading]      = useState(false)
   const [error,        setError]        = useState('')
-  const [detalleAbierto, setDetalleAbierto] = useState<MateriaPlanillaStaff | null>(null)
+  // Normalmente un solo registro; en materias BTH con subáreas puede haber varios
+  // (uno por docente de subárea) — se muestran como pestañas dentro del modal.
+  const [detalleGrupo, setDetalleGrupo] = useState<MateriaPlanillaStaff[] | null>(null)
+  const [detalleTab,   setDetalleTab]   = useState(0)
+  const detalleAbierto = detalleGrupo?.[detalleTab] ?? null
 
   // Por defecto: gestión activa + primer trimestre no cerrado (se puede cambiar con el selector)
   useEffect(() => {
@@ -454,7 +458,7 @@ function CalificacionesTab({ estudianteId }: { estudianteId: string }) {
               </div>
             )}
             {boletin.materias.map((m, i) => {
-              const detalle = planilla.find(p => p.materia.nombre === m.nombre)
+              const detalles = planilla.filter(p => p.materia.nombre === m.nombre || p.materia.materia_padre === m.nombre)
               return (
                 <div key={i} className="rounded-xl border border-border bg-surface p-3 shadow-sm">
                   <div className="flex items-start justify-between gap-2">
@@ -475,9 +479,9 @@ function CalificacionesTab({ estudianteId }: { estudianteId: string }) {
                       </div>
                     ))}
                   </div>
-                  {detalle && (
+                  {detalles.length > 0 && (
                     <button
-                      onClick={() => setDetalleAbierto(detalle)}
+                      onClick={() => { setDetalleGrupo(detalles); setDetalleTab(0) }}
                       className="mt-2 w-full rounded-lg border border-border py-1.5 text-xs font-medium text-brand hover:bg-surface-2"
                     >
                       Ver registro del profesor
@@ -512,7 +516,7 @@ function CalificacionesTab({ estudianteId }: { estudianteId: string }) {
               </thead>
               <tbody className="divide-y divide-border">
                 {boletin.materias.map((m, i) => {
-                  const detalle = planilla.find(p => p.materia.nombre === m.nombre)
+                  const detalles = planilla.filter(p => p.materia.nombre === m.nombre || p.materia.materia_padre === m.nombre)
                   return (
                     <tr key={i} className="hover:bg-surface-2/60">
                       <td className="px-5 py-2.5 text-fg-muted text-xs">{m.campo}</td>
@@ -526,9 +530,9 @@ function CalificacionesTab({ estudianteId }: { estudianteId: string }) {
                         <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${escalaColor(m.escala)}`}>{m.escala}</span>
                       </td>
                       <td className="px-3 py-2.5 text-right">
-                        {detalle && (
+                        {detalles.length > 0 && (
                           <button
-                            onClick={() => setDetalleAbierto(detalle)}
+                            onClick={() => { setDetalleGrupo(detalles); setDetalleTab(0) }}
                             className="text-xs font-medium text-brand hover:text-brand-hover"
                           >
                             Ver registro del profesor
@@ -567,19 +571,36 @@ function CalificacionesTab({ estudianteId }: { estudianteId: string }) {
         </div>
       )}
 
-      {detalleAbierto && (
+      {detalleAbierto && detalleGrupo && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
           <div className="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl bg-surface p-6 shadow-xl space-y-4">
             <div className="flex items-start justify-between">
               <div>
-                <h2 className="text-lg font-bold text-fg">{detalleAbierto.materia.nombre}</h2>
+                <h2 className="text-lg font-bold text-fg">
+                  {detalleGrupo.length > 1 ? (detalleAbierto.materia.materia_padre ?? detalleAbierto.materia.nombre) : detalleAbierto.materia.nombre}
+                </h2>
                 <p className="text-sm text-fg-muted">{detalleAbierto.materia.campo}</p>
               </div>
               <button
-                onClick={() => setDetalleAbierto(null)}
+                onClick={() => setDetalleGrupo(null)}
                 className="text-fg-muted hover:text-fg text-2xl leading-none"
               >×</button>
             </div>
+            {detalleGrupo.length > 1 && (
+              <div className="flex flex-wrap gap-1.5">
+                {detalleGrupo.map((d, idx) => (
+                  <button
+                    key={d.asignacion_id}
+                    onClick={() => setDetalleTab(idx)}
+                    className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
+                      idx === detalleTab ? 'bg-brand text-white' : 'bg-surface-2 text-fg-muted hover:text-fg'
+                    }`}
+                  >
+                    {d.materia.nombre}
+                  </button>
+                ))}
+              </div>
+            )}
             {detalleAbierto.observacion && (
               <div className="rounded-lg bg-blue-50 dark:bg-blue-950/40 border-l-4 border-blue-400 dark:border-blue-600 px-3 py-2 text-sm text-blue-800 dark:text-blue-300">
                 <span className="font-medium">Observación del docente: </span>{detalleAbierto.observacion}

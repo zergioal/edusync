@@ -153,6 +153,88 @@ export class ReportesController {
     try { this.sendExcel(res, await this.nominaTabla(req), 'nomina_estudiantes') } catch (e) { next(e) }
   }
 
+  // ── Reportes de BTH ──────────────────────────────────────────────────────────
+
+  listaTecnica = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const { paralelo_id, gestion_id } = req.query as Record<string, string>
+      if (!paralelo_id || !gestion_id) throw new AppError(400, 'paralelo_id y gestion_id son requeridos', 'MISSING_PARAM')
+      const data = await this.service.getListaTecnica(paralelo_id, gestion_id, req.auth!.institucion_id)
+      res.json({ data })
+    } catch (e) { next(e) }
+  }
+  listaTecnicaPdf = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try { await this.sendPdf(res, await this.listaTecnicaTabla(req), 'lista_tecnica_bth') } catch (e) { next(e) }
+  }
+  listaTecnicaExcel = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try { this.sendExcel(res, await this.listaTecnicaTabla(req), 'lista_tecnica_bth') } catch (e) { next(e) }
+  }
+
+  private async listaTecnicaTabla(req: Request): Promise<DatosTablaSimple> {
+    const { paralelo_id, gestion_id } = req.query as Record<string, string>
+    if (!paralelo_id || !gestion_id) throw new AppError(400, 'paralelo_id y gestion_id son requeridos', 'MISSING_PARAM')
+    const [data, institucion] = await Promise.all([
+      this.service.getListaTecnica(paralelo_id, gestion_id, req.auth!.institucion_id),
+      getInstitucionInfo(req.auth!.institucion_id),
+    ])
+    return {
+      institucion,
+      titulo:    'Estudiantes que cursan / no cursan BTH',
+      subtitulo: data.curso,
+      columnas: [
+        { header: 'Código',    key: 'codigo' },
+        { header: 'Apellido',  key: 'apellido' },
+        { header: 'Nombre',    key: 'nombre' },
+        { header: 'Cursa BTH', key: 'cursa', align: 'center' },
+      ],
+      filas: [
+        ...data.cursan.map(e => ({ ...e, cursa: 'Sí' })),
+        ...data.no_cursan.map(e => ({ ...e, cursa: 'No' })),
+      ],
+    }
+  }
+
+  notasSubareas = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const { paralelo_id, trimestre_id } = req.query as Record<string, string>
+      if (!paralelo_id || !trimestre_id) throw new AppError(400, 'paralelo_id y trimestre_id son requeridos', 'MISSING_PARAM')
+      const data = await this.service.getNotasSubareas(paralelo_id, trimestre_id, req.auth!.institucion_id)
+      res.json({ data })
+    } catch (e) { next(e) }
+  }
+  notasSubareasPdf = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try { await this.sendPdf(res, await this.notasSubareasTabla(req), 'notas_subareas_bth') } catch (e) { next(e) }
+  }
+  notasSubareasExcel = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try { this.sendExcel(res, await this.notasSubareasTabla(req), 'notas_subareas_bth') } catch (e) { next(e) }
+  }
+
+  private async notasSubareasTabla(req: Request): Promise<DatosTablaSimple> {
+    const { paralelo_id, trimestre_id } = req.query as Record<string, string>
+    if (!paralelo_id || !trimestre_id) throw new AppError(400, 'paralelo_id y trimestre_id son requeridos', 'MISSING_PARAM')
+    const [data, institucion] = await Promise.all([
+      this.service.getNotasSubareas(paralelo_id, trimestre_id, req.auth!.institucion_id),
+      getInstitucionInfo(req.auth!.institucion_id),
+    ])
+    return {
+      institucion,
+      titulo:    'Notas de Subáreas — BTH',
+      subtitulo: data.curso,
+      columnas: [
+        { header: 'Código',   key: 'codigo' },
+        { header: 'Apellido', key: 'apellido' },
+        { header: 'Nombre',   key: 'nombre' },
+        ...data.subareas.map((nombre, i) => ({ header: nombre, key: `sub_${i}`, align: 'center' as const })),
+        { header: 'Promedio', key: 'promedio', align: 'center' as const },
+      ],
+      filas: data.estudiantes.map(e => ({
+        codigo: e.codigo, apellido: e.apellido, nombre: e.nombre,
+        ...Object.fromEntries(e.notasSubareas.map((n, i) => [`sub_${i}`, n.total])),
+        promedio: e.promedio,
+      })),
+    }
+  }
+
   // Ficha individual ------------------------------------------------------------
 
   fichaEstudiante = async (req: Request, res: Response, next: NextFunction): Promise<void> => {

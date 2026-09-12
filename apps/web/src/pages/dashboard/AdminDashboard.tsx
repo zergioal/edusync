@@ -23,9 +23,11 @@ const RegistrarPensionesPage = lazy(() => import('../contador/RegistrarPensiones
 const ConfiguracionPage    = lazy(() => import('../admin/ConfiguracionPage'))
 const InstitucionesPage    = lazy(() => import('../admin/InstitucionesPage'))
 const AuditoriaPage        = lazy(() => import('../admin/AuditoriaPage'))
+const PersonalPage         = lazy(() => import('../admin/PersonalPage'))
 const AnunciosInternosPage = lazy(() => import('../shared/AnunciosInternosPage'))
 const MensajesPage         = lazy(() => import('../shared/MensajesPage'))
 const PadresPage           = lazy(() => import('../secretaria/PadresPage'))
+const ProyectosBTHPage     = lazy(() => import('../coordinador/ProyectosBTHPage'))
 const ReportesPage         = lazy(() => import('../secretaria/reportes/ReportesPage'))
 
 // ─── Panel principal ──────────────────────────────────────────────────────────
@@ -181,6 +183,7 @@ export default function AdminDashboard() {
         {/* Docentes y Padres */}
         <Route path="docentes"       element={<DocentesPage />} />
         <Route path="padres"         element={<PadresPage />} />
+        <Route path="proyectos-bth"  element={<ProyectosBTHPage />} />
 
         {/* Académico (compartido con coordinador) */}
         <Route path="paralelos"      element={<ParalelosPage />} />
@@ -190,6 +193,7 @@ export default function AdminDashboard() {
         <Route path="horarios"      element={<SectionPlaceholder title="Horarios" />} />
         <Route path="instituciones" element={<InstitucionesPage />} />
         <Route path="auditoria"    element={<AuditoriaPage />} />
+        <Route path="personal"     element={<PersonalPage />} />
         <Route path="anuncios"      element={<AnunciosInternosPage />} />
         <Route path="mensajes"      element={<MensajesPage />} />
         <Route path="configuracion" element={<ConfiguracionPage />} />

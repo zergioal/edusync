@@ -1,9 +1,11 @@
 import { useState, useEffect, useRef } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { api, apiDownload } from '../../../lib/api'
+import { useAuth } from '../../../context/AuthContext'
 import { SelectGestion }   from '../../../components/select/SelectGestion'
 import { SelectTrimestre } from '../../../components/select/SelectTrimestre'
 import { SelectParalelo }  from '../../../components/select/SelectParalelo'
+import { Icon } from '../../../components/ui/Icon'
 
 interface Materia { id: string; nombre: string; campo: string }
 interface EstRow {
@@ -18,6 +20,7 @@ interface Data {
 }
 
 export default function CentralizadorPage() {
+  const { user } = useAuth()
   const [searchParams] = useSearchParams()
   const autoGenRef = useRef(false)
 
@@ -79,7 +82,7 @@ export default function CentralizadorPage() {
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-4">
           <SelectGestion   value={gestionId}   onChange={id => { setGestionId(id); setTrimestreId(''); setData(null) }} />
           <SelectTrimestre value={trimestreId} onChange={setTrimestreId} gestionId={gestionId} />
-          <SelectParalelo  value={paraleloId}  onChange={setParaleloId} />
+          <SelectParalelo  value={paraleloId}  onChange={setParaleloId} nivelesPermitidos={user?.alcance_niveles} />
           <div className="flex items-end">
             <button
               onClick={generar}
@@ -144,7 +147,14 @@ export default function CentralizadorPage() {
                       const total = est.notas[m.id]?.total ?? null
                       return (
                         <td key={m.id} className={`border border-border px-1 py-1 text-center ${total !== null && total <= 50 ? 'bg-red-100 text-red-700 font-bold' : ''}`}>
-                          {total ?? '—'}
+                          <span className="inline-flex items-center gap-1">
+                            {total ?? '—'}
+                            {total === 50 && (
+                              <span title="No recomendable — coincide justo con el límite de aprobación, revisá el registro">
+                                <Icon name="alert-triangle" className="h-3 w-3 text-amber-500" />
+                              </span>
+                            )}
+                          </span>
                         </td>
                       )
                     })}

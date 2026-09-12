@@ -356,7 +356,7 @@ export class PlanillaService {
         gestion_id,
         ...(llevaTecnica ? {} : { materia: { es_subarea_de_id: null } }),
       },
-      include: { materia: { include: { campo: true } } },
+      include: { materia: { include: { campo: true, parent_materia: { select: { nombre: true } } } } },
       orderBy: [{ materia: { campo: { nombre: 'asc' } } }, { materia: { nombre: 'asc' } }],
     })
 
@@ -403,7 +403,11 @@ export class PlanillaService {
 
       return {
         asignacion_id: asig.id,
-        materia:        { nombre: asig.materia.nombre, campo: asig.materia.campo.nombre },
+        materia: {
+          nombre:        asig.materia.nombre,
+          campo:         asig.materia.campo.nombre,
+          materia_padre: asig.materia.parent_materia?.nombre ?? null,
+        },
         observacion:    obsMap.get(asig.docente_id) ?? null,
         dimensiones:    dimsAsig,
         estudiante: {

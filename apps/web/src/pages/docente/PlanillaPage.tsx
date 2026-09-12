@@ -7,6 +7,7 @@ import { Button, Spinner, Badge } from '@edusync/ui'
 import { getTrimestreActivo, trimestreLabel } from '../../lib/trimestre'
 import { useIsMobile } from '../../hooks/useIsMobile'
 import { IndicadorFormModal, type IndicadorFormValues } from '../../components/planilla/IndicadorFormModal'
+import { Icon } from '../../components/ui/Icon'
 
 const ES_AUTOEVAL = (nombre: string) => nombre === 'AUTOEVALUACION'
 
@@ -395,7 +396,14 @@ function PlanillaMobileView({
             <span className="font-semibold text-sm">Total</span>
           </div>
           <div className="flex items-center gap-3">
-            <span className="text-2xl font-bold">{estudiante.total ?? '—'}</span>
+            <span className="text-2xl font-bold flex items-center gap-1.5">
+              {estudiante.total ?? '—'}
+              {estudiante.total === 50 && (
+                <span title="No recomendable — coincide justo con el límite de aprobación, revisá el registro">
+                  <Icon name="alert-triangle" className="h-4 w-4 text-amber-400" />
+                </span>
+              )}
+            </span>
             {estudiante.escala && (
               <span className={`rounded px-3 py-1 text-sm font-bold ${ESCALA_COLORS[estudiante.escala] ?? ''}`}>
                 {estudiante.escala}
@@ -791,7 +799,16 @@ export default function PlanillaPage() {
                         : 'text-fg bg-surface'
                     }`}
                   >
-                    {est.total != null ? est.total : <span className="text-fg-muted/50">—</span>}
+                    {est.total != null ? (
+                      <span className="inline-flex items-center gap-1">
+                        {est.total}
+                        {est.total === 50 && (
+                          <span title="No recomendable — coincide justo con el límite de aprobación, revisá el registro">
+                            <Icon name="alert-triangle" className="h-3.5 w-3.5 text-amber-500" />
+                          </span>
+                        )}
+                      </span>
+                    ) : <span className="text-fg-muted/50">—</span>}
                   </td>
 
                   {/* ESCALA */}

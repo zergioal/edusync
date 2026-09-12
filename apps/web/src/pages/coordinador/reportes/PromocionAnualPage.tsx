@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { api } from '../../../lib/api'
+import { useAuth } from '../../../context/AuthContext'
 import { SelectGestion }  from '../../../components/select/SelectGestion'
 import { SelectParalelo } from '../../../components/select/SelectParalelo'
 
@@ -18,6 +19,7 @@ interface EstRow {
 }
 
 export default function PromocionAnualPage() {
+  const { user } = useAuth()
   const [gestionId,  setGestionId]  = useState('')
   const [paraleloId, setParaleloId] = useState('')
   const [data,       setData]       = useState<EstRow[] | null>(null)
@@ -54,7 +56,7 @@ export default function PromocionAnualPage() {
       <div className="rounded-xl border border-border bg-surface p-5">
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
           <SelectGestion  value={gestionId}  onChange={id => { setGestionId(id); setData(null) }} />
-          <SelectParalelo value={paraleloId} onChange={setParaleloId} />
+          <SelectParalelo value={paraleloId} onChange={setParaleloId} nivelesPermitidos={user?.alcance_niveles} />
           <div className="flex items-end">
             <button
               onClick={cargar}

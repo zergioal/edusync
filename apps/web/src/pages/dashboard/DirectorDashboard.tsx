@@ -22,7 +22,9 @@ const DocentesPage             = lazy(() => import('../secretaria/DocentesPage')
 const EstudiantesPage          = lazy(() => import('../secretaria/EstudiantesPage'))
 const PerfilEstudiantePage     = lazy(() => import('../secretaria/PerfilEstudiantePage'))
 const AuditoriaPage            = lazy(() => import('../admin/AuditoriaPage'))
+const PersonalPage             = lazy(() => import('../admin/PersonalPage'))
 const PadresPage               = lazy(() => import('../secretaria/PadresPage'))
+const ProyectosBTHPage         = lazy(() => import('../coordinador/ProyectosBTHPage'))
 
 interface GestionInfo {
   id:        string
@@ -229,10 +231,12 @@ export default function DirectorDashboard() {
         <Route path="gestiones"         element={<GestionesPage />} />
         <Route path="horarios"          element={<HorariosPage />} />
         <Route path="reportes/*"        element={<ReportesPage />} />
+        <Route path="proyectos-bth"     element={<ProyectosBTHPage />} />
         <Route path="carga-horaria"     element={<CargaHorariaDocentesPage />} />
         <Route path="anuncios"          element={<AnunciosInternosPage />} />
         <Route path="mensajes"          element={<MensajesPage />} />
         <Route path="auditoria"         element={<AuditoriaPage />} />
+        <Route path="personal"          element={<PersonalPage />} />
         <Route path="*"                 element={<DirectorHome />} />
       </Routes>
     </DashboardLayout>

@@ -13,6 +13,7 @@ const MiBoletinPage         = lazy(() => import('../estudiante/MiBoletinPage'))
 const MiAsistenciaPage      = lazy(() => import('../estudiante/MiAsistenciaPage'))
 const MiControlDiarioPage   = lazy(() => import('../estudiante/MiControlDiarioPage'))
 const MisTareasPage         = lazy(() => import('../estudiante/MisTareasPage'))
+const MiProyectoBTHPage     = lazy(() => import('../estudiante/MiProyectoBTHPage'))
 const AnunciosInternosPage  = lazy(() => import('../shared/AnunciosInternosPage'))
 const MensajesPage          = lazy(() => import('../shared/MensajesPage'))
 
@@ -170,6 +171,7 @@ export default function EstudianteDashboard() {
         <Route path="asistencia" element={<MiAsistenciaPage />} />
         <Route path="control-diario" element={<MiControlDiarioPage />} />
         <Route path="tareas"     element={<MisTareasPage />} />
+        <Route path="proyecto-bth" element={<MiProyectoBTHPage />} />
         <Route path="horario"    element={<SectionPlaceholder title="Mi Horario" />} />
         <Route path="anuncios"   element={<AnunciosInternosPage />} />
         <Route path="mensajes"   element={<MensajesPage />} />
