@@ -34,7 +34,7 @@ export async function checkAlcanceCoordinador(req: Request, res: Response, next:
     if (!nivelesPermitidos.has(paralelo.grado.nivel_id)) {
       res.status(403).json({
         error:   'Forbidden',
-        message: 'No tenés acceso a reportes de este nivel.',
+        message: 'No tienes acceso a reportes de este nivel.',
       })
       return
     }

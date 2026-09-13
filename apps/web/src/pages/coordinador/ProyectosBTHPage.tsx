@@ -151,7 +151,7 @@ export default function ProyectosBTHPage() {
     try {
       setProyectos(await api.get<Proyecto[]>(`/proyectos-bth?gestion_id=${gestionId}`))
     } catch {
-      toastRef.current.error('No se pudieron cargar los proyectos (¿tenés acceso a BTH?)')
+      toastRef.current.error('No se pudieron cargar los proyectos (¿tienes acceso a BTH?)')
     } finally {
       setLoading(false)
     }

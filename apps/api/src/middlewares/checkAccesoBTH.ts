@@ -23,7 +23,7 @@ export async function checkAccesoBTH(req: Request, res: Response, next: NextFunc
     if (!alcance.some(a => a.es_bth)) {
       res.status(403).json({
         error:   'Forbidden',
-        message: 'No tenés acceso a las funciones de BTH.',
+        message: 'No tienes acceso a las funciones de BTH.',
       })
       return
     }
