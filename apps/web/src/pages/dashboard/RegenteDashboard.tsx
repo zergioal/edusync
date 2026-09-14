@@ -95,7 +95,7 @@ export default function RegenteDashboard() {
         <Route path="reporte"          element={<ReporteAsistenciaPage />} />
         <Route path="inasistencias"    element={<ComunicadosInasistenciaPage />} />
         <Route path="estudiantes"      element={<RegenteEstudiantesPage />} />
-        <Route path="estudiante/:id"   element={<PerfilEstudiantePage visibleTabs={['asistencia', 'pensiones']} />} />
+        <Route path="estudiante/:id"   element={<PerfilEstudiantePage visibleTabs={['asistencia', 'pensiones']} basePath="/dashboard/regente" />} />
         <Route path="anuncios"         element={<AnunciosInternosPage />} />
         <Route path="mensajes"         element={<MensajesPage />} />
         <Route path="*"                element={<RegenteHome />} />

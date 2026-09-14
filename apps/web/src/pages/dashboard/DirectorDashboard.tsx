@@ -223,9 +223,9 @@ export default function DirectorDashboard() {
       <Routes>
         <Route index                    element={<DirectorHome />} />
         <Route path="docentes"          element={<DocentesPage />} />
-        <Route path="padres"            element={<PadresPage />} />
+        <Route path="padres"            element={<PadresPage basePath="/dashboard/director" />} />
         <Route path="estudiantes"       element={<EstudiantesPage basePath="/dashboard/director" />} />
-        <Route path="estudiante/:id"    element={<PerfilEstudiantePage />} />
+        <Route path="estudiante/:id"    element={<PerfilEstudiantePage basePath="/dashboard/director" />} />
         <Route path="paralelos"         element={<ParalelosPage />} />
         <Route path="asignaciones"      element={<AsignacionesPage />} />
         <Route path="gestiones"         element={<GestionesPage />} />

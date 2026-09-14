@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { api, ApiError } from '../../lib/api'
 import { useToast } from '../../components/ui/Toast'
 import { Button, Badge, Spinner } from '@edusync/ui'
@@ -161,7 +162,8 @@ function PadreModal({ padre, onClose, onSaved }: { padre: Padre | null; onClose:
 
 type View = 'cursos' | 'lista'
 
-export default function PadresPage() {
+export default function PadresPage({ basePath = '/dashboard/admin' }: { basePath?: string } = {}) {
+  const navigate = useNavigate()
   const toast    = useToast()
   const toastRef = useRef(toast)
   toastRef.current = toast
@@ -391,9 +393,17 @@ export default function PadresPage() {
                   ) : (
                     <div className="flex flex-wrap gap-1">
                       {p.hijos_a_cargo.filter(rel => rel.estudiante?.usuario).map(rel => (
-                        <Badge key={rel.estudiante.id} variant="info">
-                          {rel.estudiante.usuario.apellido}, {rel.estudiante.usuario.nombre}
-                        </Badge>
+                        <button
+                          key={rel.estudiante.id}
+                          type="button"
+                          onClick={() => navigate(`${basePath}/estudiante/${rel.estudiante.id}`)}
+                          className="cursor-pointer transition-opacity hover:opacity-75"
+                          title="Ver perfil del estudiante"
+                        >
+                          <Badge variant="info">
+                            {rel.estudiante.usuario.apellido}, {rel.estudiante.usuario.nombre}
+                          </Badge>
+                        </button>
                       ))}
                     </div>
                   )}

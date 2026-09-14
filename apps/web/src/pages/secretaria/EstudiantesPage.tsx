@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { api, ApiError } from '../../lib/api'
 import { useToast } from '../../components/ui/Toast'
 import { useAuth } from '../../context/AuthContext'
@@ -493,6 +493,7 @@ type View = 'cursos' | 'lista'
 
 export default function EstudiantesPage({ basePath = '/dashboard/admin' }: { basePath?: string } = {}) {
   const navigate  = useNavigate()
+  const [searchParams, setSearchParams] = useSearchParams()
   const toast     = useToast()
   const toastRef  = useRef(toast)
   toastRef.current = toast
@@ -527,6 +528,18 @@ export default function EstudiantesPage({ basePath = '/dashboard/admin' }: { bas
       .finally(() => setLoadingParalelos(false))
   }, [])
 
+  // Si venimos de "Volver" desde el perfil de un estudiante, la URL trae
+  // ?paralelo_id=... — restauramos directamente la lista de ese curso en vez
+  // de la grilla de cursos.
+  useEffect(() => {
+    if (paralelos.length === 0) return
+    const paraleloId = searchParams.get('paralelo_id')
+    if (!paraleloId || selectedParalelo) return
+    const match = paralelos.find(p => p.id === paraleloId)
+    if (match) { setSelectedParalelo(match); setView('lista') }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [paralelos])
+
   const load = useCallback(async () => {
     if (!selectedParalelo) return
     setLoading(true)
@@ -548,12 +561,24 @@ export default function EstudiantesPage({ basePath = '/dashboard/admin' }: { bas
     setSelectedParalelo(p)
     setBuscar(''); setBuscarInput(''); setGestionId(''); setEstadoFiltro('ACTIVO')
     setView('lista')
+    setSearchParams({ paralelo_id: p.id }, { replace: true })
   }
 
   function backToCursos() {
     setView('cursos')
     setSelectedParalelo(null)
     setEstudiantes([])
+    setSearchParams({}, { replace: true })
+  }
+
+  // Arma la URL al perfil del estudiante, llevando el curso actual para que
+  // "Volver" regrese a esta misma lista en vez de a la grilla de cursos.
+  function perfilUrl(estId: string, tab?: string): string {
+    const params = new URLSearchParams()
+    if (tab) params.set('tab', tab)
+    if (selectedParalelo) params.set('paralelo_id', selectedParalelo.id)
+    const qs = params.toString()
+    return `${basePath}/estudiante/${estId}${qs ? `?${qs}` : ''}`
   }
 
   async function handleDelete(est: Estudiante) {
@@ -790,22 +815,22 @@ export default function EstudiantesPage({ basePath = '/dashboard/admin' }: { bas
                 <td className="px-4 py-3 text-right">
                   <div className="flex items-center justify-end gap-1 flex-nowrap">
                     <Button variant="ghost" size="sm"
-                      onClick={() => navigate(`${basePath}/estudiante/${est.id}`)}>
+                      onClick={() => navigate(perfilUrl(est.id))}>
                       Perfil
                     </Button>
                     <Button variant="ghost" size="sm"
                       className="text-indigo-600 hover:text-indigo-800 hidden sm:inline-flex"
-                      onClick={() => navigate(`${basePath}/estudiante/${est.id}?tab=calificaciones`)}>
+                      onClick={() => navigate(perfilUrl(est.id, 'calificaciones'))}>
                       Notas
                     </Button>
                     <Button variant="ghost" size="sm"
                       className="text-teal-600 hover:text-teal-800 hidden sm:inline-flex"
-                      onClick={() => navigate(`${basePath}/estudiante/${est.id}?tab=asistencia`)}>
+                      onClick={() => navigate(perfilUrl(est.id, 'asistencia'))}>
                       Asist.
                     </Button>
                     <Button variant="ghost" size="sm"
                       className="text-amber-600 hover:text-amber-800 hidden sm:inline-flex"
-                      onClick={() => navigate(`${basePath}/estudiante/${est.id}?tab=pensiones`)}>
+                      onClick={() => navigate(perfilUrl(est.id, 'pensiones'))}>
                       Pensión
                     </Button>
                     {canManage && (

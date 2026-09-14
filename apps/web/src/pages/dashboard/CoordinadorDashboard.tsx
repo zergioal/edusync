@@ -113,9 +113,9 @@ export default function CoordinadorDashboard() {
         <Route path="proyectos-bth"    element={<ProyectosBTHPage />} />
         <Route path="gestiones"        element={<GestionesPage />} />
         <Route path="docentes"         element={<DocentesPage />} />
-        <Route path="padres"           element={<PadresPage />} />
+        <Route path="padres"           element={<PadresPage basePath="/dashboard/coordinador" />} />
         <Route path="estudiantes"      element={<EstudiantesPage basePath="/dashboard/coordinador" />} />
-        <Route path="estudiante/:id"   element={<PerfilEstudiantePage />} />
+        <Route path="estudiante/:id"   element={<PerfilEstudiantePage basePath="/dashboard/coordinador" />} />
         <Route path="anuncios"         element={<AnunciosInternosPage />} />
         <Route path="mensajes"         element={<MensajesPage />} />
         <Route path="*"                element={<CoordinadorHome />} />

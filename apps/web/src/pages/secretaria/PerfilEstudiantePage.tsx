@@ -1079,11 +1079,12 @@ const ALL_TABS: { key: Tab; label: string }[] = [
 ]
 
 export default function PerfilEstudiantePage({
-  visibleTabs,
-}: { visibleTabs?: Tab[] } = {}) {
+  visibleTabs, basePath = '/dashboard/admin',
+}: { visibleTabs?: Tab[]; basePath?: string } = {}) {
   const { id }    = useParams<{ id: string }>()
   const navigate  = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
+  const paraleloId = searchParams.get('paralelo_id')
 
   const { user } = useAuth()
   const canManageTecnica = user?.rol ? CAN_MANAGE_TECNICA.includes(user.rol) : false
@@ -1094,7 +1095,11 @@ export default function PerfilEstudiantePage({
 
   const rawTab   = (searchParams.get('tab') ?? TABS[0]?.key ?? 'datos') as Tab
   const tab      = TABS.some(t => t.key === rawTab) ? rawTab : (TABS[0]?.key ?? 'datos') as Tab
-  const setTab   = (t: Tab) => setSearchParams({ tab: t }, { replace: true })
+  const setTab   = (t: Tab) => setSearchParams(prev => {
+    const next = new URLSearchParams(prev)
+    next.set('tab', t)
+    return next
+  }, { replace: true })
 
   const [est,     setEst]     = useState<Estudiante | null>(null)
   const [loading, setLoading] = useState(true)
@@ -1133,7 +1138,12 @@ export default function PerfilEstudiantePage({
     <div className="space-y-5 max-w-4xl">
       {/* Header */}
       <div className="flex items-center gap-4">
-        <Button variant="ghost" size="sm" onClick={() => navigate(-1)}>← Volver</Button>
+        <Button
+          variant="ghost" size="sm"
+          onClick={() => navigate(`${basePath}/estudiantes${paraleloId ? `?paralelo_id=${paraleloId}` : ''}`)}
+        >
+          ← Volver
+        </Button>
         <div>
           <h1 className="text-2xl font-bold text-fg">
             {est.usuario.apellido}, {est.usuario.nombre}

@@ -41,6 +41,12 @@ interface DocenteGroup {
 
 interface LockedDocente { id: string; nombre: string; apellido: string }
 
+interface DocenteBasico {
+  id:                      string
+  horas_pedagogicas_total: number
+  usuario:                 { nombre: string; apellido: string }
+}
+
 interface ParaleloBlock {
   key:         number
   paralelo_id: string
@@ -157,6 +163,7 @@ export default function AsignacionesPage() {
 
   const [gestion,      setGestion]      = useState<Gestion | null>(null)
   const [asignaciones, setAsignaciones] = useState<Asignacion[]>([])
+  const [docentes,     setDocentes]     = useState<DocenteBasico[]>([])
   const [loading,      setLoading]      = useState(true)
   const [filterPar,    setFilterPar]    = useState('')
   const [searchDoc,    setSearchDoc]    = useState('')
@@ -175,6 +182,9 @@ export default function AsignacionesPage() {
     api.get<Gestion>('/gestiones/activa')
       .then(setGestion)
       .catch(() => toastRef.current.error('No se encontró una gestión activa'))
+    api.get<DocenteBasico[]>('/docentes')
+      .then(setDocentes)
+      .catch(() => {})
   }, [])
 
   // ── Carga asignaciones (filtrada por gestión activa) ──────────────────────
@@ -199,6 +209,24 @@ export default function AsignacionesPage() {
 
   const allGroups = useMemo<DocenteGroup[]>(() => {
     const map = new Map<string, DocenteGroup>()
+
+    // Sin filtro de paralelo: partimos de TODOS los docentes (incluye a los que
+    // todavía no tienen ninguna asignación) para que aparezcan en la lista y se
+    // les pueda agregar su primera materia. Con un paralelo filtrado, la lista
+    // muestra solo a quienes ya están asignados ahí (comportamiento previo).
+    if (!filterPar) {
+      for (const d of docentes) {
+        map.set(d.id, {
+          docente_id:              d.id,
+          nombre:                  d.usuario.nombre,
+          apellido:                d.usuario.apellido,
+          horas_pedagogicas_total: d.horas_pedagogicas_total,
+          asignaciones:            [],
+          niveles:                 [],
+        })
+      }
+    }
+
     for (const a of asignaciones) {
       const dId = a.docente.id
       if (!map.has(dId)) {
@@ -219,7 +247,7 @@ export default function AsignacionesPage() {
     return Array.from(map.values()).sort((a, b) =>
       a.apellido.localeCompare(b.apellido, 'es')
     )
-  }, [asignaciones])
+  }, [asignaciones, docentes, filterPar])
 
   const groups = useMemo(() => {
     if (!searchDoc.trim()) return allGroups
@@ -456,7 +484,12 @@ export default function AsignacionesPage() {
               </div>
 
               {/* Detalle expandido */}
-              {expanded && (
+              {expanded && g.asignaciones.length === 0 && (
+                <div className="border-t border-blue-100 px-5 py-6 text-center text-sm text-fg-muted">
+                  Todavía no tiene ninguna materia asignada.
+                </div>
+              )}
+              {expanded && g.asignaciones.length > 0 && (
                 <div className="border-t border-blue-100">
                   <table className="w-full text-sm">
                     <thead>

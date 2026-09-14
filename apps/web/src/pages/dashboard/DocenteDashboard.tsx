@@ -216,7 +216,7 @@ export default function DocenteDashboard() {
         <Route path="asistencia/:asignacion_id" element={<AsistenciaClasePage />} />
         <Route path="tareas"                    element={<TareasPage />} />
         <Route path="estudiantes"               element={<DocenteEstudiantesPage />} />
-        <Route path="estudiante/:id"            element={<PerfilEstudiantePage visibleTabs={['datos', 'calificaciones']} />} />
+        <Route path="estudiante/:id"            element={<PerfilEstudiantePage visibleTabs={['datos', 'calificaciones']} basePath="/dashboard/docente" />} />
         <Route path="calificaciones"            element={<MisMateriasPage />} />
         <Route path="asistencia"                element={<DocenteAsistenciaPage />} />
         <Route path="control-diario"            element={<ControlDiarioPage />} />
