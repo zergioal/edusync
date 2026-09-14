@@ -1,76 +1,16 @@
-import { useState, useEffect } from 'react'
-import { api } from '../../lib/api'
-import { Spinner, Badge } from '@edusync/ui'
-
-interface DocenteHoras {
-  id:       string
-  nombre:   string
-  apellido: string
-  email:    string
-  horas_pedagogicas_total: number
-  n_asignaciones: number
-}
+import { SeccionCargaHoraria } from '../../components/configuracion/SeccionCargaHoraria'
 
 export default function CargaHorariaDocentesPage() {
-  const [docentes, setDocentes] = useState<DocenteHoras[]>([])
-  const [loading,  setLoading]  = useState(true)
-
-  useEffect(() => {
-    api.get<DocenteHoras[]>('/docentes')
-      .then(setDocentes)
-      .catch(() => {})
-      .finally(() => setLoading(false))
-  }, [])
-
-  if (loading) return <div className="flex justify-center py-16"><Spinner /></div>
-
-  const sinHoras = docentes.filter(d => d.horas_pedagogicas_total === 0)
-
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-fg">Carga Horaria Docentes</h1>
-          <p className="text-sm text-fg-muted mt-0.5">Horas pedagógicas asignadas por docente</p>
-        </div>
-        {sinHoras.length > 0 && (
-          <div className="flex items-center gap-2 rounded-xl bg-red-50 px-4 py-2 text-sm font-medium text-red-700">
-            <span className="h-2 w-2 rounded-full bg-red-500" />
-            {sinHoras.length} docente(s) sin horas asignadas
-          </div>
-        )}
+    <div className="space-y-4">
+      <div>
+        <h1 className="text-2xl font-bold text-fg">Carga horaria por materia y grado</h1>
+        <p className="text-sm text-fg-muted mt-0.5">
+          Horas pedagógicas mensuales para cada materia según el grado. Los cambios afectan
+          las asignaciones futuras.
+        </p>
       </div>
-
-      <div className="rounded-xl border border-border bg-surface shadow-sm overflow-hidden">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b border-border bg-bg text-xs font-semibold uppercase tracking-wide text-fg-muted">
-              <th className="px-5 py-3 text-left">Docente</th>
-              <th className="px-5 py-3 text-left">Email</th>
-              <th className="px-5 py-3 text-center">Asignaciones</th>
-              <th className="px-5 py-3 text-center">Horas pedagógicas</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-border">
-            {docentes.length === 0 ? (
-              <tr>
-                <td colSpan={4} className="py-12 text-center text-fg-muted">No hay docentes registrados</td>
-              </tr>
-            ) : docentes.map(d => (
-              <tr key={d.id} className={`hover:bg-surface-2 transition-colors ${d.horas_pedagogicas_total === 0 ? 'bg-red-50 dark:bg-red-950/30' : ''}`}>
-                <td className="px-5 py-3 font-medium text-fg">{d.apellido}, {d.nombre}</td>
-                <td className="px-5 py-3 text-fg-muted">{d.email}</td>
-                <td className="px-5 py-3 text-center">{d.n_asignaciones ?? '—'}</td>
-                <td className="px-5 py-3 text-center">
-                  <Badge variant={d.horas_pedagogicas_total === 0 ? 'danger' : d.horas_pedagogicas_total < 20 ? 'warning' : 'success'}>
-                    {d.horas_pedagogicas_total}h
-                  </Badge>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      <SeccionCargaHoraria />
     </div>
   )
 }

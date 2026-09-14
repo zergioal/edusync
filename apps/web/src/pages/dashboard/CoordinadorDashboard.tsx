@@ -10,7 +10,6 @@ import { EditarPerfilModal } from '../../components/EditarPerfilModal'
 
 import { useGestionActiva } from '../../hooks/useGestionActiva'
 const ParalelosPage        = lazy(() => import('../coordinador/ParalelosPage'))
-const AsignacionesPage     = lazy(() => import('../coordinador/AsignacionesPage'))
 const HorariosPage         = lazy(() => import('../coordinador/HorariosPage'))
 const ReportesPage         = lazy(() => import('../coordinador/ReportesPage'))
 const GestionesPage        = lazy(() => import('../secretaria/GestionesPage'))
@@ -107,7 +106,6 @@ export default function CoordinadorDashboard() {
       <Routes>
         <Route index                   element={<CoordinadorHome />} />
         <Route path="paralelos"        element={<ParalelosPage />} />
-        <Route path="asignaciones"     element={<AsignacionesPage />} />
         <Route path="horarios"         element={<HorariosPage />} />
         <Route path="reportes/*"       element={<ReportesPage />} />
         <Route path="proyectos-bth"    element={<ProyectosBTHPage />} />

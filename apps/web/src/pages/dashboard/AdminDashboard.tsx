@@ -14,7 +14,6 @@ const PerfilEstudiantePage = lazy(() => import('../secretaria/PerfilEstudiantePa
 const GestionesPage        = lazy(() => import('../secretaria/GestionesPage'))
 const DocentesPage         = lazy(() => import('../secretaria/DocentesPage'))
 const ParalelosPage        = lazy(() => import('../coordinador/ParalelosPage'))
-const AsignacionesPage     = lazy(() => import('../coordinador/AsignacionesPage'))
 const PensionesPage        = lazy(() => import('../contador/PensionesPage'))
 const MorosidadPage        = lazy(() => import('../contador/MorosidadPage'))
 const EstadoCuentaPage     = lazy(() => import('../contador/EstadoCuentaPage'))
@@ -187,7 +186,6 @@ export default function AdminDashboard() {
 
         {/* Académico (compartido con coordinador) */}
         <Route path="paralelos"      element={<ParalelosPage />} />
-        <Route path="asignaciones"   element={<AsignacionesPage />} />
         <Route path="calificaciones" element={<SectionPlaceholder title="Calificaciones" />} />
         <Route path="asistencia"    element={<SectionPlaceholder title="Asistencia" />} />
         <Route path="horarios"      element={<SectionPlaceholder title="Horarios" />} />

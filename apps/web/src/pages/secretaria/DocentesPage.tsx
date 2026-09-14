@@ -2,9 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { api, ApiError } from '../../lib/api'
 import { useToast } from '../../components/ui/Toast'
 import { Button, Spinner } from '@edusync/ui'
-import { SelectGestion } from '../../components/select/SelectGestion'
-import { SelectParalelo, type Paralelo } from '../../components/select/SelectParalelo'
-import { SelectMateria } from '../../components/select/SelectMateria'
+import { AsignarHorasModal } from '../../components/AsignarHorasModal'
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -267,18 +265,7 @@ function DatosTab({ doc, onSaved }: { doc: DocenteDetalle; onSaved: () => void }
 function AsignacionesTab({ doc, onChanged }: { doc: DocenteDetalle; onChanged: () => void }) {
   const toast = useToast()
   const [removing, setRemoving] = useState<string | null>(null)
-
-  // Form: nueva asignación
-  const [gestionId,  setGestionId]   = useState('')
-  const [paraleloId, setParaleloId]  = useState('')
-  const [nivelId,    setNivelId]     = useState('')
-  const [materiaId,  setMateriaId]   = useState('')
-  const [adding,     setAdding]      = useState(false)
-
-  const handleParalelo = (p: Paralelo | null) => {
-    setNivelId(p?.grado.nivel.id ?? '')
-    setMateriaId('')
-  }
+  const [asignarHoras, setAsignarHoras] = useState(false)
 
   async function removeAsig(id: string) {
     setRemoving(id)
@@ -293,29 +280,8 @@ function AsignacionesTab({ doc, onChanged }: { doc: DocenteDetalle; onChanged: (
     }
   }
 
-  async function addAsig(e: React.FormEvent) {
-    e.preventDefault()
-    if (!gestionId || !paraleloId || !materiaId) return
-    setAdding(true)
-    try {
-      await api.post('/asignaciones', {
-        docente_id:  doc.id,
-        materia_id:  materiaId,
-        paralelo_id: paraleloId,
-        gestion_id:  gestionId,
-      })
-      toast.success('Asignación agregada')
-      setMateriaId(''); setParaleloId(''); setNivelId(''); setGestionId('')
-      onChanged()
-    } catch (err) {
-      toast.error(err instanceof ApiError ? err.message : 'Error al agregar')
-    } finally {
-      setAdding(false)
-    }
-  }
-
   return (
-    <div className="space-y-5">
+    <div className="space-y-4">
       {/* Lista actual */}
       {doc.asignaciones.length === 0
         ? <p className="text-sm text-fg-muted italic">Sin asignaciones registradas.</p>
@@ -358,39 +324,17 @@ function AsignacionesTab({ doc, onChanged }: { doc: DocenteDetalle; onChanged: (
         )
       }
 
-      {/* Formulario: agregar asignación */}
-      <div className="rounded-xl border border-dashed border-blue-200 bg-blue-50/40 p-4 space-y-3">
-        <p className="text-sm font-semibold text-blue-800">Agregar asignación</p>
-        <form onSubmit={addAsig} className="space-y-3">
-          <div className="grid grid-cols-2 gap-3">
-            <SelectGestion value={gestionId} onChange={setGestionId} label="Gestión" />
-            <SelectParalelo
-              value={paraleloId}
-              onChange={setParaleloId}
-              onParaleloChange={handleParalelo}
-              label="Paralelo"
-              placeholder="— Seleccionar paralelo —"
-            />
-          </div>
-          <SelectMateria
-            value={materiaId}
-            onChange={setMateriaId}
-            {...(nivelId ? { nivelId } : {})}
-            label="Materia"
-            disabled={!paraleloId}
-          />
-          <div className="flex justify-end">
-            <Button
-              type="submit"
-              loading={adding}
-              disabled={!gestionId || !paraleloId || !materiaId}
-              size="sm"
-            >
-              Agregar
-            </Button>
-          </div>
-        </form>
+      <div className="flex justify-end">
+        <Button size="sm" onClick={() => setAsignarHoras(true)}>Asignar horas</Button>
       </div>
+
+      {asignarHoras && (
+        <AsignarHorasModal
+          docente={{ id: doc.id, nombre: doc.usuario.nombre, apellido: doc.usuario.apellido }}
+          onClose={() => setAsignarHoras(false)}
+          onSaved={onChanged}
+        />
+      )}
     </div>
   )
 }
@@ -405,6 +349,7 @@ export default function DocentesPage() {
   const [docentes,    setDocentes]    = useState<DocenteResumen[]>([])
   const [loading,     setLoading]     = useState(true)
   const [modal,       setModal]       = useState<'new' | string | null>(null)  // 'new' | docente.id
+  const [asignarHorasTarget, setAsignarHorasTarget] = useState<DocenteResumen | null>(null)
   const [buscarInput, setBuscarInput] = useState('')
   const [buscar,      setBuscar]      = useState('')
 
@@ -525,9 +470,14 @@ export default function DocentesPage() {
                     </div>
                   </td>
                   <td className="px-4 py-3 text-right">
-                    <Button variant="ghost" size="sm" onClick={() => setModal(doc.id)}>
-                      Ver perfil
-                    </Button>
+                    <div className="flex items-center justify-end gap-1.5 flex-nowrap">
+                      <Button variant="ghost" size="sm" onClick={() => setModal(doc.id)}>
+                        Ver perfil
+                      </Button>
+                      <Button variant="ghost" size="sm" onClick={() => setAsignarHorasTarget(doc)}>
+                        Asignar horas
+                      </Button>
+                    </div>
                   </td>
                 </tr>
               )
@@ -541,6 +491,13 @@ export default function DocentesPage() {
       )}
       {modal && modal !== 'new' && (
         <DocentePerfilModal docenteId={modal} onClose={() => setModal(null)} onSaved={load} />
+      )}
+      {asignarHorasTarget && (
+        <AsignarHorasModal
+          docente={{ id: asignarHorasTarget.id, nombre: asignarHorasTarget.usuario.nombre, apellido: asignarHorasTarget.usuario.apellido }}
+          onClose={() => setAsignarHorasTarget(null)}
+          onSaved={load}
+        />
       )}
     </div>
   )

@@ -15,8 +15,8 @@ const AnunciosInternosPage     = lazy(() => import('../shared/AnunciosInternosPa
 const MensajesPage             = lazy(() => import('../shared/MensajesPage'))
 const ReportesPage             = lazy(() => import('../coordinador/ReportesPage'))
 const ParalelosPage            = lazy(() => import('../coordinador/ParalelosPage'))
-const AsignacionesPage         = lazy(() => import('../coordinador/AsignacionesPage'))
-const HorariosPage             = lazy(() => import('../coordinador/HorariosPage'))
+const HorariosPage             = lazy(() => import('../director/HorariosPage'))
+const AjustesInstitucionalesPage = lazy(() => import('../director/AjustesInstitucionalesPage'))
 const GestionesPage            = lazy(() => import('../secretaria/GestionesPage'))
 const DocentesPage             = lazy(() => import('../secretaria/DocentesPage'))
 const EstudiantesPage          = lazy(() => import('../secretaria/EstudiantesPage'))
@@ -227,12 +227,12 @@ export default function DirectorDashboard() {
         <Route path="estudiantes"       element={<EstudiantesPage basePath="/dashboard/director" />} />
         <Route path="estudiante/:id"    element={<PerfilEstudiantePage basePath="/dashboard/director" />} />
         <Route path="paralelos"         element={<ParalelosPage />} />
-        <Route path="asignaciones"      element={<AsignacionesPage />} />
         <Route path="gestiones"         element={<GestionesPage />} />
         <Route path="horarios"          element={<HorariosPage />} />
         <Route path="reportes/*"        element={<ReportesPage />} />
         <Route path="proyectos-bth"     element={<ProyectosBTHPage />} />
         <Route path="carga-horaria"     element={<CargaHorariaDocentesPage />} />
+        <Route path="ajustes-institucionales" element={<AjustesInstitucionalesPage />} />
         <Route path="anuncios"          element={<AnunciosInternosPage />} />
         <Route path="mensajes"          element={<MensajesPage />} />
         <Route path="auditoria"         element={<AuditoriaPage />} />
