@@ -157,7 +157,9 @@ export function GestionAreasSubareasPage() {
       return
     }
     const msg = area._count.asignaciones > 0
-      ? `"${area.nombre}" ya tiene ${area._count.asignaciones} asignación(es) registrada(s) — se desactivará en vez de eliminarse. ¿Continuar?`
+      ? `"${area.nombre}" tiene asignaciones registradas. Se eliminarán sus asignaciones de la gestión ` +
+        `activa (los docentes quedarán sin esta materia este año) y el área se desactivará. El historial ` +
+        `de calificaciones de gestiones anteriores no se verá afectado. ¿Continuar?`
       : `¿Eliminar "${area.nombre}"? Esta acción no se puede deshacer.`
     if (!confirm(msg)) return
     try {
@@ -166,6 +168,16 @@ export function GestionAreasSubareasPage() {
       load(nivelId)
     } catch (err) {
       toastRef.current.error(err instanceof ApiError ? err.message : 'Error al eliminar')
+    }
+  }
+
+  const handleReactivar = async (materia: { id: string; nombre: string }) => {
+    try {
+      await api.patch(`/materias/${materia.id}`, { activa: true })
+      toastRef.current.success(`"${materia.nombre}" reactivada`)
+      load(nivelId)
+    } catch (err) {
+      toastRef.current.error(err instanceof ApiError ? err.message : 'Error al reactivar')
     }
   }
 
@@ -223,7 +235,9 @@ export function GestionAreasSubareasPage() {
 
   const handleDeleteSubarea = async (subarea: Subarea) => {
     const msg = subarea._count.asignaciones > 0
-      ? `"${subarea.nombre}" ya tiene ${subarea._count.asignaciones} asignación(es) registrada(s) — se desactivará en vez de eliminarse. ¿Continuar?`
+      ? `"${subarea.nombre}" tiene asignaciones registradas. Se eliminarán sus asignaciones de la gestión ` +
+        `activa (los docentes quedarán sin esta subárea este año) y se desactivará. El historial de ` +
+        `calificaciones de gestiones anteriores no se verá afectado. ¿Continuar?`
       : `¿Eliminar "${subarea.nombre}"? Esta acción no se puede deshacer.`
     if (!confirm(msg)) return
     try {
@@ -279,7 +293,11 @@ export function GestionAreasSubareasPage() {
             <div className="flex items-center gap-2 shrink-0">
               <Button size="sm" variant="ghost" onClick={() => openCreateSubarea(padre)}>+ Añadir subárea</Button>
               <Button size="sm" variant="ghost" onClick={() => openEditArea(padre)}>Editar área</Button>
-              <Button size="sm" variant="danger" onClick={() => handleDeleteArea(padre)}>Eliminar área</Button>
+              {padre.activa ? (
+                <Button size="sm" variant="danger" onClick={() => handleDeleteArea(padre)}>Eliminar área</Button>
+              ) : (
+                <Button size="sm" variant="secondary" onClick={() => handleReactivar(padre)}>Reactivar</Button>
+              )}
             </div>
           </div>
 
@@ -300,7 +318,11 @@ export function GestionAreasSubareasPage() {
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
                     <Button size="sm" variant="ghost" onClick={() => openEditSubarea(padre, sub)}>Editar</Button>
-                    <Button size="sm" variant="danger" onClick={() => handleDeleteSubarea(sub)}>Quitar</Button>
+                    {sub.activa ? (
+                      <Button size="sm" variant="danger" onClick={() => handleDeleteSubarea(sub)}>Quitar</Button>
+                    ) : (
+                      <Button size="sm" variant="secondary" onClick={() => handleReactivar(sub)}>Reactivar</Button>
+                    )}
                   </div>
                 </div>
               ))}

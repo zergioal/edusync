@@ -221,14 +221,15 @@ export class MateriasService {
   }
 
   /**
-   * Elimina un área o una subárea: hard delete si nunca se usó, soft delete (activa=false) si ya tiene
-   * historial. Un área con subáreas activas no se puede eliminar — hay que quitar sus subáreas primero.
+   * Elimina un área o una subárea. Si tiene asignaciones vigentes en la gestión activa, primero las
+   * quita (cascada: notas → indicadores → asistencias/tareas → asignación), liberando a los docentes
+   * para reasignarlos — el historial de gestiones anteriores no se toca. Luego: hard delete si no queda
+   * ningún rastro (ni asignaciones de otras gestiones ni resultados finales), soft delete (activa=false)
+   * en caso contrario. Un área con subáreas activas no se puede eliminar — hay que quitar sus subáreas
+   * primero.
    */
   async remove(institucion_id: string, id: string) {
-    const materia = await prisma.materia.findFirst({
-      where:   { id, nivel: { institucion_id } },
-      include: { _count: { select: { asignaciones: true } } },
-    })
+    const materia = await prisma.materia.findFirst({ where: { id, nivel: { institucion_id } } })
     if (!materia) throw new AppError(404, 'Materia no encontrada', 'NOT_FOUND')
 
     if (!materia.es_subarea_de_id) {
@@ -238,7 +239,35 @@ export class MateriasService {
       }
     }
 
-    const hardDelete = materia._count.asignaciones === 0
+    const gestionActiva = await prisma.gestion.findFirst({ where: { institucion_id, activa: true } })
+    const asignacionesActuales = gestionActiva
+      ? await prisma.asignacion.findMany({
+          where:  { materia_id: id, gestion_id: gestionActiva.id },
+          select: { id: true },
+        })
+      : []
+
+    if (asignacionesActuales.length > 0) {
+      await prisma.$transaction(async (tx) => {
+        for (const asig of asignacionesActuales) {
+          const indicadores = await tx.indicador.findMany({ where: { asignacion_id: asig.id }, select: { id: true } })
+          if (indicadores.length > 0) {
+            await tx.notaIndicador.deleteMany({ where: { indicador_id: { in: indicadores.map(i => i.id) } } })
+            await tx.indicador.deleteMany({ where: { asignacion_id: asig.id } })
+          }
+          await tx.asistenciaClase.deleteMany({ where: { asignacion_id: asig.id } })
+          await tx.tarea.deleteMany({ where: { asignacion_id: asig.id } })
+          await tx.asignacion.delete({ where: { id: asig.id } })
+        }
+      })
+    }
+
+    const [asignacionesRestantes, resultadosFinales] = await Promise.all([
+      prisma.asignacion.count({ where: { materia_id: id } }),
+      prisma.resultadoFinal.count({ where: { materia_id: id } }),
+    ])
+    const hardDelete = asignacionesRestantes === 0 && resultadosFinales === 0
+
     if (hardDelete) {
       await prisma.materia.delete({ where: { id } })
     } else {
@@ -254,6 +283,6 @@ export class MateriasService {
       }
     }
 
-    return { hard_delete: hardDelete }
+    return { hard_delete: hardDelete, asignaciones_eliminadas: asignacionesActuales.length }
   }
 }
