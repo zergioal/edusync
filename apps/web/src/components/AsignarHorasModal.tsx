@@ -17,17 +17,24 @@ interface MateriaDisponible {
   carga_horaria: { horas_mes: number }[]
 }
 
+interface AsignacionExistente { docente_id: string; materia_id: string }
+
 /** Selección de materias para UN curso ya visitado dentro de un bloque — se conserva al cambiar de curso. */
 interface CursoSeleccion {
   paralelo_label: string
   disponibles:    MateriaDisponible[]
   materia_ids:    string[]
+  /** Materias que el docente YA tenía asignadas en este curso al momento de cargar — se muestran
+   *  marcadas, pero no se vuelven a enviar al guardar (evita error de "ya existe"). */
+  ya_asignadas:   string[]
 }
 
 interface ParaleloBlock {
   key:               number
   currentParaleloId: string
-  loading:           boolean
+  /** El paralelo_id que está siendo cargado en este momento (o null) — evita que una respuesta
+   *  tardía de un curso ya abandonado deje "Cargando…" pegado en el curso que se ve ahora. */
+  loadingParaleloId: string | null
   /** Todos los cursos visitados en este bloque, cada uno con su propia selección — cambiar el
    *  desplegable a un curso ya visitado no borra lo que se había marcado ahí. */
   cursos:            Record<string, CursoSeleccion>
@@ -35,7 +42,7 @@ interface ParaleloBlock {
 
 let nextKey = 1
 function newBlock(): ParaleloBlock {
-  return { key: nextKey++, currentParaleloId: '', loading: false, cursos: {} }
+  return { key: nextKey++, currentParaleloId: '', loadingParaleloId: null, cursos: {} }
 }
 
 // ─── Bloque de paralelo ───────────────────────────────────────────────────────
@@ -53,7 +60,8 @@ function ParaleloBloque({
   onSelectNone:     (key: number) => void
   onRemove:         (key: number) => void
 }) {
-  const curso = block.cursos[block.currentParaleloId]
+  const curso     = block.cursos[block.currentParaleloId]
+  const isLoading = block.currentParaleloId !== '' && block.loadingParaleloId === block.currentParaleloId
 
   const byField = (curso?.disponibles ?? []).reduce<Record<string, MateriaDisponible[]>>((acc, m) => {
     (acc[m.campo.nombre] ??= []).push(m)
@@ -109,14 +117,14 @@ function ParaleloBloque({
       {!block.currentParaleloId && (
         <p className="text-xs text-fg-muted italic">Seleccionar paralelo para ver materias disponibles.</p>
       )}
-      {block.currentParaleloId && block.loading && (
+      {block.currentParaleloId && isLoading && (
         <div className="flex items-center gap-2 text-xs text-fg-muted"><Spinner /><span>Cargando…</span></div>
       )}
-      {block.currentParaleloId && !block.loading && curso && curso.disponibles.length === 0 && (
+      {block.currentParaleloId && !isLoading && curso && curso.disponibles.length === 0 && (
         <p className="text-xs text-amber-600">Sin materias disponibles para este paralelo.</p>
       )}
 
-      {block.currentParaleloId && !block.loading && curso && curso.disponibles.length > 0 && (
+      {block.currentParaleloId && !isLoading && curso && curso.disponibles.length > 0 && (
         <div className="space-y-3">
           <div className="flex items-center justify-between">
             <span className="text-xs font-medium uppercase tracking-wide text-fg-muted">Materias disponibles</span>
@@ -131,7 +139,8 @@ function ParaleloBloque({
               <p className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-fg-muted">{campo}</p>
               <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3">
                 {mats.map(m => {
-                  const checked = curso.materia_ids.includes(m.id)
+                  const checked   = curso.materia_ids.includes(m.id)
+                  const yaAsignada = curso.ya_asignadas.includes(m.id)
                   const h = m.carga_horaria[0]?.horas_mes
                   return (
                     <label key={m.id} className={`flex cursor-pointer items-start gap-2 rounded-lg border px-3 py-2 text-sm transition-colors ${checked ? 'border-blue-400 bg-blue-50 text-blue-800' : 'border-border bg-surface text-fg hover:border-border'}`}>
@@ -139,6 +148,7 @@ function ParaleloBloque({
                       <span className="leading-tight">
                         {m.nombre}
                         {h ? <span className="block text-xs opacity-60">{h}h/mes</span> : null}
+                        {yaAsignada && <span className="block text-xs font-medium text-emerald-600">Ya asignada</span>}
                       </span>
                     </label>
                   )
@@ -168,6 +178,10 @@ export function AsignarHorasModal({ docente, onClose, onSaved }: {
   const [gestion, setGestion] = useState<Gestion | null>(null)
   const [saving,  setSaving]  = useState(false)
   const [blocks,  setBlocks]  = useState<ParaleloBlock[]>([newBlock()])
+  const blocksRef = useRef(blocks)
+  blocksRef.current = blocks
+  const gestionRef = useRef(gestion)
+  gestionRef.current = gestion
 
   useEffect(() => {
     api.get<Gestion>('/gestiones/activa')
@@ -177,30 +191,50 @@ export function AsignarHorasModal({ docente, onClose, onSaved }: {
 
   const handleParaleloChange = useCallback((key: number, paralelo: Paralelo | null) => {
     const paralelo_id = paralelo?.id ?? ''
-    let needsFetch = false
-    setBlocks(prev => prev.map(b => {
-      if (b.key !== key) return b
-      if (!paralelo_id) return { ...b, currentParaleloId: '' }
-      if (b.cursos[paralelo_id]) return { ...b, currentParaleloId: paralelo_id }
-      needsFetch = true
-      return { ...b, currentParaleloId: paralelo_id, loading: true }
-    }))
-    if (!paralelo_id || !needsFetch || !paralelo) return
+    if (!paralelo_id) {
+      setBlocks(prev => prev.map(b => b.key === key ? { ...b, currentParaleloId: '' } : b))
+      return
+    }
+
+    const block = blocksRef.current.find(b => b.key === key)
+    const yaVisitado = !!block?.cursos[paralelo_id]
+
+    setBlocks(prev => prev.map(b => b.key === key
+      ? { ...b, currentParaleloId: paralelo_id, loadingParaleloId: yaVisitado ? b.loadingParaleloId : paralelo_id }
+      : b
+    ))
+    if (yaVisitado || !paralelo) return
 
     const label = `${paralelo.grado.nombre} "${paralelo.letra}"`
-    api.get<MateriaDisponible[]>(`/materias/disponibles?paralelo_id=${paralelo_id}`)
-      .then(data => {
+    const gestion_id = gestionRef.current?.id
+
+    Promise.all([
+      api.get<MateriaDisponible[]>(`/materias/disponibles?paralelo_id=${paralelo_id}`),
+      gestion_id
+        ? api.get<AsignacionExistente[]>(`/asignaciones?paralelo_id=${paralelo_id}&gestion_id=${gestion_id}`)
+        : Promise.resolve([] as AsignacionExistente[]),
+    ])
+      .then(([disponibles, asignacionesExistentes]) => {
+        const yaAsignadas = asignacionesExistentes
+          .filter(a => a.docente_id === docente.id)
+          .map(a => a.materia_id)
         setBlocks(prev => prev.map(b => b.key !== key ? b : {
           ...b,
-          loading: false,
-          cursos: { ...b.cursos, [paralelo_id]: { paralelo_label: label, disponibles: data, materia_ids: [] } },
+          loadingParaleloId: b.loadingParaleloId === paralelo_id ? null : b.loadingParaleloId,
+          cursos: {
+            ...b.cursos,
+            [paralelo_id]: { paralelo_label: label, disponibles, materia_ids: yaAsignadas, ya_asignadas: yaAsignadas },
+          },
         }))
       })
       .catch(() => {
         toastRef.current.error('No se pudieron cargar las materias')
-        setBlocks(prev => prev.map(b => b.key === key ? { ...b, loading: false } : b))
+        setBlocks(prev => prev.map(b => b.key === key
+          ? { ...b, loadingParaleloId: b.loadingParaleloId === paralelo_id ? null : b.loadingParaleloId }
+          : b
+        ))
       })
-  }, [])
+  }, [docente.id])
 
   const jumpToCurso = useCallback((key: number, paralelo_id: string) => {
     setBlocks(prev => prev.map(b => b.key === key ? { ...b, currentParaleloId: paralelo_id } : b))
@@ -229,10 +263,10 @@ export function AsignarHorasModal({ docente, onClose, onSaved }: {
   const removeBlock = (key: number) => setBlocks(prev => prev.filter(b => b.key !== key))
 
   // Todas las combinaciones (paralelo, materia) seleccionadas en TODOS los cursos visitados de TODOS
-  // los bloques — no solo el curso que está mostrando cada bloque en este momento.
+  // los bloques que NO estaban ya asignadas — no se reenvían las que ya existían.
   const allPairs = blocks.flatMap(b =>
     Object.entries(b.cursos).flatMap(([paralelo_id, c]) =>
-      c.materia_ids.map(materia_id => ({ paralelo_id, materia_id }))
+      c.materia_ids.filter(id => !c.ya_asignadas.includes(id)).map(materia_id => ({ paralelo_id, materia_id }))
     )
   )
   const totalPairs = allPairs.length
