@@ -57,12 +57,29 @@ export class MateriasService {
     const nivel = await prisma.nivel.findFirst({ where: { id: nivel_id, institucion_id } })
     if (!nivel) throw new AppError(404, 'Nivel no encontrado', 'NOT_FOUND')
 
-    const grados   = await prisma.grado.findMany({ where: { nivel_id }, orderBy: { orden: 'asc' } })
-    const materias = await prisma.materia.findMany({
-      where:   { nivel_id, activa: true },
+    const grados = await prisma.grado.findMany({ where: { nivel_id }, orderBy: { orden: 'asc' } })
+    // Se traen todas (incluidas inactivas) para no perder una subárea activa cuya área padre
+    // haya quedado inactiva — el filtro de qué mostrar se aplica después de agrupar.
+    const todas = await prisma.materia.findMany({
+      where:   { nivel_id },
       include: { campo: true, carga_horaria: { include: { grado: true } } },
       orderBy: [{ campo: { nombre: 'asc' } }, { nombre: 'asc' }],
     })
+
+    const subareasPorPadre = new Map<string, typeof todas>()
+    for (const m of todas) {
+      if (!m.es_subarea_de_id) continue
+      if (!subareasPorPadre.has(m.es_subarea_de_id)) subareasPorPadre.set(m.es_subarea_de_id, [])
+      subareasPorPadre.get(m.es_subarea_de_id)!.push(m)
+    }
+
+    const materias = todas
+      .filter(m => !m.es_subarea_de_id)
+      .map(padre => ({
+        ...padre,
+        subareas: (subareasPorPadre.get(padre.id) ?? []).filter(s => s.activa),
+      }))
+      .filter(padre => padre.activa || padre.subareas.length > 0)
 
     return { grados, materias }
   }
