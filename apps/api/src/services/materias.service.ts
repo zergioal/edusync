@@ -76,4 +76,120 @@ export class MateriasService {
       })
     }
   }
+
+  /** Materias de nivel superior (posibles áreas padre) agrupadas con sus subáreas, para la gestión CRUD. */
+  async findAdmin(institucion_id: string, nivel_id?: string) {
+    return prisma.materia.findMany({
+      where: {
+        es_subarea_de_id: null,
+        nivel: { institucion_id, ...(nivel_id ? { id: nivel_id } : {}) },
+      },
+      include: {
+        campo: true,
+        _count: { select: { asignaciones: true } },
+        subareas: {
+          include: { _count: { select: { asignaciones: true } } },
+          orderBy: { nombre: 'asc' },
+        },
+      },
+      orderBy: [{ campo: { nombre: 'asc' } }, { nombre: 'asc' }],
+    })
+  }
+
+  /** Crea una subárea nueva bajo una materia padre existente, heredando campo/nivel/solo_si_bth del padre. */
+  async createSubarea(institucion_id: string, data: {
+    nombre: string
+    es_subarea_de_id: string
+    aplica_solo_desde_grado?: number | null | undefined
+    aplica_hasta_grado?: number | null | undefined
+    horas_semanales?: number | null | undefined
+  }) {
+    const padre = await prisma.materia.findFirst({
+      where: { id: data.es_subarea_de_id, nivel: { institucion_id } },
+    })
+    if (!padre) throw new AppError(404, 'Área padre no encontrada', 'NOT_FOUND')
+    if (padre.es_subarea_de_id) {
+      throw new AppError(400, 'No se pueden crear subáreas dentro de otra subárea', 'VALIDATION')
+    }
+
+    const base = data.nombre.trim()
+    if (!base) throw new AppError(400, 'El nombre es requerido', 'VALIDATION')
+
+    const [materia] = await prisma.$transaction([
+      prisma.materia.create({
+        data: {
+          nombre:                  `${base} (${padre.nombre})`,
+          campo_id:                padre.campo_id,
+          nivel_id:                padre.nivel_id,
+          solo_si_bth:             padre.solo_si_bth,
+          es_subarea_de_id:        padre.id,
+          aplica_solo_desde_grado: data.aplica_solo_desde_grado ?? padre.aplica_solo_desde_grado,
+          aplica_hasta_grado:      data.aplica_hasta_grado ?? padre.aplica_hasta_grado,
+          horas_semanales:         data.horas_semanales ?? null,
+        },
+        include: { campo: true, parent_materia: { select: { id: true, nombre: true } } },
+      }),
+      prisma.materia.update({ where: { id: padre.id }, data: { tiene_subareas: true } }),
+    ])
+    return materia
+  }
+
+  /** Edita una subárea existente (no permite cambiar de área padre). */
+  async updateSubarea(institucion_id: string, id: string, data: {
+    nombre?: string | undefined
+    activa?: boolean | undefined
+    aplica_solo_desde_grado?: number | null | undefined
+    aplica_hasta_grado?: number | null | undefined
+    horas_semanales?: number | null | undefined
+  }) {
+    const materia = await prisma.materia.findFirst({
+      where:   { id, nivel: { institucion_id } },
+      include: { parent_materia: { select: { nombre: true } } },
+    })
+    if (!materia) throw new AppError(404, 'Materia no encontrada', 'NOT_FOUND')
+
+    let nombre: string | undefined
+    if (data.nombre !== undefined) {
+      const base = data.nombre.trim()
+      if (!base) throw new AppError(400, 'El nombre es requerido', 'VALIDATION')
+      nombre = materia.parent_materia ? `${base} (${materia.parent_materia.nombre})` : base
+    }
+
+    return prisma.materia.update({
+      where: { id },
+      data: {
+        ...(nombre !== undefined ? { nombre } : {}),
+        ...(data.activa !== undefined ? { activa: data.activa } : {}),
+        ...(data.aplica_solo_desde_grado !== undefined ? { aplica_solo_desde_grado: data.aplica_solo_desde_grado } : {}),
+        ...(data.aplica_hasta_grado !== undefined ? { aplica_hasta_grado: data.aplica_hasta_grado } : {}),
+        ...(data.horas_semanales !== undefined ? { horas_semanales: data.horas_semanales } : {}),
+      },
+    })
+  }
+
+  /** Elimina una subárea: hard delete si nunca se usó, soft delete (activa=false) si ya tiene historial. */
+  async removeSubarea(institucion_id: string, id: string) {
+    const materia = await prisma.materia.findFirst({
+      where:   { id, nivel: { institucion_id } },
+      include: { _count: { select: { asignaciones: true } } },
+    })
+    if (!materia) throw new AppError(404, 'Materia no encontrada', 'NOT_FOUND')
+    if (!materia.es_subarea_de_id) throw new AppError(400, 'Solo se pueden eliminar subáreas', 'VALIDATION')
+
+    const hardDelete = materia._count.asignaciones === 0
+    if (hardDelete) {
+      await prisma.materia.delete({ where: { id } })
+    } else {
+      await prisma.materia.update({ where: { id }, data: { activa: false } })
+    }
+
+    const hermanasActivas = await prisma.materia.count({
+      where: { es_subarea_de_id: materia.es_subarea_de_id, activa: true },
+    })
+    if (hermanasActivas === 0) {
+      await prisma.materia.update({ where: { id: materia.es_subarea_de_id }, data: { tiene_subareas: false } })
+    }
+
+    return { hard_delete: hardDelete }
+  }
 }

@@ -51,6 +51,7 @@ export const NAV_POR_ROL: Record<string, NavItem[]> = {
     { to: '/dashboard/director/personal', label: 'Personal', icon: 'teacher' },
     { to: '/dashboard/director/proyectos-bth', label: 'Proyectos BTH', icon: 'book' },
     { to: '/dashboard/director/ajustes-institucionales', label: 'Ajustes Institucionales', icon: 'settings' },
+    { to: '/dashboard/director/subareas',      label: 'Subáreas',    icon: 'book'     },
   ],
   regente: [
     { to: '/dashboard/regente',                   label: 'Panel',                icon: 'home'     },
@@ -73,6 +74,7 @@ export const NAV_POR_ROL: Record<string, NavItem[]> = {
     { to: '/dashboard/coordinador/anuncios',          label: 'Comunicados',          icon: 'bell'     },
     { to: '/dashboard/coordinador/mensajes',          label: 'Mensajes',             icon: 'folder'   },
     { to: '/dashboard/coordinador/proyectos-bth',     label: 'Proyectos BTH',        icon: 'book'     },
+    { to: '/dashboard/coordinador/subareas',          label: 'Subáreas',             icon: 'book'     },
   ],
   admin: [
     { to: '/dashboard/admin',                label: 'Panel',             icon: 'home'     },
@@ -92,6 +94,7 @@ export const NAV_POR_ROL: Record<string, NavItem[]> = {
     { to: '/dashboard/admin/configuracion',  label: 'Configuración',     icon: 'settings' },
     { to: '/dashboard/admin/personal',       label: 'Personal',          icon: 'teacher'  },
     { to: '/dashboard/admin/proyectos-bth',  label: 'Proyectos BTH',     icon: 'book'     },
+    { to: '/dashboard/admin/subareas',       label: 'Subáreas',         icon: 'book'     },
   ],
   secretaria: [
     { to: '/dashboard/admin',                label: 'Panel',          icon: 'home'     },

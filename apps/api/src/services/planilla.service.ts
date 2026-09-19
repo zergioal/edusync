@@ -2,6 +2,7 @@ import { prisma } from '@edusync/database'
 import { AppError } from '../middlewares/errorHandler'
 import { BoletinesService } from './boletines.service'
 import { Instrumento } from '@edusync/types'
+import { calcNotasEstudiante, type DimInfo } from './calculo.service'
 
 type Escala = 'ED' | 'DA' | 'DO' | 'DP'
 
@@ -76,7 +77,7 @@ export class PlanillaService {
             usuario: { select: { nombre: true, apellido: true, institucion_id: true } },
           },
         },
-        materia:  { include: { campo: true } },
+        materia:  { include: { campo: true, parent_materia: { select: { nombre: true } } } },
         paralelo: { include: { grado: { include: { nivel: true } } } },
         gestion:  { include: { trimestres: { orderBy: { numero: 'asc' as const } } } },
       },
@@ -295,6 +296,102 @@ export class PlanillaService {
     }
   }
 
+  /**
+   * Centralizador de subáreas: para un docente que dicta una subárea, muestra las notas de todas las
+   * subáreas hermanas del mismo curso (mismo padre, mismo paralelo/gestión) y el promedio combinado que
+   * repercutirá en el boletín — misma fórmula que BoletinesService usa para la fila combinada.
+   */
+  async getCentralizadorSubareas(asignacion_id: string, trimestre_id: string) {
+    const asignacion = await prisma.asignacion.findUnique({
+      where:   { id: asignacion_id },
+      include: {
+        docente: { include: { usuario: { select: { institucion_id: true } } } },
+        materia: { include: { parent_materia: { select: { id: true, nombre: true, solo_si_bth: true } } } },
+      },
+    })
+    if (!asignacion) throw new AppError(404, 'Asignación no encontrada', 'NOT_FOUND')
+    const padre = asignacion.materia.parent_materia
+    if (!padre) throw new AppError(400, 'Esta asignación no corresponde a una subárea', 'VALIDATION')
+
+    const institucion_id = asignacion.docente.usuario.institucion_id
+    const { paralelo_id, gestion_id } = asignacion
+
+    const [dimensionesRaw, subareaAsigs, matriculas] = await Promise.all([
+      prisma.dimension.findMany({ where: { institucion_id }, orderBy: { orden: 'asc' } }),
+      prisma.asignacion.findMany({
+        where:   { paralelo_id, gestion_id, materia: { es_subarea_de_id: padre.id } },
+        include: {
+          materia:     true,
+          docente:     { include: { usuario: { select: { nombre: true, apellido: true } } } },
+          indicadores: { where: { trimestre_id }, select: { id: true, dimension_id: true } },
+        },
+        orderBy: { materia: { nombre: 'asc' } },
+      }),
+      prisma.matricula.findMany({
+        where:   { paralelo_id, gestion_id },
+        include: { estudiante: { include: { usuario: { select: { nombre: true, apellido: true } } } } },
+        orderBy: [
+          { estudiante: { usuario: { apellido: 'asc' } } },
+          { estudiante: { usuario: { nombre:   'asc' } } },
+        ],
+      }),
+    ])
+
+    const dimensiones: DimInfo[] = dimensionesRaw.map(d => ({
+      id: d.id, nombre: d.nombre, puntaje_max: d.puntaje_max, orden: d.orden,
+    }))
+
+    const estudiantesQueCursan = padre.solo_si_bth
+      ? matriculas.filter(m => m.lleva_tecnica ?? true)
+      : matriculas
+
+    const indicadorIds  = subareaAsigs.flatMap(a => a.indicadores.map(i => i.id))
+    const estudianteIds = estudiantesQueCursan.map(m => m.estudiante_id)
+    const notas = indicadorIds.length > 0 && estudianteIds.length > 0
+      ? await prisma.notaIndicador.findMany({
+          where: { indicador_id: { in: indicadorIds }, estudiante_id: { in: estudianteIds } },
+        })
+      : []
+
+    const notasIndex = new Map<string, Map<string, number | null>>()
+    for (const nota of notas) {
+      if (!notasIndex.has(nota.estudiante_id)) notasIndex.set(nota.estudiante_id, new Map())
+      notasIndex.get(nota.estudiante_id)!.set(nota.indicador_id, nota.puntaje ?? null)
+    }
+
+    const estudiantes = estudiantesQueCursan.map(m => {
+      const estNotas = notasIndex.get(m.estudiante_id) ?? new Map<string, number | null>()
+      const notasSubareas = subareaAsigs.map(asig => {
+        const { total, hasAny } = calcNotasEstudiante(asig.indicadores, estNotas, dimensiones)
+        return { asignacion_id: asig.id, materia_id: asig.materia_id, nombre: asig.materia.nombre, total: hasAny ? total : null }
+      })
+      const conNota = notasSubareas.filter((n): n is typeof n & { total: number } => n.total !== null)
+      const promedio = conNota.length > 0
+        ? Math.round(conNota.reduce((s, n) => s + n.total, 0) / conNota.length)
+        : null
+
+      return {
+        id:       m.estudiante_id,
+        codigo:   m.estudiante.codigo,
+        apellido: m.estudiante.usuario.apellido,
+        nombre:   m.estudiante.usuario.nombre,
+        notasSubareas,
+        promedio,
+      }
+    })
+
+    return {
+      area_padre: padre.nombre,
+      subareas: subareaAsigs.map(a => ({
+        asignacion_id: a.id,
+        nombre:        a.materia.nombre,
+        docente:       `${a.docente.usuario.nombre} ${a.docente.usuario.apellido}`,
+        es_esta:       a.id === asignacion_id,
+      })),
+      estudiantes,
+    }
+  }
+
   // ── Vistas estudiante/padre: planilla detallada de un solo estudiante ────────
 
   async getMia(usuario_id: string, trimestre_id: string, institucion_id: string) {
@@ -350,14 +447,22 @@ export class PlanillaService {
     }
 
     const llevaTecnica = matricula.lleva_tecnica ?? true
-    const asignaciones = await prisma.asignacion.findMany({
-      where: {
-        paralelo_id: matricula.paralelo_id,
-        gestion_id,
-        ...(llevaTecnica ? {} : { materia: { es_subarea_de_id: null } }),
+    const asignacionesRaw = await prisma.asignacion.findMany({
+      where: { paralelo_id: matricula.paralelo_id, gestion_id },
+      include: {
+        materia: {
+          include: { campo: true, parent_materia: { select: { nombre: true, solo_si_bth: true } } },
+        },
       },
-      include: { materia: { include: { campo: true, parent_materia: { select: { nombre: true } } } } },
       orderBy: [{ materia: { campo: { nombre: 'asc' } } }, { materia: { nombre: 'asc' } }],
+    })
+    // Las subáreas de un área normal se ven siempre; las del área técnica BTH (padre solo_si_bth)
+    // respetan la electiva por estudiante (lleva_tecnica), igual que en boletines.service.ts. Una
+    // asignación regular de una materia que ya "tiene_subareas" se excluye (evita fila duplicada si
+    // quedó una asignación directa de antes de que el área tuviera subáreas).
+    const asignaciones = asignacionesRaw.filter(a => {
+      if (a.materia.es_subarea_de_id) return !a.materia.parent_materia?.solo_si_bth || llevaTecnica
+      return !a.materia.tiene_subareas
     })
 
     const obsRecs = await prisma.observacionInicial.findMany({

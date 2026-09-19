@@ -60,7 +60,7 @@ export class BoletinesService {
           materia: {
             include: {
               campo:          true,
-              parent_materia: { select: { id: true, nombre: true, campo: { select: { nombre: true } } } },
+              parent_materia: { select: { id: true, nombre: true, solo_si_bth: true, campo: { select: { nombre: true } } } },
             },
           },
           docente: { include: { usuario: { select: { nombre: true, apellido: true } } } },
@@ -158,9 +158,15 @@ export class BoletinesService {
 
     const llevaTecnica = matricula.lleva_tecnica ?? true
 
-    // Separate regular materias from BTH sub-areas (parent materias with tiene_subareas have no asignacion)
-    const regularAsigs  = asignaciones.filter(a => !a.materia.es_subarea_de_id)
-    const subareaAsigs  = llevaTecnica ? asignaciones.filter(a => !!a.materia.es_subarea_de_id) : []
+    // Separate regular materias from sub-areas. Una materia que ya "tiene_subareas" se excluye de las
+    // regulares aunque conserve una asignación directa antigua (de antes de convertirse en área con
+    // subáreas) — su nota final ahora se arma solo a partir de sus subáreas, para no duplicar la fila.
+    // Las subáreas de un área normal se incluyen siempre (todo el curso las cursa); las del área técnica
+    // BTH (padre con solo_si_bth) siguen respetando la electiva por estudiante (lleva_tecnica).
+    const regularAsigs = asignaciones.filter(a => !a.materia.es_subarea_de_id && !a.materia.tiene_subareas)
+    const subareaAsigs = asignaciones.filter(a =>
+      !!a.materia.es_subarea_de_id && (!a.materia.parent_materia?.solo_si_bth || llevaTecnica)
+    )
 
     const materias = regularAsigs.map(asig => {
       const { dimNotas, total, hasAny } = calcNotasEstudiante(asig.indicadores, notasMap, dimensiones)

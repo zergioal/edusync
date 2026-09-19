@@ -8,7 +8,13 @@ const ctrl = new MateriasController()
 
 const canManage = requireRol(Rol.ADMIN_SISTEMA, Rol.DIRECTOR, Rol.COORDINADOR, Rol.REGENTE)
 
+const canManageSubareas = requireRol(Rol.ADMIN_SISTEMA, Rol.DIRECTOR, Rol.COORDINADOR)
+
 materiasRouter.get('/',              ctrl.findAll)
 materiasRouter.get('/disponibles',   ctrl.findDisponibles)
 materiasRouter.get('/carga-horaria', ctrl.findCargaHoraria)
 materiasRouter.put('/carga-horaria', canManage, ctrl.updateCargaHoraria)
+materiasRouter.get('/admin',         canManageSubareas, ctrl.findAdmin)
+materiasRouter.post('/',             canManageSubareas, ctrl.createSubarea)
+materiasRouter.patch('/:id',         canManageSubareas, ctrl.updateSubarea)
+materiasRouter.delete('/:id',        canManageSubareas, ctrl.removeSubarea)

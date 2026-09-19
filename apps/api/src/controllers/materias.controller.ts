@@ -36,4 +36,45 @@ export class MateriasController {
       res.json({ data: null })
     } catch (e) { next(e) }
   }
+
+  findAdmin = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const nivel_id = req.query['nivel_id'] as string | undefined
+      res.json({ data: await this.service.findAdmin(req.auth!.institucion_id, nivel_id) })
+    } catch (e) { next(e) }
+  }
+
+  createSubarea = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const { nombre, es_subarea_de_id, aplica_solo_desde_grado, aplica_hasta_grado, horas_semanales } = req.body as {
+        nombre: string; es_subarea_de_id: string
+        aplica_solo_desde_grado?: number | null; aplica_hasta_grado?: number | null; horas_semanales?: number | null
+      }
+      if (!nombre || !es_subarea_de_id) throw new AppError(400, 'nombre y es_subarea_de_id son requeridos', 'VALIDATION')
+      const data = await this.service.createSubarea(req.auth!.institucion_id, {
+        nombre, es_subarea_de_id, aplica_solo_desde_grado, aplica_hasta_grado, horas_semanales,
+      })
+      res.status(201).json({ data })
+    } catch (e) { next(e) }
+  }
+
+  updateSubarea = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const { nombre, activa, aplica_solo_desde_grado, aplica_hasta_grado, horas_semanales } = req.body as {
+        nombre?: string; activa?: boolean
+        aplica_solo_desde_grado?: number | null; aplica_hasta_grado?: number | null; horas_semanales?: number | null
+      }
+      const data = await this.service.updateSubarea(req.auth!.institucion_id, req.params['id']!, {
+        nombre, activa, aplica_solo_desde_grado, aplica_hasta_grado, horas_semanales,
+      })
+      res.json({ data })
+    } catch (e) { next(e) }
+  }
+
+  removeSubarea = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const data = await this.service.removeSubarea(req.auth!.institucion_id, req.params['id']!)
+      res.json({ data })
+    } catch (e) { next(e) }
+  }
 }

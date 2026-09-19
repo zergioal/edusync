@@ -14,6 +14,7 @@ const MisMateriasPage          = lazy(() => import('../docente/MisMateriasPage')
 const MisAreasPage             = lazy(() => import('../docente/MisAreasPage'))
 const PlanillaPage             = lazy(() => import('../docente/PlanillaPage'))
 const CentralizadorAsignacionPage = lazy(() => import('../docente/CentralizadorAsignacionPage'))
+const CentralizadorSubareasPage   = lazy(() => import('../docente/CentralizadorSubareasPage'))
 const ObservacionesInicialPage = lazy(() => import('../docente/ObservacionesInicialPage'))
 const AsistenciaClasePage      = lazy(() => import('../docente/AsistenciaClasePage'))
 const DocenteAsistenciaPage    = lazy(() => import('../docente/DocenteAsistenciaPage'))
@@ -212,6 +213,7 @@ export default function DocenteDashboard() {
         <Route path="asignaciones"              element={<MisAreasPage />} />
         <Route path="planilla/:asignacion_id"   element={<PlanillaPage />} />
         <Route path="planilla/:asignacion_id/centralizador" element={<CentralizadorAsignacionPage />} />
+        <Route path="planilla/:asignacion_id/subareas"       element={<CentralizadorSubareasPage />} />
         <Route path="inicial/:asignacion_id"    element={<ObservacionesInicialPage />} />
         <Route path="asistencia/:asignacion_id" element={<AsistenciaClasePage />} />
         <Route path="tareas"                    element={<TareasPage />} />

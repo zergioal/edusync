@@ -23,4 +23,5 @@ planillaRouter.get('/:asignacion_id/registro/excel',           canManage, ctrl.g
 planillaRouter.get('/:asignacion_id/centralizador/pdf',        canManage, ctrl.getCentralizadorAsignacionPdf)
 planillaRouter.get('/:asignacion_id/centralizador/excel',      canManage, ctrl.getCentralizadorAsignacionExcel)
 planillaRouter.get('/:asignacion_id/centralizador',            canManage, ctrl.getCentralizadorAsignacion)
+planillaRouter.get('/:asignacion_id/subareas',                  canManage, ctrl.getCentralizadorSubareas)
 planillaRouter.get('/:asignacion_id', canManage, ctrl.get)

@@ -45,7 +45,7 @@ export interface TrimestrePlanilla {
 export interface PlanillaData {
   asignacion: {
     id:      string
-    materia: { nombre: string; campo: { nombre: string } }
+    materia: { nombre: string; campo: { nombre: string }; es_subarea_de_id: string | null; parent_materia: { nombre: string } | null }
     paralelo: { letra: string; grado: { nombre: string; nivel: { nombre: string } } }
     gestion: { id: string; anno: number; trimestres: TrimestrePlanilla[] }
     docente: { nombre: string; apellido: string }

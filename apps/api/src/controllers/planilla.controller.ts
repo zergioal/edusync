@@ -123,6 +123,14 @@ export class PlanillaController {
     } catch (e) { next(e) }
   }
 
+  getCentralizadorSubareas = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const { trimestre_id } = req.query as Record<string, string>
+      if (!trimestre_id) throw new AppError(400, 'trimestre_id es requerido', 'MISSING_PARAM')
+      res.json({ data: await this.service.getCentralizadorSubareas(req.params['asignacion_id']!, trimestre_id) })
+    } catch (e) { next(e) }
+  }
+
   getParaStaff = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const { trimestre_id } = req.query as Record<string, string>

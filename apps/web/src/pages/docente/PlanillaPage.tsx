@@ -155,6 +155,8 @@ interface PlanillaMobileViewProps {
   onAddIndicador:    (data: CreateIndicadorData) => Promise<void>
   onUpdateIndicador: (id: string, data: Partial<Omit<CreateIndicadorData, 'asignacion_id' | 'dimension_id'>>) => Promise<void>
   onDeleteIndicador: (id: string) => Promise<void>
+  onGuardar:         () => void
+  guardando:         boolean
 }
 
 function PlanillaMobileView({
@@ -171,6 +173,8 @@ function PlanillaMobileView({
   onAddIndicador,
   onUpdateIndicador,
   onDeleteIndicador,
+  onGuardar,
+  guardando,
 }: PlanillaMobileViewProps) {
   const navigate = useNavigate()
   const [selectedEstIdx, setSelectedEstIdx] = useState(0)
@@ -253,6 +257,15 @@ function PlanillaMobileView({
         </button>
       </div>
 
+      {asignacion.materia.es_subarea_de_id && (
+        <button
+          onClick={() => navigate(`subareas?trimestre_id=${selectedTrimestre?.id ?? ''}`)}
+          className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-xs font-semibold text-fg-muted hover:bg-surface-2 hover:text-fg transition-colors"
+        >
+          📚 Ver subáreas de {asignacion.materia.parent_materia?.nombre ?? 'esta área'}
+        </button>
+      )}
+
       {/* Exportar el registro del trimestre actual */}
       <div className="flex gap-2">
         <button
@@ -270,6 +283,14 @@ function PlanillaMobileView({
           {dlState === 'xlsx' ? '…' : '📗 Excel'}
         </button>
       </div>
+
+      <button
+        onClick={onGuardar}
+        disabled={guardando}
+        className="w-full rounded-lg bg-emerald-600 px-3 py-2.5 text-sm font-semibold text-white hover:bg-emerald-700 disabled:opacity-60 transition-colors"
+      >
+        {guardando ? 'Guardando…' : '💾 Guardar calificaciones'}
+      </button>
 
       {trimestreCerrado && (
         <div className="rounded-lg bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900 px-4 py-2.5 text-sm text-amber-800 dark:text-amber-400">
@@ -441,16 +462,34 @@ function PlanillaMobileView({
 export default function PlanillaPage() {
   const { asignacion_id } = useParams<{ asignacion_id: string }>()
   const navigate = useNavigate()
+  const toast    = useToast()
 
   const [selectedTrimestre, setSelectedTrimestre] = useState<TrimestrePlanilla | null>(null)
   const [initDone,          setInitDone]          = useState(false)
   const [indicadorModal,    setIndicadorModal]    = useState<IndicadorModalState | null>(null)
   const [dlState,           setDlState]           = useState<'idle' | 'pdf' | 'xlsx'>('idle')
+  const [guardando,         setGuardando]         = useState(false)
 
   const {
     data, loading, error, saving,
     updateNota, addIndicador, updateIndicador, deleteIndicador,
   } = usePlanilla(asignacion_id!, initDone ? selectedTrimestre?.id : undefined)
+
+  const savingRef = useRef(saving)
+  savingRef.current = saving
+
+  async function guardarCalificaciones() {
+    setGuardando(true)
+    const active = document.activeElement
+    if (active instanceof HTMLInputElement) active.blur()
+    await new Promise(r => setTimeout(r, 250))
+    const start = Date.now()
+    while (savingRef.current.size > 0 && Date.now() - start < 5000) {
+      await new Promise(r => setTimeout(r, 150))
+    }
+    setGuardando(false)
+    toast.success('Todas las calificaciones están guardadas ✓')
+  }
 
   // Auto-select active trimestre on first load
   useEffect(() => {
@@ -533,6 +572,8 @@ export default function PlanillaPage() {
         onAddIndicador={addIndicador}
         onUpdateIndicador={updateIndicador}
         onDeleteIndicador={deleteIndicador}
+        onGuardar={guardarCalificaciones}
+        guardando={guardando}
       />
     )
   }
@@ -589,6 +630,20 @@ export default function PlanillaPage() {
 
             <Button variant="ghost" size="sm" onClick={() => navigate('centralizador')}>
               📊 Centralizador
+            </Button>
+
+            {asignacion.materia.es_subarea_de_id && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => navigate(`subareas?trimestre_id=${selectedTrimestre?.id ?? ''}`)}
+              >
+                📚 Subáreas de {asignacion.materia.parent_materia?.nombre ?? 'esta área'}
+              </Button>
+            )}
+
+            <Button size="sm" onClick={guardarCalificaciones} loading={guardando}>
+              💾 Guardar calificaciones
             </Button>
 
             <div className="flex gap-2">
