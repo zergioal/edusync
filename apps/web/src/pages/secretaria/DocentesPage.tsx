@@ -13,6 +13,13 @@ function abbreviateCurso(gradoNombre: string, letra: string): string {
   return `${m[1]} ${abbr} ${letra}`
 }
 
+const NIVEL_ORDEN: Record<string, number> = { INICIAL: 0, PRIMARIA: 1, SECUNDARIA: 2 }
+const NIVEL_CURSO_COLOR: Record<string, string> = {
+  INICIAL:    'bg-amber-50 text-amber-700',
+  PRIMARIA:   'bg-blue-50 text-blue-700',
+  SECUNDARIA: 'bg-emerald-50 text-emerald-700',
+}
+
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 interface AsignacionResumen {
@@ -22,7 +29,10 @@ interface AsignacionResumen {
     horas_semanales: number | null
     carga_horaria:   { grado_id: string; horas_mes: number }[]
   }
-  paralelo: { letra: string; grado: { id: string; nombre: string } }
+  paralelo: {
+    letra: string
+    grado: { id: string; nombre: string; orden: number; nivel: { nombre: string } }
+  }
   gestion:  { anno: number }
 }
 
@@ -429,9 +439,24 @@ export default function DocentesPage() {
                 const ch = a.materia?.carga_horaria?.find(c => c.grado_id === a.paralelo?.grado?.id)
                 return s + (ch?.horas_mes ?? a.materia?.horas_semanales ?? 0)
               }, 0)
-              const cursos     = [...new Set(doc.asignaciones.map(a =>
-                abbreviateCurso(a.paralelo?.grado?.nombre ?? '', a.paralelo?.letra ?? '')
-              ))]
+              const cursosMap = new Map<string, { label: string; nivel: string; nivelOrden: number; gradoOrden: number; letra: string }>()
+              for (const a of doc.asignaciones) {
+                const grado = a.paralelo?.grado
+                if (!grado) continue
+                const key = `${grado.id}-${a.paralelo.letra}`
+                if (cursosMap.has(key)) continue
+                const nivel = grado.nivel?.nombre ?? ''
+                cursosMap.set(key, {
+                  label:      abbreviateCurso(grado.nombre, a.paralelo.letra),
+                  nivel,
+                  nivelOrden: NIVEL_ORDEN[nivel] ?? 99,
+                  gradoOrden: grado.orden,
+                  letra:      a.paralelo.letra,
+                })
+              }
+              const cursos = [...cursosMap.values()].sort((a, b) =>
+                a.nivelOrden - b.nivelOrden || a.gradoOrden - b.gradoOrden || a.letra.localeCompare(b.letra)
+              )
               return (
                 <tr key={doc.id} className="hover:bg-surface-2 transition-colors align-top">
                   <td className="px-4 py-3 text-center text-xs font-mono text-fg-muted select-none">
@@ -460,12 +485,14 @@ export default function DocentesPage() {
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex flex-wrap gap-1">
-                      {cursos.slice(0, 3).map(c => (
-                        <span key={c} className="inline-block rounded-md bg-indigo-50 px-2 py-0.5 text-xs text-indigo-600 font-medium">{c}</span>
+                      {cursos.map(c => (
+                        <span
+                          key={`${c.label}-${c.nivel}`}
+                          className={`inline-block rounded-md px-2 py-0.5 text-xs font-medium ${NIVEL_CURSO_COLOR[c.nivel] ?? 'bg-surface-2 text-fg-muted'}`}
+                        >
+                          {c.label}
+                        </span>
                       ))}
-                      {cursos.length > 3 && (
-                        <span className="inline-block rounded-md bg-indigo-50 px-2 py-0.5 text-xs text-indigo-400">+{cursos.length - 3}</span>
-                      )}
                       {cursos.length === 0 && <span className="text-xs text-fg-muted italic">—</span>}
                     </div>
                   </td>

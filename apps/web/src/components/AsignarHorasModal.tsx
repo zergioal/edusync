@@ -3,7 +3,7 @@ import { api, ApiError } from '../lib/api'
 import { useToast } from './ui/Toast'
 import { Modal } from './ui/Modal'
 import { Button, Spinner } from '@edusync/ui'
-import { SelectParalelo } from './select/SelectParalelo'
+import { SelectParalelo, type Paralelo } from './select/SelectParalelo'
 
 // ─── Tipos ──────────────────────────────────────────────────────────────────
 
@@ -17,43 +17,60 @@ interface MateriaDisponible {
   carga_horaria: { horas_mes: number }[]
 }
 
+/** Selección de materias para UN curso ya visitado dentro de un bloque — se conserva al cambiar de curso. */
+interface CursoSeleccion {
+  paralelo_label: string
+  disponibles:    MateriaDisponible[]
+  materia_ids:    string[]
+}
+
 interface ParaleloBlock {
-  key:         number
-  paralelo_id: string
-  materia_ids: string[]
-  disponibles: MateriaDisponible[]
-  loading:     boolean
+  key:               number
+  currentParaleloId: string
+  loading:           boolean
+  /** Todos los cursos visitados en este bloque, cada uno con su propia selección — cambiar el
+   *  desplegable a un curso ya visitado no borra lo que se había marcado ahí. */
+  cursos:            Record<string, CursoSeleccion>
 }
 
 let nextKey = 1
 function newBlock(): ParaleloBlock {
-  return { key: nextKey++, paralelo_id: '', materia_ids: [], disponibles: [], loading: false }
+  return { key: nextKey++, currentParaleloId: '', loading: false, cursos: {} }
 }
 
 // ─── Bloque de paralelo ───────────────────────────────────────────────────────
 
 function ParaleloBloque({
   block, canRemove,
-  onParaleloChange, onToggleMateria, onRemove,
+  onParaleloChange, onJumpToCurso, onToggleMateria, onSelectAll, onSelectNone, onRemove,
 }: {
   block:            ParaleloBlock
   canRemove:        boolean
-  onParaleloChange: (key: number, id: string) => void
+  onParaleloChange: (key: number, paralelo: Paralelo | null) => void
+  onJumpToCurso:    (key: number, paralelo_id: string) => void
   onToggleMateria:  (key: number, id: string) => void
+  onSelectAll:      (key: number) => void
+  onSelectNone:     (key: number) => void
   onRemove:         (key: number) => void
 }) {
-  const byField = block.disponibles.reduce<Record<string, MateriaDisponible[]>>((acc, m) => {
+  const curso = block.cursos[block.currentParaleloId]
+
+  const byField = (curso?.disponibles ?? []).reduce<Record<string, MateriaDisponible[]>>((acc, m) => {
     (acc[m.campo.nombre] ??= []).push(m)
     return acc
   }, {})
+
+  const otrosCursosConSeleccion = Object.entries(block.cursos)
+    .filter(([id, c]) => id !== block.currentParaleloId && c.materia_ids.length > 0)
 
   return (
     <div className="rounded-xl border border-border bg-bg p-4">
       <div className="flex items-center gap-3 mb-3">
         <div className="flex-1">
           <SelectParalelo
-            value={block.paralelo_id}
-            onChange={id => onParaleloChange(block.key, id)}
+            value={block.currentParaleloId}
+            onChange={() => {}}
+            onParaleloChange={p => onParaleloChange(block.key, p)}
             label=""
             placeholder="— Seleccionar paralelo —"
           />
@@ -72,24 +89,41 @@ function ParaleloBloque({
         )}
       </div>
 
-      {!block.paralelo_id && (
+      {otrosCursosConSeleccion.length > 0 && (
+        <div className="mb-3 flex flex-wrap items-center gap-1.5">
+          <span className="text-xs text-fg-muted">Ya seleccionado en:</span>
+          {otrosCursosConSeleccion.map(([id, c]) => (
+            <button
+              key={id}
+              type="button"
+              onClick={() => onJumpToCurso(block.key, id)}
+              className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-medium text-emerald-700 hover:bg-emerald-100 transition-colors"
+              title="Volver a este curso"
+            >
+              {c.paralelo_label} · {c.materia_ids.length}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {!block.currentParaleloId && (
         <p className="text-xs text-fg-muted italic">Seleccionar paralelo para ver materias disponibles.</p>
       )}
-      {block.paralelo_id && block.loading && (
+      {block.currentParaleloId && block.loading && (
         <div className="flex items-center gap-2 text-xs text-fg-muted"><Spinner /><span>Cargando…</span></div>
       )}
-      {block.paralelo_id && !block.loading && block.disponibles.length === 0 && (
+      {block.currentParaleloId && !block.loading && curso && curso.disponibles.length === 0 && (
         <p className="text-xs text-amber-600">Sin materias disponibles para este paralelo.</p>
       )}
 
-      {block.paralelo_id && !block.loading && block.disponibles.length > 0 && (
+      {block.currentParaleloId && !block.loading && curso && curso.disponibles.length > 0 && (
         <div className="space-y-3">
           <div className="flex items-center justify-between">
             <span className="text-xs font-medium uppercase tracking-wide text-fg-muted">Materias disponibles</span>
             <div className="flex gap-2 text-xs">
-              <button type="button" onClick={() => block.disponibles.forEach(m => { if (!block.materia_ids.includes(m.id)) onToggleMateria(block.key, m.id) })} className="text-blue-600 hover:text-blue-800">Todas</button>
+              <button type="button" onClick={() => onSelectAll(block.key)} className="text-blue-600 hover:text-blue-800">Todas</button>
               <span className="text-fg-muted">·</span>
-              <button type="button" onClick={() => [...block.materia_ids].forEach(id => onToggleMateria(block.key, id))} className="text-fg-muted hover:text-fg">Ninguna</button>
+              <button type="button" onClick={() => onSelectNone(block.key)} className="text-fg-muted hover:text-fg">Ninguna</button>
             </div>
           </div>
           {Object.entries(byField).map(([campo, mats]) => (
@@ -97,7 +131,7 @@ function ParaleloBloque({
               <p className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-fg-muted">{campo}</p>
               <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3">
                 {mats.map(m => {
-                  const checked = block.materia_ids.includes(m.id)
+                  const checked = curso.materia_ids.includes(m.id)
                   const h = m.carga_horaria[0]?.horas_mes
                   return (
                     <label key={m.id} className={`flex cursor-pointer items-start gap-2 rounded-lg border px-3 py-2 text-sm transition-colors ${checked ? 'border-blue-400 bg-blue-50 text-blue-800' : 'border-border bg-surface text-fg hover:border-border'}`}>
@@ -141,49 +175,79 @@ export function AsignarHorasModal({ docente, onClose, onSaved }: {
       .catch(() => toastRef.current.error('No se encontró una gestión activa'))
   }, [])
 
-  const handleParaleloChange = useCallback(async (key: number, paralelo_id: string) => {
-    setBlocks(prev =>
-      prev.map(b => b.key === key ? { ...b, paralelo_id, materia_ids: [], disponibles: [], loading: !!paralelo_id } : b)
-    )
-    if (!paralelo_id) return
-    try {
-      const data = await api.get<MateriaDisponible[]>(`/materias/disponibles?paralelo_id=${paralelo_id}`)
-      setBlocks(prev => prev.map(b => b.key === key ? { ...b, disponibles: data, loading: false } : b))
-    } catch {
-      toastRef.current.error('No se pudieron cargar las materias')
-      setBlocks(prev => prev.map(b => b.key === key ? { ...b, loading: false } : b))
-    }
-  }, [])
-
-  const toggleMateria = (key: number, materia_id: string) =>
+  const handleParaleloChange = useCallback((key: number, paralelo: Paralelo | null) => {
+    const paralelo_id = paralelo?.id ?? ''
+    let needsFetch = false
     setBlocks(prev => prev.map(b => {
       if (b.key !== key) return b
-      const materia_ids = b.materia_ids.includes(materia_id)
-        ? b.materia_ids.filter(id => id !== materia_id)
-        : [...b.materia_ids, materia_id]
-      return { ...b, materia_ids }
+      if (!paralelo_id) return { ...b, currentParaleloId: '' }
+      if (b.cursos[paralelo_id]) return { ...b, currentParaleloId: paralelo_id }
+      needsFetch = true
+      return { ...b, currentParaleloId: paralelo_id, loading: true }
     }))
+    if (!paralelo_id || !needsFetch || !paralelo) return
+
+    const label = `${paralelo.grado.nombre} "${paralelo.letra}"`
+    api.get<MateriaDisponible[]>(`/materias/disponibles?paralelo_id=${paralelo_id}`)
+      .then(data => {
+        setBlocks(prev => prev.map(b => b.key !== key ? b : {
+          ...b,
+          loading: false,
+          cursos: { ...b.cursos, [paralelo_id]: { paralelo_label: label, disponibles: data, materia_ids: [] } },
+        }))
+      })
+      .catch(() => {
+        toastRef.current.error('No se pudieron cargar las materias')
+        setBlocks(prev => prev.map(b => b.key === key ? { ...b, loading: false } : b))
+      })
+  }, [])
+
+  const jumpToCurso = useCallback((key: number, paralelo_id: string) => {
+    setBlocks(prev => prev.map(b => b.key === key ? { ...b, currentParaleloId: paralelo_id } : b))
+  }, [])
+
+  const updateCursoActual = (key: number, fn: (c: CursoSeleccion) => CursoSeleccion) =>
+    setBlocks(prev => prev.map(b => {
+      if (b.key !== key) return b
+      const curso = b.cursos[b.currentParaleloId]
+      if (!curso) return b
+      return { ...b, cursos: { ...b.cursos, [b.currentParaleloId]: fn(curso) } }
+    }))
+
+  const toggleMateria = (key: number, materia_id: string) =>
+    updateCursoActual(key, c => ({
+      ...c,
+      materia_ids: c.materia_ids.includes(materia_id)
+        ? c.materia_ids.filter(id => id !== materia_id)
+        : [...c.materia_ids, materia_id],
+    }))
+
+  const selectAll  = (key: number) => updateCursoActual(key, c => ({ ...c, materia_ids: c.disponibles.map(m => m.id) }))
+  const selectNone = (key: number) => updateCursoActual(key, c => ({ ...c, materia_ids: [] }))
 
   const addBlock    = () => setBlocks(prev => [...prev, newBlock()])
   const removeBlock = (key: number) => setBlocks(prev => prev.filter(b => b.key !== key))
 
-  const totalPairs = blocks.reduce((s, b) => s + b.materia_ids.length, 0)
+  // Todas las combinaciones (paralelo, materia) seleccionadas en TODOS los cursos visitados de TODOS
+  // los bloques — no solo el curso que está mostrando cada bloque en este momento.
+  const allPairs = blocks.flatMap(b =>
+    Object.entries(b.cursos).flatMap(([paralelo_id, c]) =>
+      c.materia_ids.map(materia_id => ({ paralelo_id, materia_id }))
+    )
+  )
+  const totalPairs = allPairs.length
   const canSubmit  = !!gestion && totalPairs > 0
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!canSubmit) return
 
-    const pairs = blocks.flatMap(b =>
-      b.materia_ids.map(materia_id => ({ paralelo_id: b.paralelo_id, materia_id }))
-    )
-
     setSaving(true)
     let created = 0
     const errors: string[] = []
 
     await Promise.allSettled(
-      pairs.map(({ paralelo_id, materia_id }) =>
+      allPairs.map(({ paralelo_id, materia_id }) =>
         api.post('/asignaciones', { docente_id: docente.id, materia_id, paralelo_id, gestion_id: gestion!.id })
           .then(() => { created++ })
           .catch((err: unknown) => { errors.push(err instanceof ApiError ? err.message : 'Error') })
@@ -231,7 +295,10 @@ export function AsignarHorasModal({ docente, onClose, onSaved }: {
               block={block}
               canRemove={blocks.length > 1}
               onParaleloChange={handleParaleloChange}
+              onJumpToCurso={jumpToCurso}
               onToggleMateria={toggleMateria}
+              onSelectAll={selectAll}
+              onSelectNone={selectNone}
               onRemove={removeBlock}
             />
           ))}

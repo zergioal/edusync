@@ -35,7 +35,12 @@ const DOC_INCLUDE = {
       paralelo: {
         select: {
           letra: true,
-          grado: { select: { id: true, nombre: true } },
+          grado: {
+            select: {
+              id: true, nombre: true, orden: true,
+              nivel: { select: { nombre: true } },
+            },
+          },
         },
       },
       gestion: { select: { anno: true } },
