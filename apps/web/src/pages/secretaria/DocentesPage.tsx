@@ -427,7 +427,7 @@ export default function DocentesPage() {
               const materias = [...new Set(doc.asignaciones.map(a => a.materia?.nombre).filter(Boolean))]
               const horasMes = doc.asignaciones.reduce((s, a) => {
                 const ch = a.materia?.carga_horaria?.find(c => c.grado_id === a.paralelo?.grado?.id)
-                return s + (ch?.horas_mes ?? (a.materia?.horas_semanales ?? 0) * 4)
+                return s + (ch?.horas_mes ?? a.materia?.horas_semanales ?? 0)
               }, 0)
               const cursos     = [...new Set(doc.asignaciones.map(a =>
                 abbreviateCurso(a.paralelo?.grado?.nombre ?? '', a.paralelo?.letra ?? '')

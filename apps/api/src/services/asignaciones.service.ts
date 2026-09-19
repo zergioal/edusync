@@ -69,7 +69,7 @@ export class AsignacionesService {
     const carga = await prisma.cargaHorariaMateria.findUnique({
       where: { materia_id_grado_id: { materia_id: data.materia_id, grado_id: paralelo.grado_id } },
     })
-    const horas = carga?.horas_mes ?? (materia.horas_semanales ?? 0) * 4
+    const horas = carga?.horas_mes ?? materia.horas_semanales ?? 0
 
     return prisma.$transaction(async (tx) => {
       const asignacion = await tx.asignacion.create({ data, include: INCLUDE })
@@ -104,7 +104,7 @@ export class AsignacionesService {
         const carga = await prisma.cargaHorariaMateria.findUnique({
           where: { materia_id_grado_id: { materia_id: a.materia_id, grado_id: a.paralelo.grado_id } },
         })
-        const horas_mes = carga?.horas_mes ?? (a.materia.horas_semanales ?? 0) * 4
+        const horas_mes = carga?.horas_mes ?? a.materia.horas_semanales ?? 0
 
         return {
           ...a,
@@ -138,7 +138,7 @@ export class AsignacionesService {
     const carga = await prisma.cargaHorariaMateria.findUnique({
       where: { materia_id_grado_id: { materia_id: a.materia_id, grado_id: a.paralelo.grado_id } },
     })
-    const horas = carga?.horas_mes ?? (a.materia.horas_semanales ?? 0) * 4
+    const horas = carga?.horas_mes ?? a.materia.horas_semanales ?? 0
 
     await prisma.$transaction(async (tx) => {
       await tx.asignacion.delete({ where: { id } })

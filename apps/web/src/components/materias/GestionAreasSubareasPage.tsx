@@ -26,6 +26,7 @@ interface MateriaPadre {
   activa:                  boolean
   aplica_solo_desde_grado: number | null
   aplica_hasta_grado:      number | null
+  horas_semanales:         number | null
   subareas:                Subarea[]
   _count:                  { asignaciones: number }
 }
@@ -114,7 +115,7 @@ export function GestionAreasSubareasPage() {
       solo_si_bth:             area.solo_si_bth,
       aplica_solo_desde_grado: area.aplica_solo_desde_grado?.toString() ?? '',
       aplica_hasta_grado:      area.aplica_hasta_grado?.toString() ?? '',
-      horas_semanales:         '',
+      horas_semanales:         area.horas_semanales?.toString() ?? '',
     })
     setAreaModal({ mode: 'edit', area })
   }
@@ -313,7 +314,7 @@ export function GestionAreasSubareasPage() {
                     </span>
                     {!sub.activa && <Badge variant="warning">Inactiva</Badge>}
                     {sub.horas_semanales != null && (
-                      <span className="text-xs text-fg-muted shrink-0">{sub.horas_semanales} hrs/sem</span>
+                      <span className="text-xs text-fg-muted shrink-0">{sub.horas_semanales} hrs/mes</span>
                     )}
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
@@ -408,15 +409,26 @@ export function GestionAreasSubareasPage() {
               </div>
             </div>
 
-            <div className="flex flex-col gap-1">
-              <label className="text-sm font-medium text-fg">Horas semanales (opcional)</label>
-              <input
-                type="number" min={0}
-                value={areaForm.horas_semanales}
-                onChange={e => setAreaForm(f => ({ ...f, horas_semanales: e.target.value }))}
-                className="w-32 rounded-lg border border-border px-3 py-2 text-sm shadow-sm focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand"
-              />
-            </div>
+            {areaModal.mode === 'edit' && areaModal.area?.tiene_subareas ? (
+              <p className="text-xs text-fg-muted rounded-lg bg-surface-2 px-3 py-2">
+                Esta área tiene subáreas — sus horas se calculan automáticamente sumando las horas
+                mensuales de cada subárea, no se editan aquí.
+              </p>
+            ) : (
+              <div className="flex flex-col gap-1">
+                <label className="text-sm font-medium text-fg">Horas mensuales (opcional)</label>
+                <input
+                  type="number" min={0}
+                  value={areaForm.horas_semanales}
+                  onChange={e => setAreaForm(f => ({ ...f, horas_semanales: e.target.value }))}
+                  className="w-32 rounded-lg border border-border px-3 py-2 text-sm shadow-sm focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand"
+                />
+                <p className="text-xs text-fg-muted">
+                  Se aplicará como carga horaria mensual en todos los grados donde aplique este área
+                  (editable luego, grado por grado, en "Carga horaria por materia y grado").
+                </p>
+              </div>
+            )}
           </form>
         )}
       </Modal>
@@ -476,13 +488,17 @@ export function GestionAreasSubareasPage() {
             <p className="text-xs text-fg-muted -mt-2">Vacío = hereda el rango de "{subareaModal.padre.nombre}".</p>
 
             <div className="flex flex-col gap-1">
-              <label className="text-sm font-medium text-fg">Horas semanales (opcional)</label>
+              <label className="text-sm font-medium text-fg">Horas mensuales (opcional)</label>
               <input
                 type="number" min={0}
                 value={subareaForm.horas_semanales}
                 onChange={e => setSubareaForm(f => ({ ...f, horas_semanales: e.target.value }))}
                 className="w-32 rounded-lg border border-border px-3 py-2 text-sm shadow-sm focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand"
               />
+              <p className="text-xs text-fg-muted">
+                Se aplicará como carga horaria mensual en todos los grados donde aplique esta subárea
+                (editable luego, grado por grado, en "Carga horaria por materia y grado").
+              </p>
             </div>
           </form>
         )}

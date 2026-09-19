@@ -31,6 +31,8 @@ export class MateriasService {
       where: {
         activa:   true,
         nivel_id: paralelo.grado.nivel_id,
+        // Un área con subáreas ya no se asigna directamente — solo sus subáreas
+        tiene_subareas: false,
         // Si la institución NO es BTH, excluir materias BTH
         ...(!esBTH ? { solo_si_bth: false } : {}),
         // Respetar rangos de aplicación por grado
@@ -90,6 +92,40 @@ export class MateriasService {
         where:  { materia_id_grado_id: { materia_id: e.materia_id, grado_id: e.grado_id } },
         create: { materia_id: e.materia_id, grado_id: e.grado_id, horas_mes: e.horas_mes },
         update: { horas_mes: e.horas_mes },
+      })
+    }
+
+    // Mantiene Materia.horas_semanales (horas mensuales resumen) sincronizado con lo editado acá: si
+    // todos los grados de una materia terminan con el mismo valor, ese es su resumen; si varían, queda
+    // en null (no hay un solo número que lo represente). Las materias con subáreas no tienen horas
+    // propias — se omiten.
+    const materiaIds = [...new Set(entries.map(e => e.materia_id))]
+    for (const materiaId of materiaIds) {
+      const materia = await prisma.materia.findUnique({ where: { id: materiaId }, select: { tiene_subareas: true } })
+      if (!materia || materia.tiene_subareas) continue
+
+      const filas   = await prisma.cargaHorariaMateria.findMany({ where: { materia_id: materiaId } })
+      const valores = new Set(filas.map(f => f.horas_mes))
+      const uniforme = valores.size === 1 ? filas[0]!.horas_mes : null
+      await prisma.materia.update({ where: { id: materiaId }, data: { horas_semanales: uniforme } })
+    }
+  }
+
+  /** Aplica `horasMensuales` a todos los grados aplicables de una materia (crea/actualiza CargaHorariaMateria). */
+  private async syncCargaHorariaUniforme(
+    materia: { id: string; nivel_id: string; aplica_solo_desde_grado: number | null; aplica_hasta_grado: number | null },
+    horasMensuales: number,
+  ) {
+    const grados = await prisma.grado.findMany({ where: { nivel_id: materia.nivel_id } })
+    const aplicables = grados.filter(g =>
+      (materia.aplica_solo_desde_grado === null || g.orden >= materia.aplica_solo_desde_grado) &&
+      (materia.aplica_hasta_grado === null || g.orden <= materia.aplica_hasta_grado)
+    )
+    for (const g of aplicables) {
+      await prisma.cargaHorariaMateria.upsert({
+        where:  { materia_id_grado_id: { materia_id: materia.id, grado_id: g.id } },
+        create: { materia_id: materia.id, grado_id: g.id, horas_mes: horasMensuales },
+        update: { horas_mes: horasMensuales },
       })
     }
   }
@@ -163,6 +199,7 @@ export class MateriasService {
         }),
         prisma.materia.update({ where: { id: padre.id }, data: { tiene_subareas: true } }),
       ])
+      if (data.horas_semanales) await this.syncCargaHorariaUniforme(materia, data.horas_semanales)
       return materia
     }
 
@@ -171,7 +208,7 @@ export class MateriasService {
     const campo = await prisma.campo.findFirst({ where: { id: data.campo_id, institucion_id } })
     if (!campo) throw new AppError(404, 'Campo no encontrado', 'NOT_FOUND')
 
-    return prisma.materia.create({
+    const area = await prisma.materia.create({
       data: {
         nombre:                  base,
         campo_id:                campo.id,
@@ -183,6 +220,8 @@ export class MateriasService {
       },
       include: { campo: true },
     })
+    if (data.horas_semanales) await this.syncCargaHorariaUniforme(area, data.horas_semanales)
+    return area
   }
 
   /** Edita un área o una subárea existente (no permite cambiar de campo/área padre). */
@@ -207,7 +246,7 @@ export class MateriasService {
       nombre = materia.parent_materia ? `${base} (${materia.parent_materia.nombre})` : base
     }
 
-    return prisma.materia.update({
+    const actualizada = await prisma.materia.update({
       where: { id },
       data: {
         ...(nombre !== undefined ? { nombre } : {}),
@@ -218,6 +257,13 @@ export class MateriasService {
         ...(data.horas_semanales !== undefined ? { horas_semanales: data.horas_semanales } : {}),
       },
     })
+
+    // Un área con subáreas no tiene horas propias — se derivan de sus subáreas, nunca se sincronizan acá.
+    if (data.horas_semanales != null && !materia.tiene_subareas) {
+      await this.syncCargaHorariaUniforme(actualizada, data.horas_semanales)
+    }
+
+    return actualizada
   }
 
   /**

@@ -128,7 +128,7 @@ export function SeccionAjustesInstitucionales() {
                   <thead>
                     <tr className="bg-indigo-50 text-left text-xs font-semibold uppercase tracking-wide text-indigo-700 border-b border-indigo-100">
                       <th className="px-4 py-2.5">Sub-área</th>
-                      <th className="px-4 py-2.5 text-center">Horas/semana</th>
+                      <th className="px-4 py-2.5 text-center">Horas/mes</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border">
@@ -145,7 +145,7 @@ export function SeccionAjustesInstitucionales() {
                   </tbody>
                 </table>
               </div>
-              <p className="text-xs text-fg-muted">Total: {draft.subareas_bth.reduce((s, a) => s + (a.horas_semanales ?? 0), 0)} horas/semana</p>
+              <p className="text-xs text-fg-muted">Total: {draft.subareas_bth.reduce((s, a) => s + (a.horas_semanales ?? 0), 0)} horas/mes</p>
             </div>
           )}
         </section>

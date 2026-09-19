@@ -51,13 +51,14 @@ export function SeccionCargaHoraria() {
 
   useEffect(() => { load(nivelId) }, [nivelId, load])
 
-  // Lista plana de todas las filas (áreas + sus subáreas), para totales y guardado.
-  const todasFilas = (carga?.materias ?? []).flatMap(m => [m as Subarea, ...m.subareas])
+  // Filas que cuentan para totales y guardado: un área con subáreas ya no tiene horas propias
+  // editables — solo cuentan sus subáreas (o el área misma, si no tiene ninguna).
+  const filasContables = (carga?.materias ?? []).flatMap(m => m.subareas.length > 0 ? m.subareas : [m as Subarea])
 
   const getHoras = (materia_id: string, grado_id: string): number => {
     const ov = overrides[materia_id]?.[grado_id]
     if (ov !== undefined) return ov
-    const mat = todasFilas.find(m => m.id === materia_id)
+    const mat = filasContables.find(m => m.id === materia_id)
     return mat?.carga_horaria.find(c => c.grado.id === grado_id)?.horas_mes ?? 0
   }
 
@@ -73,16 +74,23 @@ export function SeccionCargaHoraria() {
   const rowTotal = (materia_id: string): number =>
     (carga?.grados ?? []).reduce((s, g) => s + getHoras(materia_id, g.id), 0)
 
+  // Para un área con subáreas: suma en vivo de sus subáreas por grado (no tiene fila propia editable).
+  const horasPadreDerivadas = (mat: Materia, grado_id: string): number =>
+    mat.subareas.reduce((s, sub) => s + getHoras(sub.id, grado_id), 0)
+
+  const rowTotalPadreDerivado = (mat: Materia): number =>
+    (carga?.grados ?? []).reduce((s, g) => s + horasPadreDerivadas(mat, g.id), 0)
+
   const colTotal = (grado_id: string): number =>
-    todasFilas.reduce((s, m) => s + getHoras(m.id, grado_id), 0)
+    filasContables.reduce((s, m) => s + getHoras(m.id, grado_id), 0)
 
   const grandTotal = (): number =>
-    todasFilas.reduce((s, m) => s + rowTotal(m.id), 0)
+    filasContables.reduce((s, m) => s + rowTotal(m.id), 0)
 
   const save = async () => {
     if (!carga) return
     const entries: { materia_id: string; grado_id: string; horas_mes: number }[] = []
-    for (const mat of todasFilas) {
+    for (const mat of filasContables) {
       for (const grado of carga.grados) {
         entries.push({ materia_id: mat.id, grado_id: grado.id, horas_mes: getHoras(mat.id, grado.id) })
       }
@@ -147,14 +155,26 @@ export function SeccionCargaHoraria() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
-                {carga.materias.map(mat => (
+                {carga.materias.map(mat => {
+                  const tieneSubareas = mat.subareas.length > 0
+                  return (
                   <Fragment key={mat.id}>
                     <tr className="hover:bg-surface-2">
                       <td className="sticky left-0 bg-surface px-4 py-2.5 font-medium text-fg hover:bg-surface-2">
                         <span>{mat.nombre}</span>
                         <span className="ml-2 text-xs text-fg-muted">{mat.campo.nombre}</span>
+                        {tieneSubareas && (
+                          <span className="ml-2 text-xs text-fg-muted italic">(suma de subáreas)</span>
+                        )}
                       </td>
                       {carga.grados.map(g => {
+                        if (tieneSubareas) {
+                          return (
+                            <td key={g.id} className="px-2 py-1.5 text-center text-fg-muted">
+                              {horasPadreDerivadas(mat, g.id)}
+                            </td>
+                          )
+                        }
                         const h  = getHoras(mat.id, g.id)
                         const ov = overrides[mat.id]?.[g.id] !== undefined
                         return (
@@ -171,7 +191,7 @@ export function SeccionCargaHoraria() {
                         )
                       })}
                       <td className="px-3 py-2.5 text-center font-semibold text-fg bg-surface-2">
-                        {rowTotal(mat.id)}
+                        {tieneSubareas ? rowTotalPadreDerivado(mat) : rowTotal(mat.id)}
                       </td>
                     </tr>
                     {mat.subareas.map(sub => (
@@ -202,7 +222,8 @@ export function SeccionCargaHoraria() {
                       </tr>
                     ))}
                   </Fragment>
-                ))}
+                  )
+                })}
               </tbody>
               <tfoot>
                 <tr className="border-t-2 border-border bg-bg font-semibold">

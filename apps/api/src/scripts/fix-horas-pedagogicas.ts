@@ -20,7 +20,7 @@ async function main() {
   for (const doc of docentes) {
     const horas = doc.asignaciones.reduce((sum, a) => {
       const ch = a.materia.carga_horaria.find(c => c.grado_id === a.paralelo.grado_id)
-      return sum + (ch?.horas_mes ?? (a.materia.horas_semanales ?? 0) * 4)
+      return sum + (ch?.horas_mes ?? a.materia.horas_semanales ?? 0)
     }, 0)
 
     if (horas !== doc.horas_pedagogicas_total) {
