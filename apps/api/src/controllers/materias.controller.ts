@@ -44,36 +44,49 @@ export class MateriasController {
     } catch (e) { next(e) }
   }
 
-  createSubarea = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  findCampos = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const { nombre, es_subarea_de_id, aplica_solo_desde_grado, aplica_hasta_grado, horas_semanales } = req.body as {
-        nombre: string; es_subarea_de_id: string
+      const nivel_id = req.query['nivel_id'] as string | undefined
+      res.json({ data: await this.service.findCampos(req.auth!.institucion_id, nivel_id) })
+    } catch (e) { next(e) }
+  }
+
+  create = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const {
+        nombre, es_subarea_de_id, campo_id, solo_si_bth,
+        aplica_solo_desde_grado, aplica_hasta_grado, horas_semanales,
+      } = req.body as {
+        nombre: string; es_subarea_de_id?: string; campo_id?: string; solo_si_bth?: boolean
         aplica_solo_desde_grado?: number | null; aplica_hasta_grado?: number | null; horas_semanales?: number | null
       }
-      if (!nombre || !es_subarea_de_id) throw new AppError(400, 'nombre y es_subarea_de_id son requeridos', 'VALIDATION')
-      const data = await this.service.createSubarea(req.auth!.institucion_id, {
-        nombre, es_subarea_de_id, aplica_solo_desde_grado, aplica_hasta_grado, horas_semanales,
+      if (!nombre) throw new AppError(400, 'nombre es requerido', 'VALIDATION')
+      if (!es_subarea_de_id && !campo_id) {
+        throw new AppError(400, 'campo_id es requerido para crear un área', 'VALIDATION')
+      }
+      const data = await this.service.create(req.auth!.institucion_id, {
+        nombre, es_subarea_de_id, campo_id, solo_si_bth, aplica_solo_desde_grado, aplica_hasta_grado, horas_semanales,
       })
       res.status(201).json({ data })
     } catch (e) { next(e) }
   }
 
-  updateSubarea = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  update = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const { nombre, activa, aplica_solo_desde_grado, aplica_hasta_grado, horas_semanales } = req.body as {
-        nombre?: string; activa?: boolean
+      const { nombre, activa, solo_si_bth, aplica_solo_desde_grado, aplica_hasta_grado, horas_semanales } = req.body as {
+        nombre?: string; activa?: boolean; solo_si_bth?: boolean
         aplica_solo_desde_grado?: number | null; aplica_hasta_grado?: number | null; horas_semanales?: number | null
       }
-      const data = await this.service.updateSubarea(req.auth!.institucion_id, req.params['id']!, {
-        nombre, activa, aplica_solo_desde_grado, aplica_hasta_grado, horas_semanales,
+      const data = await this.service.update(req.auth!.institucion_id, req.params['id']!, {
+        nombre, activa, solo_si_bth, aplica_solo_desde_grado, aplica_hasta_grado, horas_semanales,
       })
       res.json({ data })
     } catch (e) { next(e) }
   }
 
-  removeSubarea = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  remove = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const data = await this.service.removeSubarea(req.auth!.institucion_id, req.params['id']!)
+      const data = await this.service.remove(req.auth!.institucion_id, req.params['id']!)
       res.json({ data })
     } catch (e) { next(e) }
   }

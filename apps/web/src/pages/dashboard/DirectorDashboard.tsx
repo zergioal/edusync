@@ -17,7 +17,7 @@ const ReportesPage             = lazy(() => import('../coordinador/ReportesPage'
 const ParalelosPage            = lazy(() => import('../coordinador/ParalelosPage'))
 const HorariosPage             = lazy(() => import('../director/HorariosPage'))
 const AjustesInstitucionalesPage = lazy(() => import('../director/AjustesInstitucionalesPage'))
-const SubareasPage             = lazy(() => import('../director/SubareasPage'))
+const AreasSubareasPage        = lazy(() => import('../director/AreasSubareasPage'))
 const GestionesPage            = lazy(() => import('../secretaria/GestionesPage'))
 const DocentesPage             = lazy(() => import('../secretaria/DocentesPage'))
 const EstudiantesPage          = lazy(() => import('../secretaria/EstudiantesPage'))
@@ -234,7 +234,7 @@ export default function DirectorDashboard() {
         <Route path="proyectos-bth"     element={<ProyectosBTHPage />} />
         <Route path="carga-horaria"     element={<CargaHorariaDocentesPage />} />
         <Route path="ajustes-institucionales" element={<AjustesInstitucionalesPage />} />
-        <Route path="subareas"       element={<SubareasPage />} />
+        <Route path="areas-subareas" element={<AreasSubareasPage />} />
         <Route path="anuncios"          element={<AnunciosInternosPage />} />
         <Route path="mensajes"          element={<MensajesPage />} />
         <Route path="auditoria"         element={<AuditoriaPage />} />

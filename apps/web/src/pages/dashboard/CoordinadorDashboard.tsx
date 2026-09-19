@@ -20,7 +20,7 @@ const AnunciosInternosPage = lazy(() => import('../shared/AnunciosInternosPage')
 const MensajesPage         = lazy(() => import('../shared/MensajesPage'))
 const PadresPage           = lazy(() => import('../secretaria/PadresPage'))
 const ProyectosBTHPage     = lazy(() => import('../coordinador/ProyectosBTHPage'))
-const SubareasPage         = lazy(() => import('../coordinador/SubareasPage'))
+const AreasSubareasPage    = lazy(() => import('../coordinador/AreasSubareasPage'))
 
 // ─── Panel principal ──────────────────────────────────────────────────────────
 
@@ -110,7 +110,7 @@ export default function CoordinadorDashboard() {
         <Route path="horarios"         element={<HorariosPage />} />
         <Route path="reportes/*"       element={<ReportesPage />} />
         <Route path="proyectos-bth"    element={<ProyectosBTHPage />} />
-        <Route path="subareas"         element={<SubareasPage />} />
+        <Route path="areas-subareas"   element={<AreasSubareasPage />} />
         <Route path="gestiones"        element={<GestionesPage />} />
         <Route path="docentes"         element={<DocentesPage />} />
         <Route path="padres"           element={<PadresPage basePath="/dashboard/coordinador" />} />
