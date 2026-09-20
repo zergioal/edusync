@@ -96,6 +96,11 @@ export const NAV_POR_ROL: Record<string, NavItem[]> = {
       icon: "chart",
     },
     {
+      to: "/dashboard/director/ajustes-nota",
+      label: "Ajustes de Nota",
+      icon: "settings",
+    },
+    {
       to: "/dashboard/director/proyectos-bth",
       label: "Proyectos BTH",
       icon: "book",
@@ -182,6 +187,11 @@ export const NAV_POR_ROL: Record<string, NavItem[]> = {
       icon: "chart",
     },
     {
+      to: "/dashboard/coordinador/ajustes-nota",
+      label: "Ajustes de Nota",
+      icon: "settings",
+    },
+    {
       to: "/dashboard/coordinador/proyectos-bth",
       label: "Proyectos BTH",
       icon: "book",
@@ -233,6 +243,11 @@ export const NAV_POR_ROL: Record<string, NavItem[]> = {
       to: "/dashboard/admin/calificaciones",
       label: "Calificaciones",
       icon: "chart",
+    },
+    {
+      to: "/dashboard/admin/ajustes-nota",
+      label: "Ajustes de Nota",
+      icon: "settings",
     },
     { to: "/dashboard/admin/asistencia", label: "Asistencia", icon: "chart" },
     {

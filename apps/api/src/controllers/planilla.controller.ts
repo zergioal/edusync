@@ -1,5 +1,6 @@
 import type { Request, Response, NextFunction } from 'express'
 import { PlanillaService } from '../services/planilla.service'
+import { AjustesService } from '../services/ajustes.service'
 import { AppError } from '../middlewares/errorHandler'
 import { generarHTMLRegistroMateria, type DatosRegistroMateria } from '../templates/registro-materia.template'
 import { generarHTMLCentralizadorAsignacion, type DatosCentralizadorAsignacion } from '../templates/centralizador-asignacion.template'
@@ -8,6 +9,7 @@ import { generateRegistroMateriaExcel, generateCentralizadorAsignacionExcel } fr
 
 export class PlanillaController {
   private service = new PlanillaService()
+  private ajustesService = new AjustesService()
 
   get = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
@@ -140,6 +142,30 @@ export class PlanillaController {
           req.params['estudiante_id']!,
           trimestre_id,
           req.auth!.institucion_id,
+        ),
+      })
+    } catch (e) { next(e) }
+  }
+
+  getAjustes = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const trimestre_id = req.query['trimestre_id'] as string | undefined
+      if (!trimestre_id) throw new AppError(400, 'trimestre_id es requerido', 'MISSING_PARAM')
+      res.json({
+        data: await this.ajustesService.list(req.params['asignacion_id']!, trimestre_id, req.auth!.institucion_id),
+      })
+    } catch (e) { next(e) }
+  }
+
+  putAjustes = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const trimestre_id = req.query['trimestre_id'] as string | undefined
+      if (!trimestre_id) throw new AppError(400, 'trimestre_id es requerido', 'MISSING_PARAM')
+      const entries = req.body as { estudiante_id: string; valor: number | null; motivo?: string }[]
+      if (!Array.isArray(entries)) throw new AppError(400, 'Se esperaba un array de entradas', 'VALIDATION')
+      res.json({
+        data: await this.ajustesService.upsertBulk(
+          req.params['asignacion_id']!, trimestre_id, entries, req.auth!.usuario_id, req.auth!.institucion_id,
         ),
       })
     } catch (e) { next(e) }

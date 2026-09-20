@@ -3,6 +3,7 @@ import { AppError } from '../middlewares/errorHandler'
 import { BoletinesService } from './boletines.service'
 import { Instrumento } from '@edusync/types'
 import { calcNotasEstudiante, type DimInfo } from './calculo.service'
+import { AjustesService } from './ajustes.service'
 
 type Escala = 'ED' | 'DA' | 'DO' | 'DP'
 
@@ -31,10 +32,16 @@ const INDICADORES_DEFECTO: Record<string, Array<{ nombre: string; instrumento: I
   ],
 }
 
-/** Calcula notas/promedios/total/escala de un estudiante a partir de sus dimensiones+indicadores y su mapa de notas. */
+/**
+ * Calcula notas/promedios/total/escala de un estudiante a partir de sus dimensiones+indicadores y su
+ * mapa de notas. `ajuste` es el valor oculto de AjusteNota (ver ajustes.service.ts): se suma al total
+ * sin aparecer como indicador/columna — quien llama a esta función nunca debe exponer `ajuste` a un
+ * docente, solo el total/escala ya resultante.
+ */
 export function calcularFilaEstudiante(
   dimensiones: Array<{ id: string; indicadores: Array<{ id: string }> }>,
   notasDeEstudiante: Map<string, number | null>,
+  ajuste: number = 0,
 ) {
   const notasObj: Record<string, number | null>  = {}
   const promedios: Record<string, number | null> = {}
@@ -57,6 +64,9 @@ export function calcularFilaEstudiante(
     promedios[dim.id] = avg
     total += avg
   }
+
+  total += ajuste
+  hasAny = hasAny || ajuste !== 0
 
   return {
     notas:    notasObj,
@@ -247,10 +257,17 @@ export class PlanillaService {
       notasMap.get(nota.estudiante_id)!.set(nota.indicador_id, nota.puntaje ?? null)
     }
 
+    // Ajuste oculto (solo admin/director/coordinador) — se suma al total sin aparecer nunca en
+    // esta respuesta como columna/indicador visible para el docente.
+    const ajustesMap = trimestre_id
+      ? await new AjustesService().getMapa([asignacion_id], trimestre_id)
+      : new Map<string, number>()
+
     const estudiantes = matriculas.map(m => {
       const est      = m.estudiante
       const estNotas = notasMap.get(est.id) ?? new Map<string, number | null>()
-      const fila     = calcularFilaEstudiante(dimensiones, estNotas)
+      const ajuste   = ajustesMap.get(`${asignacion_id}:${est.id}`) ?? 0
+      const fila     = calcularFilaEstudiante(dimensiones, estNotas, ajuste)
 
       return {
         id:       est.id,
@@ -339,6 +356,8 @@ export class PlanillaService {
 
     const META = 51 * trimestres.length // mínimo aprobado (escala DA) × cantidad de trimestres de la gestión
 
+    const ajustesMap = await new AjustesService().getMapaMultiTrimestre([asignacion.id], trimestres.map(t => t.id))
+
     const estudiantes = matriculas.map(m => {
       const est      = m.estudiante
       const estNotas = notasMap.get(est.id) ?? new Map<string, number | null>()
@@ -350,7 +369,8 @@ export class PlanillaService {
           id: d.id,
           indicadores: d.indicadores.filter(i => i.trimestre_id === trim.id),
         }))
-        const fila = calcularFilaEstudiante(dimsTrim, estNotas)
+        const ajuste = ajustesMap.get(`${asignacion.id}:${est.id}:${trim.id}`) ?? 0
+        const fila = calcularFilaEstudiante(dimsTrim, estNotas, ajuste)
         totales[trim.id] = fila.total
         escalas[trim.id] = fila.escala
       }
@@ -598,9 +618,12 @@ export class PlanillaService {
       : []
     const notasDeEstudiante = new Map(notas.map(n => [n.indicador_id, n.puntaje ?? null]))
 
+    const ajustesMap = await new AjustesService().getMapa(asignaciones.map(a => a.id), trimestre_id)
+
     const materias = asignaciones.map(asig => {
       // Dimensiones de esta materia: propios indicadores + los de sus subáreas especiales (si tiene)
       const especialesDeEstaMateria = especialAsigs.filter(e => e.materia.es_subarea_de_id === asig.materia_id)
+      const ajuste = ajustesMap.get(`${asig.id}:${estudiante_id}`) ?? 0
       const dimsAsig = dimensiones.map(d => ({
         id:          d.id,
         nombre:      d.nombre,
@@ -610,7 +633,7 @@ export class PlanillaService {
           i.asignacion_id === asig.id || especialesDeEstaMateria.some(e => e.id === i.asignacion_id)
         ),
       }))
-      const fila = calcularFilaEstudiante(dimsAsig, notasDeEstudiante)
+      const fila = calcularFilaEstudiante(dimsAsig, notasDeEstudiante, ajuste)
 
       return {
         asignacion_id: asig.id,

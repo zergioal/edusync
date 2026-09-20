@@ -5,6 +5,7 @@ import {
   calcularEscala, calcNotasEstudiante, calcularPromedioAnual, determinarResultado,
   type DimInfo,
 } from './calculo.service'
+import { AjustesService } from './ajustes.service'
 import type { DatosCentralizador } from '../templates/centralizador.template'
 import type { DatosCuadroHonor }   from '../templates/cuadro-honor.template'
 import { getInstitucionInfo }      from '../utils/institucion.util'
@@ -78,7 +79,10 @@ async function loadParaleloData(
     notasIndex.get(nota.estudiante_id)!.set(nota.indicador_id, nota.puntaje ?? null)
   }
 
-  return { trimestre, gestion_id, paralelo, dimensiones, asignaciones, matriculas, notasIndex }
+  // Ajuste oculto (admin/director/coordinador) por asignación+estudiante en este trimestre.
+  const ajustesIndex = await new AjustesService().getMapa(asignaciones.map(a => a.id), trimestre_id)
+
+  return { trimestre, gestion_id, paralelo, dimensiones, asignaciones, matriculas, notasIndex, ajustesIndex }
 }
 
 // ─── Service ─────────────────────────────────────────────────────────────────
@@ -90,7 +94,7 @@ export class ReportesService {
     trimestre_id:   string,
     institucion_id: string,
   ): Promise<DatosCuadroHonor> {
-    const { trimestre, paralelo, dimensiones, asignaciones, matriculas, notasIndex } =
+    const { trimestre, paralelo, dimensiones, asignaciones, matriculas, notasIndex, ajustesIndex } =
       await loadParaleloData(paralelo_id, trimestre_id, institucion_id)
 
     const estudiantesCalc = matriculas.map(m => {
@@ -98,7 +102,8 @@ export class ReportesService {
       const mapa = notasIndex.get(est.id) ?? new Map()
 
       const promediosPorMateria = asignaciones.map(asig => {
-        const { total, hasAny } = calcNotasEstudiante(asig.indicadores, mapa, dimensiones)
+        const ajuste = ajustesIndex.get(`${asig.id}:${est.id}`) ?? 0
+        const { total, hasAny } = calcNotasEstudiante(asig.indicadores, mapa, dimensiones, ajuste)
         return hasAny ? total : 0
       })
       const promedio_general = promediosPorMateria.length > 0
@@ -137,7 +142,7 @@ export class ReportesService {
     trimestre_id:   string,
     institucion_id: string,
   ): Promise<DatosCentralizador> {
-    const { trimestre, paralelo, dimensiones, asignaciones, matriculas, notasIndex } =
+    const { trimestre, paralelo, dimensiones, asignaciones, matriculas, notasIndex, ajustesIndex } =
       await loadParaleloData(paralelo_id, trimestre_id, institucion_id)
 
     const materias = asignaciones.map(a => ({
@@ -153,7 +158,8 @@ export class ReportesService {
       let sumTotal = 0, cnt = 0
 
       for (const asig of asignaciones) {
-        const { total, hasAny } = calcNotasEstudiante(asig.indicadores, mapa, dimensiones)
+        const ajuste = ajustesIndex.get(`${asig.id}:${est.id}`) ?? 0
+        const { total, hasAny } = calcNotasEstudiante(asig.indicadores, mapa, dimensiones, ajuste)
         notas[asig.id] = { total: hasAny ? total : null }
         if (hasAny) { sumTotal += total; cnt++ }
       }
@@ -314,6 +320,10 @@ export class ReportesService {
 
     const trimestres = gestion.trimestres // [T1, T2, T3]
 
+    const ajustesIndex = await new AjustesService().getMapaMultiTrimestre(
+      asignaciones.map(a => a.id), trimestres.map(t => t.id),
+    )
+
     return matriculas.map(m => {
       const est = m.estudiante
 
@@ -327,15 +337,14 @@ export class ReportesService {
               dimension_id: i.dimension_id,
             }))
 
-          if (inds.length === 0) return null
-
           const notasMap = new Map<string, number | null>()
           for (const ind of asig.indicadores.filter(i => i.trimestre_id === trim.id)) {
             const nota = ind.notas.find(n => n.estudiante_id === est.id)
             notasMap.set(ind.id, nota?.puntaje ?? null)
           }
 
-          const { total, hasAny } = calcNotasEstudiante(inds, notasMap, dimensiones)
+          const ajuste = ajustesIndex.get(`${asig.id}:${est.id}:${trim.id}`) ?? 0
+          const { total, hasAny } = calcNotasEstudiante(inds, notasMap, dimensiones, ajuste)
           return hasAny ? total : null
         })
 
@@ -446,7 +455,7 @@ export class ReportesService {
   }
 
   async getNotasSubareas(paralelo_id: string, trimestre_id: string, institucion_id: string) {
-    const { paralelo, dimensiones, asignaciones, matriculas, notasIndex } =
+    const { paralelo, dimensiones, asignaciones, matriculas, notasIndex, ajustesIndex } =
       await loadParaleloData(paralelo_id, trimestre_id, institucion_id)
 
     const subareas = asignaciones.filter(a => a.materia.es_subarea_de_id !== null)
@@ -456,7 +465,8 @@ export class ReportesService {
       .map(m => {
         const mapa = notasIndex.get(m.estudiante_id) ?? new Map()
         const notasSubareas = subareas.map(asig => {
-          const { total } = calcNotasEstudiante(asig.indicadores, mapa, dimensiones)
+          const ajuste = ajustesIndex.get(`${asig.id}:${m.estudiante_id}`) ?? 0
+          const { total } = calcNotasEstudiante(asig.indicadores, mapa, dimensiones, ajuste)
           return { nombre: asig.materia.nombre, total }
         })
         const promedio = notasSubareas.length > 0

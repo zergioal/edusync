@@ -9,6 +9,8 @@ const ctrl = new PlanillaController()
 
 const canManage = requireRol(Rol.DOCENTE, Rol.ADMIN_SISTEMA, Rol.DIRECTOR, Rol.COORDINADOR)
 const canViewEstudiante = requireRol(Rol.ADMIN_SISTEMA, Rol.DIRECTOR, Rol.COORDINADOR, Rol.SECRETARIA)
+// Ajustes ocultos: nunca el docente — solo quien puede otorgarlos/verlos.
+const canAjustar = requireRol(Rol.ADMIN_SISTEMA, Rol.DIRECTOR, Rol.COORDINADOR)
 
 // ── Vistas estudiante/padre: planilla detallada de un solo estudiante ────────
 planillaRouter.get('/mia',                checkAccesoAcademico, ctrl.getMia)
@@ -24,4 +26,6 @@ planillaRouter.get('/:asignacion_id/centralizador/pdf',        canManage, ctrl.g
 planillaRouter.get('/:asignacion_id/centralizador/excel',      canManage, ctrl.getCentralizadorAsignacionExcel)
 planillaRouter.get('/:asignacion_id/centralizador',            canManage, ctrl.getCentralizadorAsignacion)
 planillaRouter.get('/:asignacion_id/subareas',                  canManage, ctrl.getCentralizadorSubareas)
+planillaRouter.get('/:asignacion_id/ajustes', canAjustar, ctrl.getAjustes)
+planillaRouter.put('/:asignacion_id/ajustes', canAjustar, ctrl.putAjustes)
 planillaRouter.get('/:asignacion_id', canManage, ctrl.get)

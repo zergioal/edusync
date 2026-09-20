@@ -161,6 +161,7 @@ model Usuario {
   certificados_emitidos CertificadoEmitido[] @relation("CertificadosEmitidosPor")
   cambios_estado_estudiante HistorialEstadoEstudiante[]
   alcance_niveles     CoordinadorNivel[]
+  ajustes_nota_creados AjusteNota[]
 
   @@map("usuarios")
 }
@@ -210,6 +211,7 @@ model Estudiante {
   certificados        CertificadoEmitido[]
   historial_estado    HistorialEstadoEstudiante[]
   proyectos_bth       ProyectoBTHEstudiante[]
+  ajustes_nota        AjusteNota[]
 
   @@map("estudiantes")
 }
@@ -383,6 +385,7 @@ model Trimestre {
   gestion       Gestion      @relation(fields: [gestion_id], references: [id], onDelete: Cascade)
   observaciones ObservacionInicial[]
   indicadores   Indicador[]
+  ajustes_nota  AjusteNota[]
 
   @@unique([gestion_id, numero])
   @@map("trimestres")
@@ -403,9 +406,33 @@ model Asignacion {
   asistencias AsistenciaClase[]
   tareas      Tarea[]
   observaciones_diarias ObservacionDiaria[]
+  ajustes_nota AjusteNota[]
 
   @@unique([docente_id, materia_id, paralelo_id, gestion_id])
   @@map("asignaciones")
+}
+
+// Ajuste oculto por estudiante+trimestre, sumado al total junto con las dimensiones. Solo
+// visible/editable por Admin, Director y Coordinador — el docente nunca lo ve. Sirve para
+// importar notas históricas sin desglose por dimensión (0 + ajuste = ajuste) o para sumar
+// puntos excepcionales sobre una nota que el docente ya cargó normalmente.
+model AjusteNota {
+  id             String   @id @default(uuid())
+  asignacion_id  String
+  estudiante_id  String
+  trimestre_id   String
+  valor          Int
+  motivo         String?
+  creado_por_id  String
+  actualizado_en DateTime @updatedAt
+
+  asignacion Asignacion @relation(fields: [asignacion_id], references: [id], onDelete: Cascade)
+  estudiante Estudiante @relation(fields: [estudiante_id], references: [id], onDelete: Cascade)
+  trimestre  Trimestre  @relation(fields: [trimestre_id], references: [id], onDelete: Cascade)
+  creado_por Usuario    @relation(fields: [creado_por_id], references: [id])
+
+  @@unique([asignacion_id, estudiante_id, trimestre_id])
+  @@map("ajustes_nota")
 }
 
 model Dimension {
