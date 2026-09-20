@@ -1,17 +1,28 @@
 import type { Request, Response, NextFunction } from 'express'
 import type { EstadoEstudiante } from '@edusync/types'
 import { ReportesService } from '../services/reportes.service'
+import { DocentesService } from '../services/docentes.service'
 import { AppError }        from '../middlewares/errorHandler'
 import { generarHTMLCentralizador } from '../templates/centralizador.template'
 import { generarHTMLCuadroHonor }   from '../templates/cuadro-honor.template'
-import { generarHTMLTablaSimple, type DatosTablaSimple } from '../templates/reporte-tabla.template'
+import { generarHTMLTablaSimple, type DatosTablaSimple, type ColumnaTabla } from '../templates/reporte-tabla.template'
 import { generarHTMLFichaEstudiante } from '../templates/ficha-estudiante.template'
 import { generatePDF, generatePDFLandscape } from '../utils/pdf.generator'
 import { generateCentralizadorExcel, generateTablaSimpleExcel } from '../utils/excel.generator'
 import { getInstitucionInfo } from '../utils/institucion.util'
 
+const NIVEL_ORDEN: Record<string, number> = { INICIAL: 0, PRIMARIA: 1, SECUNDARIA: 2 }
+
+function abreviarCurso(gradoNombre: string, letra: string): string {
+  const m = gradoNombre.match(/^(\d+°)\s+de\s+(Inicial|Primaria|Secundaria)$/)
+  if (!m) return `${gradoNombre} ${letra}`
+  const abbr = m[2] === 'Secundaria' ? 'Sec' : m[2] === 'Primaria' ? 'Pri' : 'Ini'
+  return `${m[1]} ${abbr} ${letra}`
+}
+
 export class ReportesController {
-  private service = new ReportesService()
+  private service         = new ReportesService()
+  private docentesService = new DocentesService()
 
   cuadroHonor = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
@@ -151,6 +162,77 @@ export class ReportesController {
   }
   nominaExcel = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try { this.sendExcel(res, await this.nominaTabla(req), 'nomina_estudiantes') } catch (e) { next(e) }
+  }
+
+  // Listado de docentes ---------------------------------------------------------
+
+  private async docentesListaTabla(req: Request): Promise<DatosTablaSimple> {
+    const columnasPedidas = ((req.query['columnas'] as string) ?? '').split(',').filter(Boolean)
+    const [docentes, institucion] = await Promise.all([
+      this.docentesService.findAll(req.auth!.institucion_id),
+      getInstitucionInfo(req.auth!.institucion_id),
+    ])
+
+    const columnas: ColumnaTabla[] = [
+      { header: 'N°', key: 'n', align: 'center' },
+      { header: 'Apellidos y Nombres', key: 'nombre' },
+    ]
+    if (columnasPedidas.includes('correo'))   columnas.push({ header: 'Correo', key: 'correo' })
+    if (columnasPedidas.includes('materias')) columnas.push({ header: 'Materias asignadas', key: 'materias' })
+    if (columnasPedidas.includes('horas'))    columnas.push({ header: 'Hs/mes', key: 'horas', align: 'center' })
+    if (columnasPedidas.includes('cursos'))   columnas.push({ header: 'Cursos', key: 'cursos' })
+
+    const filas = docentes.map((doc, idx) => {
+      const materias = [...new Set(doc.asignaciones.map(a => a.materia?.nombre).filter(Boolean))].join(', ')
+
+      const horas = doc.asignaciones.reduce((s, a) => {
+        const ch = a.materia?.carga_horaria?.find(c => c.grado_id === a.paralelo?.grado?.id)
+        return s + (ch?.horas_mes ?? a.materia?.horas_semanales ?? 0)
+      }, 0)
+
+      const cursosMap = new Map<string, { label: string; nivelOrden: number; gradoOrden: number; letra: string }>()
+      for (const a of doc.asignaciones) {
+        const grado = a.paralelo?.grado
+        if (!grado) continue
+        const key = `${grado.id}-${a.paralelo.letra}`
+        if (cursosMap.has(key)) continue
+        const nivel = grado.nivel?.nombre ?? ''
+        cursosMap.set(key, {
+          label:      abreviarCurso(grado.nombre, a.paralelo.letra),
+          nivelOrden: NIVEL_ORDEN[nivel] ?? 99,
+          gradoOrden: grado.orden,
+          letra:      a.paralelo.letra,
+        })
+      }
+      const cursos = [...cursosMap.values()]
+        .sort((a, b) => a.nivelOrden - b.nivelOrden || a.gradoOrden - b.gradoOrden || a.letra.localeCompare(b.letra))
+        .map(c => c.label)
+        .join(', ')
+
+      return {
+        n:        idx + 1,
+        nombre:   `${doc.usuario.apellido}, ${doc.usuario.nombre}`,
+        correo:   doc.usuario.email,
+        materias,
+        horas,
+        cursos,
+      }
+    })
+
+    return {
+      institucion,
+      titulo:    'Listado de Docentes',
+      subtitulo: `${docentes.length} docente(s)`,
+      columnas,
+      filas,
+    }
+  }
+
+  docentesListaPdf = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try { await this.sendPdf(res, await this.docentesListaTabla(req), 'listado_docentes') } catch (e) { next(e) }
+  }
+  docentesListaExcel = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try { this.sendExcel(res, await this.docentesListaTabla(req), 'listado_docentes') } catch (e) { next(e) }
   }
 
   // ── Reportes de BTH ──────────────────────────────────────────────────────────

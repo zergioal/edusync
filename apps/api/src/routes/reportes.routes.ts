@@ -35,6 +35,9 @@ reportesRouter.get('/nomina',                        canSecretaria, ctrl.nomina)
 reportesRouter.get('/nomina/pdf',                     canSecretaria, ctrl.nominaPdf)
 reportesRouter.get('/nomina/excel',                   canSecretaria, ctrl.nominaExcel)
 
+reportesRouter.get('/docentes/pdf',                   canSecretaria, ctrl.docentesListaPdf)
+reportesRouter.get('/docentes/excel',                 canSecretaria, ctrl.docentesListaExcel)
+
 reportesRouter.get('/ficha-estudiante/pdf/:estudiante_id', canSecretaria, ctrl.fichaEstudiantePdf)
 reportesRouter.get('/ficha-estudiante/:estudiante_id',      canSecretaria, ctrl.fichaEstudiante)
 

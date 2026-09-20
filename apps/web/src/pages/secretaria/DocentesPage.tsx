@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { api, ApiError } from '../../lib/api'
+import { api, ApiError, apiDownload } from '../../lib/api'
 import { useToast } from '../../components/ui/Toast'
+import { Modal } from '../../components/ui/Modal'
 import { Button, Spinner } from '@edusync/ui'
 import { AsignarHorasModal } from '../../components/AsignarHorasModal'
 
@@ -349,6 +350,73 @@ function AsignacionesTab({ doc, onChanged }: { doc: DocenteDetalle; onChanged: (
   )
 }
 
+// ─── Modal: exportar listado ────────────────────────────────────────────────
+
+const EXPORT_COLUMNS = [
+  { key: 'correo',   label: 'Correo' },
+  { key: 'materias', label: 'Materias asignadas' },
+  { key: 'horas',    label: 'Hs/mes' },
+  { key: 'cursos',   label: 'Cursos' },
+] as const
+
+function ExportarDocentesModal({ onClose }: { onClose: () => void }) {
+  const toast = useToast()
+  const [selected,    setSelected]    = useState<string[]>(EXPORT_COLUMNS.map(c => c.key))
+  const [downloading, setDownloading] = useState<'pdf' | 'excel' | null>(null)
+
+  const toggle = (key: string) =>
+    setSelected(prev => prev.includes(key) ? prev.filter(k => k !== key) : [...prev, key])
+
+  async function descargar(tipo: 'pdf' | 'excel') {
+    setDownloading(tipo)
+    try {
+      const qs = selected.length > 0 ? `?columnas=${selected.join(',')}` : ''
+      const ext = tipo === 'pdf' ? 'pdf' : 'xlsx'
+      await apiDownload(`/reportes/docentes/${tipo}${qs}`, `listado_docentes.${ext}`)
+    } catch {
+      toast.error('Error al generar el archivo')
+    } finally {
+      setDownloading(null)
+    }
+  }
+
+  return (
+    <Modal
+      isOpen
+      onClose={onClose}
+      title="Exportar listado de docentes"
+      footer={
+        <div className="flex justify-end gap-3">
+          <Button variant="secondary" onClick={onClose} disabled={!!downloading}>Cerrar</Button>
+          <Button variant="secondary" onClick={() => descargar('excel')} loading={downloading === 'excel'} disabled={!!downloading}>
+            📗 Excel
+          </Button>
+          <Button onClick={() => descargar('pdf')} loading={downloading === 'pdf'} disabled={!!downloading}>
+            📄 PDF
+          </Button>
+        </div>
+      }
+    >
+      <p className="text-sm text-fg-muted mb-3">
+        Siempre se incluyen N° y Apellidos y Nombres. Elige qué otras columnas mostrar:
+      </p>
+      <div className="space-y-2">
+        {EXPORT_COLUMNS.map(c => (
+          <label key={c.key} className="flex items-center gap-2 text-sm text-fg cursor-pointer">
+            <input
+              type="checkbox"
+              checked={selected.includes(c.key)}
+              onChange={() => toggle(c.key)}
+              className="rounded border-border"
+            />
+            {c.label}
+          </label>
+        ))}
+      </div>
+    </Modal>
+  )
+}
+
 // ─── Page principal ───────────────────────────────────────────────────────────
 
 export default function DocentesPage() {
@@ -362,6 +430,7 @@ export default function DocentesPage() {
   const [asignarHorasTarget, setAsignarHorasTarget] = useState<DocenteResumen | null>(null)
   const [buscarInput, setBuscarInput] = useState('')
   const [buscar,      setBuscar]      = useState('')
+  const [showExport,  setShowExport]  = useState(false)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -384,7 +453,10 @@ export default function DocentesPage() {
           <h1 className="text-2xl font-bold text-fg">Docentes</h1>
           <p className="text-sm text-fg-muted mt-0.5">Registro y gestión del cuerpo docente</p>
         </div>
-        <Button onClick={() => setModal('new')}>+ Registrar docente</Button>
+        <div className="flex items-center gap-2">
+          <Button variant="secondary" onClick={() => setShowExport(true)}>⭳ Exportar</Button>
+          <Button onClick={() => setModal('new')}>+ Registrar docente</Button>
+        </div>
       </div>
 
       {/* Buscador */}
@@ -525,6 +597,9 @@ export default function DocentesPage() {
           onClose={() => setAsignarHorasTarget(null)}
           onSaved={load}
         />
+      )}
+      {showExport && (
+        <ExportarDocentesModal onClose={() => setShowExport(false)} />
       )}
     </div>
   )
