@@ -182,6 +182,17 @@ export function GestionAreasSubareasPage() {
     }
   }
 
+  const handleDesactivar = async (materia: { id: string; nombre: string }) => {
+    if (!confirm(`¿Desactivar "${materia.nombre}"? Dejará de estar disponible para asignar a docentes, pero se conserva junto con su historial — se puede reactivar en cualquier momento.`)) return
+    try {
+      await api.patch(`/materias/${materia.id}`, { activa: false })
+      toastRef.current.success(`"${materia.nombre}" desactivada`)
+      load(nivelId)
+    } catch (err) {
+      toastRef.current.error(err instanceof ApiError ? err.message : 'Error al desactivar')
+    }
+  }
+
   // ── Subáreas ─────────────────────────────────────────────────────────────
 
   const openCreateSubarea = (padre: MateriaPadre) => {
@@ -295,10 +306,11 @@ export function GestionAreasSubareasPage() {
               <Button size="sm" variant="ghost" onClick={() => openCreateSubarea(padre)}>+ Añadir subárea</Button>
               <Button size="sm" variant="ghost" onClick={() => openEditArea(padre)}>Editar área</Button>
               {padre.activa ? (
-                <Button size="sm" variant="danger" onClick={() => handleDeleteArea(padre)}>Eliminar área</Button>
+                <Button size="sm" variant="secondary" onClick={() => handleDesactivar(padre)}>Desactivar</Button>
               ) : (
                 <Button size="sm" variant="secondary" onClick={() => handleReactivar(padre)}>Reactivar</Button>
               )}
+              <Button size="sm" variant="danger" onClick={() => handleDeleteArea(padre)}>Eliminar área</Button>
             </div>
           </div>
 
@@ -320,10 +332,11 @@ export function GestionAreasSubareasPage() {
                   <div className="flex items-center gap-2 shrink-0">
                     <Button size="sm" variant="ghost" onClick={() => openEditSubarea(padre, sub)}>Editar</Button>
                     {sub.activa ? (
-                      <Button size="sm" variant="danger" onClick={() => handleDeleteSubarea(sub)}>Quitar</Button>
+                      <Button size="sm" variant="secondary" onClick={() => handleDesactivar(sub)}>Desactivar</Button>
                     ) : (
                       <Button size="sm" variant="secondary" onClick={() => handleReactivar(sub)}>Reactivar</Button>
                     )}
+                    <Button size="sm" variant="danger" onClick={() => handleDeleteSubarea(sub)}>Quitar</Button>
                   </div>
                 </div>
               ))}
