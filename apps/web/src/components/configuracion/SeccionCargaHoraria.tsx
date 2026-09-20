@@ -9,6 +9,7 @@ interface Subarea {
   id:    string
   nombre: string
   campo: { nombre: string }
+  es_especial: boolean
   carga_horaria: { grado: { id: string }; horas_mes: number }[]
 }
 interface Materia extends Subarea {
@@ -51,9 +52,15 @@ export function SeccionCargaHoraria() {
 
   useEffect(() => { load(nivelId) }, [nivelId, load])
 
-  // Filas que cuentan para totales y guardado: un área con subáreas ya no tiene horas propias
-  // editables — solo cuentan sus subáreas (o el área misma, si no tiene ninguna).
-  const filasContables = (carga?.materias ?? []).flatMap(m => m.subareas.length > 0 ? m.subareas : [m as Subarea])
+  // Filas que cuentan para totales y guardado. Un área con subáreas NORMALES ya no tiene horas
+  // propias editables — solo cuentan sus subáreas. Un área con subáreas ESPECIALES en cambio
+  // conserva su propia carga horaria intacta (no se deshabilita), y cada especial cuenta aparte
+  // con la suya propia — nunca se suman entre sí.
+  const filasContables = (carga?.materias ?? []).flatMap(m => {
+    const normales = m.subareas.filter(s => !s.es_especial)
+    if (normales.length > 0) return normales
+    return [m as Subarea, ...m.subareas.filter(s => s.es_especial)]
+  })
 
   const getHoras = (materia_id: string, grado_id: string): number => {
     const ov = overrides[materia_id]?.[grado_id]
@@ -156,7 +163,9 @@ export function SeccionCargaHoraria() {
               </thead>
               <tbody className="divide-y divide-border">
                 {carga.materias.map(mat => {
-                  const tieneSubareas = mat.subareas.length > 0
+                  const subareasNormales = mat.subareas.filter(s => !s.es_especial)
+                  const subareasEspeciales = mat.subareas.filter(s => s.es_especial)
+                  const tieneSubareas = subareasNormales.length > 0
                   return (
                   <Fragment key={mat.id}>
                     <tr className="hover:bg-surface-2">
@@ -194,7 +203,35 @@ export function SeccionCargaHoraria() {
                         {tieneSubareas ? rowTotalPadreDerivado(mat) : rowTotal(mat.id)}
                       </td>
                     </tr>
-                    {mat.subareas.map(sub => (
+                    {subareasEspeciales.map(sub => (
+                      <tr key={sub.id} className="bg-indigo-50/40 dark:bg-indigo-500/5 hover:bg-indigo-50 dark:hover:bg-indigo-500/10">
+                        <td className="sticky left-0 bg-indigo-50/40 dark:bg-indigo-500/5 px-4 py-2 pl-8 text-fg-muted hover:bg-indigo-50 dark:hover:bg-indigo-500/10">
+                          <span className="text-fg-muted">↳ </span>
+                          <span className="text-fg">{sub.nombre}</span>
+                          <span className="ml-2 text-xs text-indigo-600 dark:text-indigo-400 italic">(especial — carga propia)</span>
+                        </td>
+                        {carga.grados.map(g => {
+                          const h  = getHoras(sub.id, g.id)
+                          const ov = overrides[sub.id]?.[g.id] !== undefined
+                          return (
+                            <td key={g.id} className="px-2 py-1.5 text-center">
+                              <input
+                                type="number" min={0} max={999}
+                                value={h}
+                                onChange={e => setHoras(sub.id, g.id, parseInt(e.target.value) || 0)}
+                                className={`w-16 rounded border text-center text-sm px-1 py-1 focus:outline-none focus:ring-1 focus:ring-brand ${
+                                  ov ? 'border-blue-400 bg-blue-50 dark:bg-blue-950/30' : 'border-border'
+                                }`}
+                              />
+                            </td>
+                          )
+                        })}
+                        <td className="px-3 py-2.5 text-center font-semibold text-fg bg-surface-2">
+                          {rowTotal(sub.id)}
+                        </td>
+                      </tr>
+                    ))}
+                    {subareasNormales.map(sub => (
                       <tr key={sub.id} className="bg-surface-2/40 hover:bg-surface-2">
                         <td className="sticky left-0 bg-surface-2/40 px-4 py-2 pl-8 text-fg-muted hover:bg-surface-2">
                           <span className="text-fg-muted">↳ </span>
