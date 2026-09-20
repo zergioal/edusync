@@ -78,10 +78,9 @@ export class ObservacionesDiariasController {
       const data = await this.service.reportePorEstudiante(req.params['estudiante_id']!, req.auth!.institucion_id, filtro)
       const html = generarHTMLTablaSimple({
         titulo:    `Control Diario — ${data.estudiante}`,
-        subtitulo: `${data.codigo} · ${data.periodo}`,
+        subtitulo: `${data.curso} · ${data.periodo}`,
         columnas: [
           { header: 'Fecha',       key: 'fecha' },
-          { header: 'Curso',       key: 'curso' },
           { header: 'Materia',     key: 'materia' },
           { header: 'Observación', key: 'categoria' },
           { header: 'Detalle',     key: 'detalle' },

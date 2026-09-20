@@ -270,9 +270,19 @@ export class ObservacionesDiariasService {
   }) {
     const estudiante = await prisma.estudiante.findFirst({
       where:  { id: estudiante_id, usuario: { institucion_id } },
-      select: { codigo: true, usuario: { select: { nombre: true, apellido: true } } },
+      select: {
+        codigo:  true,
+        usuario: { select: { nombre: true, apellido: true } },
+        matriculas: {
+          include: { paralelo: { select: { letra: true, grado: { select: { nombre: true } } } } },
+          orderBy: { gestion: { anno: 'desc' } },
+          take: 1,
+        },
+      },
     })
     if (!estudiante) throw new AppError(404, 'Estudiante no encontrado', 'NOT_FOUND')
+    const matricula = estudiante.matriculas[0]
+    const curso = matricula ? `${matricula.paralelo.grado.nombre} "${matricula.paralelo.letra}"` : estudiante.codigo
 
     let rango: { gte: Date; lte: Date } | undefined
     let periodo: string
@@ -307,10 +317,10 @@ export class ObservacionesDiariasService {
     return {
       estudiante: `${estudiante.usuario.apellido}, ${estudiante.usuario.nombre}`,
       codigo:     estudiante.codigo,
+      curso,
       periodo,
       observaciones: observaciones.map(o => ({
         fecha:      o.fecha.toLocaleString('es-BO', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }),
-        curso:      `${o.paralelo.grado.nombre} "${o.paralelo.letra}"`,
         categoria:  CATEGORIA_LABEL[o.categoria],
         detalle:    o.detalle,
         materia:    o.asignacion?.materia.nombre ?? '—',

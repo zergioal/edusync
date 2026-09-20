@@ -8,7 +8,12 @@ type Categoria =
   | 'NO_ENTREGO_TAREA' | 'FALTO' | 'SALIO_SIN_PERMISO'
   | 'NO_RINDIO_EVALUACION' | 'CITACION_AGENDA' | 'INDISCIPLINA' | 'NO_TRABAJA_EN_CLASE' | 'OTRO'
 
-interface EstudianteMatch { id: string; codigo: string; usuario: { nombre: string; apellido: string } }
+interface EstudianteMatch {
+  id:      string
+  codigo:  string
+  usuario: { nombre: string; apellido: string }
+  matriculas: Array<{ paralelo: { letra: string; grado: { nombre: string } } }>
+}
 
 interface Observacion {
   id:        string
@@ -151,7 +156,11 @@ export default function ControlDiarioBusquedaPage() {
                   className="w-full text-left px-3 py-2.5 hover:bg-surface-2 transition-colors border-b border-border last:border-0"
                 >
                   <p className="text-sm font-medium text-fg">{s.usuario.apellido}, {s.usuario.nombre}</p>
-                  <p className="text-xs text-fg-muted font-mono">{s.codigo}</p>
+                  <p className="text-xs text-fg-muted">
+                    {s.matriculas[0]
+                      ? `${s.matriculas[0].paralelo.grado.nombre} "${s.matriculas[0].paralelo.letra}"`
+                      : <span className="font-mono">{s.codigo}</span>}
+                  </p>
                 </button>
               ))}
             </div>
