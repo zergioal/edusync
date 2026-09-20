@@ -86,7 +86,7 @@ export function GestionAreasSubareasPage() {
   const [areaModal, setAreaModal] = useState<{ mode: 'create' | 'edit'; area?: MateriaPadre } | null>(null)
   const [areaForm,  setAreaForm]  = useState<AreaFormState>(EMPTY_AREA_FORM)
 
-  const [subareaModal, setSubareaModal] = useState<{ mode: 'create' | 'edit'; padre: MateriaPadre; subarea?: Subarea } | null>(null)
+  const [subareaModal, setSubareaModal] = useState<{ mode: 'create' | 'edit'; padre: MateriaPadre; subarea?: Subarea; step: 'tipo' | 'form' } | null>(null)
   const [subareaForm,  setSubareaForm]  = useState<SubareaFormState>(EMPTY_SUBAREA_FORM)
 
   useEffect(() => {
@@ -217,8 +217,9 @@ export function GestionAreasSubareasPage() {
       )
       if (!ok) return
     }
-    setSubareaForm({ ...EMPTY_SUBAREA_FORM, es_especial: tipoSubareaBloqueado(padre) === 'especial' })
-    setSubareaModal({ mode: 'create', padre })
+    const bloqueado = tipoSubareaBloqueado(padre)
+    setSubareaForm({ ...EMPTY_SUBAREA_FORM, es_especial: bloqueado === 'especial' })
+    setSubareaModal({ mode: 'create', padre, step: bloqueado === null ? 'tipo' : 'form' })
   }
 
   const openEditSubarea = (padre: MateriaPadre, subarea: Subarea) => {
@@ -230,7 +231,7 @@ export function GestionAreasSubareasPage() {
       es_especial:             subarea.es_especial,
       dimension_ids:           subarea.dimensiones_especiales,
     })
-    setSubareaModal({ mode: 'edit', padre, subarea })
+    setSubareaModal({ mode: 'edit', padre, subarea, step: 'form' })
   }
 
   // Si el área padre ya tiene subáreas de un tipo, la nueva debe ser del mismo tipo.
@@ -484,17 +485,67 @@ export function GestionAreasSubareasPage() {
       <Modal
         isOpen={subareaModal !== null}
         onClose={() => setSubareaModal(null)}
-        title={subareaModal?.mode === 'create' ? 'Nueva subárea' : 'Editar subárea'}
+        title={
+          subareaModal?.mode !== 'create'
+            ? 'Editar subárea'
+            : subareaModal.step === 'tipo' ? 'Nueva subárea — ¿qué tipo?' : 'Nueva subárea'
+        }
         footer={
-          <div className="flex justify-end gap-3">
-            <Button variant="secondary" onClick={() => setSubareaModal(null)} disabled={saving}>Cancelar</Button>
-            <Button form="form-subarea" type="submit" loading={saving}>
-              {subareaModal?.mode === 'create' ? 'Crear subárea' : 'Guardar cambios'}
-            </Button>
-          </div>
+          subareaModal?.mode === 'create' && subareaModal.step === 'tipo' ? (
+            <div className="flex justify-end">
+              <Button variant="secondary" onClick={() => setSubareaModal(null)}>Cancelar</Button>
+            </div>
+          ) : (
+            <div className="flex justify-between gap-3">
+              {subareaModal?.mode === 'create' && tipoSubareaBloqueado(subareaModal.padre) === null ? (
+                <Button variant="ghost" onClick={() => setSubareaModal(m => m && { ...m, step: 'tipo' })} disabled={saving}>
+                  ← Cambiar tipo
+                </Button>
+              ) : <span />}
+              <div className="flex gap-3">
+                <Button variant="secondary" onClick={() => setSubareaModal(null)} disabled={saving}>Cancelar</Button>
+                <Button form="form-subarea" type="submit" loading={saving}>
+                  {subareaModal?.mode === 'create' ? 'Crear subárea' : 'Guardar cambios'}
+                </Button>
+              </div>
+            </div>
+          )
         }
       >
-        {subareaModal && (
+        {subareaModal?.mode === 'create' && subareaModal.step === 'tipo' && (
+          <div className="grid gap-3 sm:grid-cols-2">
+            {([
+              {
+                tipo: 'normal' as const,
+                titulo: 'Normal',
+                resumen: 'Reemplaza al área principal',
+                detalle: 'El área principal deja de poder asignarse directamente. La subárea tiene su propia nota final, que se promedia en pie de igualdad con sus subáreas hermanas para formar la nota del área en el boletín.',
+              },
+              {
+                tipo: 'especial' as const,
+                titulo: 'Especial',
+                resumen: 'Convive con el área principal',
+                detalle: 'El área principal sigue asignada y con horas normales. La subárea especial no tiene nota final propia: aporta una única nota adicional en las dimensiones que elijas (Ser/Decidir, Saber o Hacer), que se diluye dentro del promedio del docente del área principal. Nunca aparece en el boletín.',
+              },
+            ]).map(op => (
+              <button
+                key={op.tipo}
+                type="button"
+                onClick={() => {
+                  setSubareaForm(f => ({ ...f, es_especial: op.tipo === 'especial' }))
+                  setSubareaModal(m => m && { ...m, step: 'form' })
+                }}
+                className="flex flex-col gap-1.5 rounded-xl border border-border bg-surface p-4 text-left transition-colors hover:border-brand hover:bg-surface-2"
+              >
+                <span className="text-sm font-bold text-fg">{op.titulo}</span>
+                <span className="text-xs font-medium text-brand">{op.resumen}</span>
+                <span className="text-xs text-fg-muted leading-relaxed">{op.detalle}</span>
+              </button>
+            ))}
+          </div>
+        )}
+
+        {subareaModal && !(subareaModal.mode === 'create' && subareaModal.step === 'tipo') && (
           <form id="form-subarea" onSubmit={handleSubmitSubarea} className="space-y-4">
             <div className="flex flex-col gap-1">
               <label className="text-sm font-medium text-fg">Nombre de la subárea</label>
@@ -511,35 +562,12 @@ export function GestionAreasSubareasPage() {
             </div>
 
             {subareaModal.mode === 'create' && (
-              <div className="flex flex-col gap-1.5">
-                <label className="text-sm font-medium text-fg">Tipo de subárea</label>
-                <div className="flex rounded-lg border border-border overflow-hidden w-fit">
-                  {(['normal', 'especial'] as const).map(tipo => {
-                    const bloqueado = tipoSubareaBloqueado(subareaModal.padre)
-                    const disabled  = bloqueado !== null && bloqueado !== tipo
-                    const activo    = (tipo === 'especial') === subareaForm.es_especial
-                    return (
-                      <button
-                        key={tipo}
-                        type="button"
-                        disabled={disabled}
-                        onClick={() => setSubareaForm(f => ({ ...f, es_especial: tipo === 'especial' }))}
-                        title={disabled ? `Esta área ya tiene subáreas ${bloqueado === 'especial' ? 'especiales' : 'normales'} — no se pueden mezclar tipos` : ''}
-                        className={`px-3 py-1.5 text-xs font-semibold transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${
-                          activo ? 'bg-brand text-brand-fg' : 'bg-surface text-fg-muted hover:bg-surface-2'
-                        }`}
-                      >
-                        {tipo === 'normal' ? 'Normal' : 'Especial'}
-                      </button>
-                    )
-                  })}
-                </div>
-                <p className="text-xs text-fg-muted">
-                  {subareaForm.es_especial
-                    ? 'No reemplaza al área principal: ambos docentes mantienen su registro y horas normales. Solo aporta una nota adicional implícita en las dimensiones que marques abajo.'
-                    : 'Reemplaza la asignación directa del área principal — se promedia con sus hermanas y tiene nota final propia.'}
-                </p>
-              </div>
+              <p className={`text-xs rounded-lg px-3 py-2 ${subareaForm.es_especial ? 'bg-indigo-50 dark:bg-indigo-500/10 text-indigo-800 dark:text-indigo-300' : 'bg-surface-2 text-fg-muted'}`}>
+                Tipo: <strong>{subareaForm.es_especial ? 'Especial' : 'Normal'}</strong> —{' '}
+                {subareaForm.es_especial
+                  ? 'no reemplaza al área principal; aporta una nota adicional implícita en las dimensiones que marques abajo.'
+                  : 'reemplaza la asignación directa del área principal y tiene nota final propia.'}
+              </p>
             )}
 
             {subareaForm.es_especial && (
