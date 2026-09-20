@@ -290,7 +290,6 @@ export const NAV_POR_ROL: Record<string, NavItem[]> = {
       label: "Mis Materias",
       icon: "book",
     },
-    { to: "/dashboard/docente/horario", label: "Mi Horario", icon: "clock" },
     {
       to: "/dashboard/docente/estudiantes",
       label: "Mis Estudiantes",
@@ -308,6 +307,7 @@ export const NAV_POR_ROL: Record<string, NavItem[]> = {
     },
     { to: "/dashboard/docente/tareas", label: "Tareas", icon: "folder" },
     { to: "/dashboard/docente/anuncios", label: "Comunicados", icon: "bell" },
+    { to: "/dashboard/docente/horario", label: "Mi Horario", icon: "clock" },
     { to: "/dashboard/docente/mensajes", label: "Mensajes", icon: "calendar" },
   ],
   estudiante: [

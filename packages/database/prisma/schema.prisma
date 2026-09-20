@@ -364,6 +364,7 @@ model Gestion {
   tarifas_pension    TarifaPension[]
   resultados_finales ResultadoFinal[]
   proyectos_bth      ProyectoBTH[]
+  horarios           Horario[]
 
   @@unique([institucion_id, anno])
   @@map("gestiones")
@@ -554,19 +555,26 @@ model AsistenciaDiaria {
   @@map("asistencia_diaria")
 }
 
+// Celda del horario personal de un docente: un (día, período) de una gestión se asigna a lo
+// sumo a UNA materia+curso (@@unique de abajo) — "vacío" simplemente significa que no hay fila.
+// El horario real (hora_inicio/hora_fin) se deriva en cada consulta desde ConfigHorario/Turno según
+// el nivel del paralelo — así, si el director cambia los horarios, las celdas ya guardadas se
+// actualizan solas en vez de quedar con una hora vieja y desactualizada.
 model Horario {
   id          String @id @default(uuid())
+  gestion_id  String
+  docente_id  String
   paralelo_id String
   materia_id  String
-  docente_id  String
-  dia_semana  Int
-  hora_inicio DateTime @db.Time
-  hora_fin    DateTime @db.Time
+  dia_semana  Int // 1=Lunes … 6=Sábado
+  periodo     Int // número de período dentro del turno del nivel correspondiente
 
+  gestion  Gestion  @relation(fields: [gestion_id], references: [id], onDelete: Cascade)
   paralelo Paralelo @relation(fields: [paralelo_id], references: [id], onDelete: Cascade)
   materia  Materia  @relation(fields: [materia_id], references: [id])
   docente  Docente  @relation(fields: [docente_id], references: [id])
 
+  @@unique([docente_id, gestion_id, dia_semana, periodo])
   @@map("horarios")
 }
 

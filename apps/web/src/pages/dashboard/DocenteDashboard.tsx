@@ -22,6 +22,7 @@ const ControlDiarioPage        = lazy(() => import('../docente/ControlDiarioPage
 const ControlDiarioParaleloPage = lazy(() => import('../docente/ControlDiarioParaleloPage'))
 const DocenteEstudiantesPage   = lazy(() => import('../docente/DocenteEstudiantesPage'))
 const TareasPage               = lazy(() => import('../docente/TareasPage'))
+const MiHorarioPage            = lazy(() => import('../docente/MiHorarioPage'))
 const PerfilEstudiantePage     = lazy(() => import('../secretaria/PerfilEstudiantePage'))
 const AnunciosInternosPage     = lazy(() => import('../shared/AnunciosInternosPage'))
 const MensajesPage             = lazy(() => import('../shared/MensajesPage'))
@@ -223,7 +224,7 @@ export default function DocenteDashboard() {
         <Route path="asistencia"                element={<DocenteAsistenciaPage />} />
         <Route path="control-diario"            element={<ControlDiarioPage />} />
         <Route path="control-diario/:paralelo_id" element={<ControlDiarioParaleloPage />} />
-        <Route path="horario"                   element={<SectionPlaceholder title="Mi Horario" />} />
+        <Route path="horario"                   element={<MiHorarioPage />} />
         <Route path="anuncios"                  element={<AnunciosInternosPage />} />
         <Route path="mensajes"                  element={<MensajesPage />} />
         <Route path="*"                         element={<DocenteHome />} />

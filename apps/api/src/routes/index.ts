@@ -37,6 +37,7 @@ import { certificadosRouter }   from './certificados.routes'
 import { observacionesDiariasRouter } from './observaciones-diarias.routes'
 import { personalRouter }       from './personal.routes'
 import { proyectosBTHRouter }   from './proyectos-bth.routes'
+import { horariosRouter }       from './horarios.routes'
 
 export const apiRouter: ExpressRouter = Router()
 
@@ -81,3 +82,4 @@ apiRouter.use('/padres',          padresRouter)
 apiRouter.use('/documentos',      documentosRouter)
 apiRouter.use('/certificados',    certificadosRouter)
 apiRouter.use('/observaciones-diarias', observacionesDiariasRouter)
+apiRouter.use('/horarios',        horariosRouter)
