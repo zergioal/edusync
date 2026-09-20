@@ -154,7 +154,7 @@ export function Icon({ name, className = 'h-5 w-5' }: Props) {
       aria-hidden="true"
     >
       {PATHS[name].map((d, i) => (
-        <path key={i} d={d} strokeLinecap="round" strokeLinejoin="round" />
+        <path key={i} className="nav-icon-path" pathLength={1} d={d} strokeLinecap="round" strokeLinejoin="round" />
       ))}
     </svg>
   )

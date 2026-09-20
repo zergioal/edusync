@@ -142,12 +142,24 @@ function ParaleloBloque({
                   const yaAsignada = curso.ya_asignadas.includes(m.id)
                   const h = m.carga_horaria[0]?.horas_mes
                   return (
-                    <label key={m.id} className={`flex cursor-pointer items-start gap-2 rounded-lg border px-3 py-2 text-sm transition-colors ${checked ? 'border-blue-400 bg-blue-50 text-blue-800' : 'border-border bg-surface text-fg hover:border-border'}`}>
-                      <input type="checkbox" checked={checked} onChange={() => onToggleMateria(block.key, m.id)} className="mt-0.5 shrink-0" />
+                    <label
+                      key={m.id}
+                      className={`relative flex cursor-pointer items-start gap-2 overflow-hidden rounded-lg border pl-4 pr-3 py-2 text-sm transition-colors duration-150 ${
+                        checked
+                          ? 'border-indigo-200 dark:border-indigo-500/30 bg-indigo-50 dark:bg-indigo-500/10 text-fg'
+                          : 'border-border bg-surface text-fg hover:bg-surface-2'
+                      }`}
+                    >
+                      <span
+                        className={`absolute left-0 top-1/2 -translate-y-1/2 h-4 w-1 rounded-r-full bg-indigo-500 transition-opacity duration-150 ${
+                          checked ? 'opacity-100' : 'opacity-0'
+                        }`}
+                      />
+                      <input type="checkbox" checked={checked} onChange={() => onToggleMateria(block.key, m.id)} className="mt-0.5 shrink-0 accent-indigo-600" />
                       <span className="leading-tight">
                         {m.nombre}
                         {h ? <span className="block text-xs opacity-60">{h}h/mes</span> : null}
-                        {yaAsignada && <span className="block text-xs font-medium text-emerald-600">Ya asignada</span>}
+                        {yaAsignada && <span className="block text-xs font-medium text-emerald-600 dark:text-emerald-400">Ya asignada</span>}
                       </span>
                     </label>
                   )

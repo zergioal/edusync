@@ -390,16 +390,24 @@ function ExportarDocentesModal({ onClose }: { onClose: () => void }) {
         <div className="flex items-center justify-between gap-3">
           <Button variant="ghost" onClick={onClose} disabled={!!downloading}>Cerrar</Button>
           <div className="flex gap-2">
-            <Button variant="secondary" onClick={() => descargar('excel')} loading={downloading === 'excel'} disabled={!!downloading}>
-              <span className="inline-flex items-center gap-1.5 text-emerald-700">
-                <Icon name="file-excel" className="h-4 w-4" />Excel
-              </span>
-            </Button>
-            <Button variant="secondary" onClick={() => descargar('pdf')} loading={downloading === 'pdf'} disabled={!!downloading}>
-              <span className="inline-flex items-center gap-1.5 text-red-600">
-                <Icon name="file-pdf" className="h-4 w-4" />PDF
-              </span>
-            </Button>
+            <button
+              type="button"
+              onClick={() => descargar('excel')}
+              disabled={!!downloading}
+              className="group inline-flex items-center gap-1.5 rounded-lg border border-emerald-600/60 px-3 py-1.5 text-sm font-medium text-emerald-700 dark:text-emerald-400 transition-colors duration-150 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 disabled:opacity-50"
+            >
+              <Icon name="file-excel" className="h-4 w-4" />
+              {downloading === 'excel' ? 'Generando…' : 'Excel'}
+            </button>
+            <button
+              type="button"
+              onClick={() => descargar('pdf')}
+              disabled={!!downloading}
+              className="group inline-flex items-center gap-1.5 rounded-lg border border-blue-600/60 px-3 py-1.5 text-sm font-medium text-blue-700 dark:text-blue-400 transition-colors duration-150 hover:bg-blue-50 dark:hover:bg-blue-950/30 disabled:opacity-50"
+            >
+              <Icon name="file-pdf" className="h-4 w-4" />
+              {downloading === 'pdf' ? 'Generando…' : 'PDF'}
+            </button>
           </div>
         </div>
       }
@@ -421,17 +429,27 @@ function ExportarDocentesModal({ onClose }: { onClose: () => void }) {
           return (
             <label
               key={c.key}
-              className={`flex cursor-pointer items-center gap-3 rounded-lg border px-3 py-2.5 text-sm transition-colors ${
-                checked ? 'border-blue-400 bg-blue-50 text-blue-800' : 'border-border bg-surface text-fg hover:border-border'
+              className={`group relative flex cursor-pointer items-center gap-3 overflow-hidden rounded-lg border pl-4 pr-3 py-2.5 text-sm transition-colors duration-150 ${
+                checked
+                  ? 'border-indigo-200 dark:border-indigo-500/30 bg-indigo-50 dark:bg-indigo-500/10 text-fg'
+                  : 'border-border bg-surface text-fg-muted hover:bg-surface-2 hover:text-fg'
               }`}
             >
-              <Icon name={c.icon} className={`h-4 w-4 shrink-0 ${checked ? 'text-blue-600' : 'text-fg-muted'}`} />
+              <span
+                className={`absolute left-0 top-1/2 -translate-y-1/2 h-4 w-1 rounded-r-full bg-indigo-500 transition-opacity duration-150 ${
+                  checked ? 'opacity-100' : 'opacity-0 group-hover:opacity-40'
+                }`}
+              />
+              <Icon
+                name={c.icon}
+                className={`h-4 w-4 shrink-0 transition-colors duration-150 ${checked ? 'text-indigo-600 dark:text-indigo-300' : 'text-fg-muted group-hover:text-fg'}`}
+              />
               <span className="flex-1">{c.label}</span>
               <input
                 type="checkbox"
                 checked={checked}
                 onChange={() => toggle(c.key)}
-                className="rounded border-border"
+                className="rounded border-border accent-indigo-600"
               />
             </label>
           )
