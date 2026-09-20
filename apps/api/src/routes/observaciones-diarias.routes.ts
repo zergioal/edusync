@@ -19,3 +19,8 @@ observacionesDiariasRouter.get('/hijo/:estudiante_id',    requireRol(Rol.PADRE_T
 
 observacionesDiariasRouter.get('/reporte',                puedeVer, checkAlcanceCoordinador, ctrl.reporte)
 observacionesDiariasRouter.get('/reporte/pdf',             puedeVer, checkAlcanceCoordinador, ctrl.reportePdf)
+
+// Búsqueda por estudiante (Admin/Director/Coordinador)
+observacionesDiariasRouter.get('/estudiante/:estudiante_id',            puedeVer, ctrl.getParaEstudiante)
+observacionesDiariasRouter.get('/estudiante/:estudiante_id/reporte',     puedeVer, ctrl.reportePorEstudiante)
+observacionesDiariasRouter.get('/estudiante/:estudiante_id/reporte/pdf', puedeVer, ctrl.reportePorEstudiantePdf)

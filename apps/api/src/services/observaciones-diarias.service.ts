@@ -23,6 +23,11 @@ function hoyStr(): string {
   return new Date().toISOString().slice(0, 10)
 }
 
+function inicioDia(fechaStr: string): Date { return new Date(`${fechaStr}T00:00:00.000Z`) }
+function finDia(fechaStr: string): Date { return new Date(`${fechaStr}T23:59:59.999Z`) }
+
+const HORAS_48_MS = 48 * 60 * 60 * 1000
+
 export class ObservacionesDiariasService {
 
   /** Verifica que el docente tenga acceso de escritura al paralelo (asignación activa o asesoría) y devuelve la gestión a usar. */
@@ -58,8 +63,8 @@ export class ObservacionesDiariasService {
         orderBy: { estudiante: { usuario: { apellido: 'asc' } } },
       }),
       prisma.observacionDiaria.findMany({
-        where:  { paralelo_id, fecha: new Date(hoyStr()) },
-        select: { id: true, estudiante_id: true, categoria: true, detalle: true, creada_en: true },
+        where:  { paralelo_id, fecha: { gte: inicioDia(hoyStr()), lte: finDia(hoyStr()) } },
+        select: { id: true, estudiante_id: true, categoria: true, detalle: true, fecha: true, creada_en: true },
       }),
     ])
 
@@ -76,9 +81,11 @@ export class ObservacionesDiariasService {
   async crear(docente_usuario_id: string, data: {
     estudiante_id: string
     paralelo_id:   string
-    asignacion_id?: string
+    asignacion_id?: string | undefined
     categoria:     CategoriaObservacion
-    detalle?:      string
+    detalle?:      string | undefined
+    /** Solo en modo "manual" — fecha y hora elegidas por el docente (ISO). Omitido = "automático" (ahora). */
+    fecha?:        string | undefined
   }) {
     const docente = await this.getDocente(docente_usuario_id)
     await this.verificarAcceso(docente.id, data.paralelo_id)
@@ -90,12 +97,30 @@ export class ObservacionesDiariasService {
       }
     }
 
+    const ahora = new Date()
+    let fecha = ahora
+    if (data.fecha) {
+      fecha = new Date(data.fecha)
+      if (isNaN(fecha.getTime())) throw new AppError(400, 'Fecha inválida', 'VALIDATION')
+      if (fecha.getTime() > ahora.getTime()) {
+        throw new AppError(400, 'La fecha y hora no pueden ser futuras', 'VALIDATION')
+      }
+      if (fecha.getTime() < ahora.getTime() - HORAS_48_MS) {
+        throw new AppError(400, 'La fecha no puede ser mayor a 48 horas atrás', 'VALIDATION')
+      }
+    }
+
+    const diaStr = fecha.toISOString().slice(0, 10)
     if (data.categoria !== 'OTRO') {
       const repetida = await prisma.observacionDiaria.findFirst({
-        where: { estudiante_id: data.estudiante_id, categoria: data.categoria, fecha: new Date(hoyStr()) },
+        where: {
+          estudiante_id: data.estudiante_id,
+          categoria:     data.categoria,
+          fecha:         { gte: inicioDia(diaStr), lte: finDia(diaStr) },
+        },
       })
       if (repetida) {
-        throw new AppError(409, `Ya se registró "${CATEGORIA_LABEL[data.categoria]}" hoy para este estudiante`, 'DUPLICATE')
+        throw new AppError(409, `Ya se registró "${CATEGORIA_LABEL[data.categoria]}" ese día para este estudiante`, 'DUPLICATE')
       }
     }
 
@@ -107,7 +132,7 @@ export class ObservacionesDiariasService {
         asignacion_id: data.asignacion_id ?? null,
         categoria:     data.categoria,
         detalle:       data.detalle?.trim() || null,
-        fecha:         new Date(hoyStr()),
+        fecha,
       },
     })
 
@@ -166,12 +191,21 @@ export class ObservacionesDiariasService {
     return this.listar(estudiante_id)
   }
 
+  /** Vista de staff (Admin/Director/Coordinador): historial completo de control diario de un estudiante. */
+  async getParaEstudiante(estudiante_id: string, institucion_id: string) {
+    const estudiante = await prisma.estudiante.findFirst({
+      where: { id: estudiante_id, usuario: { institucion_id } },
+    })
+    if (!estudiante) throw new AppError(404, 'Estudiante no encontrado', 'NOT_FOUND')
+    return this.listar(estudiante_id)
+  }
+
   /** Registro de observaciones de un curso en un período (mes / trimestre / gestión completa), para Director/Coordinador. */
   async reporte(paralelo_id: string, institucion_id: string, filtro: {
     modo:          'mes' | 'trimestre' | 'anno'
-    mes?:          string
-    trimestre_id?: string
-    gestion_id?:   string
+    mes?:          string | undefined
+    trimestre_id?: string | undefined
+    gestion_id?:   string | undefined
   }) {
     const paralelo = await prisma.paralelo.findFirst({
       where:  { id: paralelo_id, grado: { nivel: { institucion_id } } },
@@ -186,21 +220,21 @@ export class ObservacionesDiariasService {
       const [y, m] = filtro.mes.split('-').map(Number)
       if (!y || !m) throw new AppError(400, 'mes inválido', 'INVALID_PARAM')
       desde   = new Date(Date.UTC(y, m - 1, 1))
-      hasta   = new Date(Date.UTC(y, m, 0))
+      hasta   = new Date(Date.UTC(y, m, 0, 23, 59, 59, 999))
       periodo = `${MESES[m - 1]} ${y}`
     } else if (filtro.modo === 'trimestre') {
       if (!filtro.trimestre_id) throw new AppError(400, 'trimestre_id es requerido', 'MISSING_PARAM')
       const trimestre = await prisma.trimestre.findUnique({ where: { id: filtro.trimestre_id } })
       if (!trimestre) throw new AppError(404, 'Trimestre no encontrado', 'NOT_FOUND')
       desde   = trimestre.fecha_inicio
-      hasta   = trimestre.fecha_fin
+      hasta   = finDia(trimestre.fecha_fin.toISOString().slice(0, 10))
       periodo = `${trimestre.numero}° Trimestre`
     } else {
       if (!filtro.gestion_id) throw new AppError(400, 'gestion_id es requerido', 'MISSING_PARAM')
       const gestion = await prisma.gestion.findUnique({ where: { id: filtro.gestion_id } })
       if (!gestion) throw new AppError(404, 'Gestión no encontrada', 'NOT_FOUND')
       desde   = new Date(Date.UTC(gestion.anno, 0, 1))
-      hasta   = new Date(Date.UTC(gestion.anno, 11, 31))
+      hasta   = new Date(Date.UTC(gestion.anno, 11, 31, 23, 59, 59, 999))
       periodo = `Gestión ${gestion.anno}`
     }
 
@@ -220,6 +254,63 @@ export class ObservacionesDiariasService {
       observaciones: observaciones.map(o => ({
         fecha:      o.fecha.toISOString().slice(0, 10),
         estudiante: `${o.estudiante.usuario.apellido}, ${o.estudiante.usuario.nombre}`,
+        categoria:  CATEGORIA_LABEL[o.categoria],
+        detalle:    o.detalle,
+        materia:    o.asignacion?.materia.nombre ?? '—',
+        docente:    `${o.docente.usuario.nombre} ${o.docente.usuario.apellido}`,
+      })),
+    }
+  }
+
+  /** Reporte de control diario de UN estudiante (mensual / por trimestre / total), para Admin/Director/Coordinador. */
+  async reportePorEstudiante(estudiante_id: string, institucion_id: string, filtro: {
+    modo:          'mes' | 'trimestre' | 'total'
+    mes?:          string | undefined
+    trimestre_id?: string | undefined
+  }) {
+    const estudiante = await prisma.estudiante.findFirst({
+      where:  { id: estudiante_id, usuario: { institucion_id } },
+      select: { codigo: true, usuario: { select: { nombre: true, apellido: true } } },
+    })
+    if (!estudiante) throw new AppError(404, 'Estudiante no encontrado', 'NOT_FOUND')
+
+    let rango: { gte: Date; lte: Date } | undefined
+    let periodo: string
+
+    if (filtro.modo === 'mes') {
+      if (!filtro.mes) throw new AppError(400, 'mes es requerido', 'MISSING_PARAM')
+      const [y, m] = filtro.mes.split('-').map(Number)
+      if (!y || !m) throw new AppError(400, 'mes inválido', 'INVALID_PARAM')
+      rango   = { gte: new Date(Date.UTC(y, m - 1, 1)), lte: new Date(Date.UTC(y, m, 0, 23, 59, 59, 999)) }
+      periodo = `${MESES[m - 1]} ${y}`
+    } else if (filtro.modo === 'trimestre') {
+      if (!filtro.trimestre_id) throw new AppError(400, 'trimestre_id es requerido', 'MISSING_PARAM')
+      const trimestre = await prisma.trimestre.findUnique({ where: { id: filtro.trimestre_id } })
+      if (!trimestre) throw new AppError(404, 'Trimestre no encontrado', 'NOT_FOUND')
+      rango   = { gte: trimestre.fecha_inicio, lte: finDia(trimestre.fecha_fin.toISOString().slice(0, 10)) }
+      periodo = `${trimestre.numero}° Trimestre`
+    } else {
+      rango   = undefined
+      periodo = 'Historial completo'
+    }
+
+    const observaciones = await prisma.observacionDiaria.findMany({
+      where: { estudiante_id, ...(rango ? { fecha: rango } : {}) },
+      include: {
+        docente:    { include: { usuario: { select: { nombre: true, apellido: true } } } },
+        paralelo:   { select: { letra: true, grado: { select: { nombre: true } } } },
+        asignacion: { select: { materia: { select: { nombre: true } } } },
+      },
+      orderBy: [{ fecha: 'asc' }],
+    })
+
+    return {
+      estudiante: `${estudiante.usuario.apellido}, ${estudiante.usuario.nombre}`,
+      codigo:     estudiante.codigo,
+      periodo,
+      observaciones: observaciones.map(o => ({
+        fecha:      o.fecha.toLocaleString('es-BO', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }),
+        curso:      `${o.paralelo.grado.nombre} "${o.paralelo.letra}"`,
         categoria:  CATEGORIA_LABEL[o.categoria],
         detalle:    o.detalle,
         materia:    o.asignacion?.materia.nombre ?? '—',

@@ -18,6 +18,7 @@ const ParalelosPage            = lazy(() => import('../coordinador/ParalelosPage
 const HorariosPage             = lazy(() => import('../director/HorariosPage'))
 const AjustesInstitucionalesPage = lazy(() => import('../director/AjustesInstitucionalesPage'))
 const AreasSubareasPage        = lazy(() => import('../director/AreasSubareasPage'))
+const ControlDiarioBusquedaPage = lazy(() => import('../secretaria/ControlDiarioBusquedaPage'))
 const GestionesPage            = lazy(() => import('../secretaria/GestionesPage'))
 const DocentesPage             = lazy(() => import('../secretaria/DocentesPage'))
 const EstudiantesPage          = lazy(() => import('../secretaria/EstudiantesPage'))
@@ -235,6 +236,7 @@ export default function DirectorDashboard() {
         <Route path="carga-horaria"     element={<CargaHorariaDocentesPage />} />
         <Route path="ajustes-institucionales" element={<AjustesInstitucionalesPage />} />
         <Route path="areas-subareas" element={<AreasSubareasPage />} />
+        <Route path="control-diario" element={<ControlDiarioBusquedaPage />} />
         <Route path="anuncios"          element={<AnunciosInternosPage />} />
         <Route path="mensajes"          element={<MensajesPage />} />
         <Route path="auditoria"         element={<AuditoriaPage />} />

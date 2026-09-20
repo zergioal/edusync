@@ -18,15 +18,16 @@ export class ObservacionesDiariasController {
 
   crear = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const { estudiante_id, paralelo_id, asignacion_id, categoria, detalle } = req.body as {
+      const { estudiante_id, paralelo_id, asignacion_id, categoria, detalle, fecha } = req.body as {
         estudiante_id: string
         paralelo_id:   string
         asignacion_id?: string
         categoria:     CategoriaObservacion
         detalle?:      string
+        fecha?:        string
       }
       const data = await this.service.crear(req.auth!.usuario_id, {
-        estudiante_id, paralelo_id, asignacion_id, categoria, detalle,
+        estudiante_id, paralelo_id, asignacion_id, categoria, detalle, fecha,
       })
       res.status(201).json({ data })
     } catch (e) { next(e) }
@@ -48,6 +49,50 @@ export class ObservacionesDiariasController {
   getHijo = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       res.json({ data: await this.service.getHijo(req.auth!.usuario_id, req.params['estudiante_id']!) })
+    } catch (e) { next(e) }
+  }
+
+  getParaEstudiante = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      res.json({ data: await this.service.getParaEstudiante(req.params['estudiante_id']!, req.auth!.institucion_id) })
+    } catch (e) { next(e) }
+  }
+
+  private parseFiltroEstudiante(req: Request) {
+    const { modo, mes, trimestre_id } = req.query as Record<string, string>
+    if (!modo) throw new AppError(400, 'modo es requerido', 'MISSING_PARAM')
+    return { modo: modo as 'mes' | 'trimestre' | 'total', mes, trimestre_id }
+  }
+
+  reportePorEstudiante = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const filtro = this.parseFiltroEstudiante(req)
+      const data = await this.service.reportePorEstudiante(req.params['estudiante_id']!, req.auth!.institucion_id, filtro)
+      res.json({ data })
+    } catch (e) { next(e) }
+  }
+
+  reportePorEstudiantePdf = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const filtro = this.parseFiltroEstudiante(req)
+      const data = await this.service.reportePorEstudiante(req.params['estudiante_id']!, req.auth!.institucion_id, filtro)
+      const html = generarHTMLTablaSimple({
+        titulo:    `Control Diario — ${data.estudiante}`,
+        subtitulo: `${data.codigo} · ${data.periodo}`,
+        columnas: [
+          { header: 'Fecha',       key: 'fecha' },
+          { header: 'Curso',       key: 'curso' },
+          { header: 'Materia',     key: 'materia' },
+          { header: 'Observación', key: 'categoria' },
+          { header: 'Detalle',     key: 'detalle' },
+          { header: 'Docente',     key: 'docente' },
+        ],
+        filas: data.observaciones,
+      })
+      const pdf = await generatePDFLandscape(html)
+      res.setHeader('Content-Type', 'application/pdf')
+      res.setHeader('Content-Disposition', `attachment; filename="control_diario_${data.codigo}.pdf"`)
+      res.send(pdf)
     } catch (e) { next(e) }
   }
 

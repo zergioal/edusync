@@ -10,7 +10,7 @@ type Categoria =
   | 'NO_RINDIO_EVALUACION' | 'CITACION_AGENDA' | 'INDISCIPLINA' | 'NO_TRABAJA_EN_CLASE' | 'OTRO'
 
 interface Estudiante { estudiante_id: string; nombre: string; apellido: string }
-interface Hoy { id: string; estudiante_id: string; categoria: Categoria; detalle: string | null; creada_en: string }
+interface Hoy { id: string; estudiante_id: string; categoria: Categoria; detalle: string | null; fecha: string; creada_en: string }
 interface RosterData { estudiantes: Estudiante[]; hoy: Hoy[] }
 interface AsignacionOpcion { id: string; materia: { nombre: string }; paralelo: { id: string } }
 
@@ -33,6 +33,12 @@ function fmtFecha(s: string) {
   return new Date(s).toLocaleDateString('es-BO', { day: '2-digit', month: 'short' })
 }
 
+/** Formatea un Date a "YYYY-MM-DDTHH:mm" en hora LOCAL, para <input type="datetime-local">. */
+function toDatetimeLocal(d: Date): string {
+  const pad = (n: number) => String(n).padStart(2, '0')
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
+}
+
 export default function ControlDiarioParaleloPage() {
   const { paralelo_id } = useParams<{ paralelo_id: string }>()
   const navigate = useNavigate()
@@ -48,6 +54,8 @@ export default function ControlDiarioParaleloPage() {
   const [guardando,    setGuardando]   = useState<string | null>(null) // `${estudiante_id}:${categoria}`
   const [otroAbierto,  setOtroAbierto] = useState<string | null>(null) // estudiante_id
   const [otroTexto,    setOtroTexto]   = useState('')
+  const [modoManual,   setModoManual]  = useState(false)
+  const [fechaManual,  setFechaManual] = useState(() => toDatetimeLocal(new Date()))
 
   const cargar = useCallback(async () => {
     if (!paralelo_id) return
@@ -79,6 +87,9 @@ export default function ControlDiarioParaleloPage() {
       const nueva = await api.post<Hoy>('/observaciones-diarias', {
         estudiante_id, paralelo_id, categoria, detalle,
         asignacion_id: asignacionId || undefined,
+        // datetime-local no lleva zona horaria — new Date() lo interpreta como hora local del navegador,
+        // y toISOString() lo convierte correctamente a UTC para el backend.
+        fecha: modoManual ? new Date(fechaManual).toISOString() : undefined,
       })
       setHoy(prev => [...prev, nueva])
       toast.success(`Anotado: ${CATEGORIA_LABEL[categoria]}`)
@@ -126,6 +137,39 @@ export default function ControlDiarioParaleloPage() {
               {asignaciones.map(a => <option key={a.id} value={a.id}>{a.materia.nombre}</option>)}
             </select>
           </div>
+        )}
+      </div>
+
+      {/* Automático / Manual — fecha y hora de las próximas anotaciones */}
+      <div className="flex flex-wrap items-center gap-3 rounded-xl border border-border bg-surface p-3">
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            role="switch"
+            aria-checked={modoManual}
+            onClick={() => setModoManual(m => !m)}
+            className={`relative h-6 w-11 shrink-0 rounded-full transition-colors duration-150 ${modoManual ? 'bg-indigo-600' : 'bg-surface-2'}`}
+          >
+            <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform duration-150 ${modoManual ? 'translate-x-5' : 'translate-x-0.5'}`} />
+          </button>
+          <span className="text-sm font-medium text-fg">
+            {modoManual ? 'Manual' : 'Automático'}
+          </span>
+        </div>
+        {modoManual ? (
+          <div className="flex items-center gap-2">
+            <input
+              type="datetime-local"
+              value={fechaManual}
+              min={toDatetimeLocal(new Date(Date.now() - 48 * 60 * 60 * 1000))}
+              max={toDatetimeLocal(new Date())}
+              onChange={e => setFechaManual(e.target.value)}
+              className="rounded-lg border border-border px-3 py-1.5 text-sm shadow-sm focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand"
+            />
+            <span className="text-xs text-fg-muted">Máx. 48 horas atrás</span>
+          </div>
+        ) : (
+          <span className="text-xs text-fg-muted">Se registrará con la fecha y hora actuales</span>
         )}
       </div>
 
@@ -199,7 +243,7 @@ export default function ControlDiarioParaleloPage() {
                           <span>
                             <span className="font-medium text-fg">{CATEGORIA_LABEL[h.categoria]}</span>
                             {h.detalle && <> — {h.detalle}</>}
-                            <span className="text-fg-muted"> · {fmtFecha(h.creada_en)}, {fmtHora(h.creada_en)}</span>
+                            <span className="text-fg-muted"> · {fmtFecha(h.fecha)}, {fmtHora(h.fecha)}</span>
                           </span>
                         </span>
                         <button onClick={() => deshacer(h.id)} className="text-red-500 hover:text-red-700 font-medium whitespace-nowrap">

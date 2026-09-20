@@ -474,7 +474,9 @@ model ObservacionDiaria {
   asignacion_id String?
   categoria     CategoriaObservacion
   detalle       String?              @db.Text
-  fecha         DateTime             @db.Date
+  // Momento real de la observación (fecha y hora) — "automático" = ahora, "manual" = elegido por el
+  // docente (hasta 48h atrás). Antes solo guardaba la fecha (sin hora); ahora es un timestamp completo.
+  fecha         DateTime
   creada_en     DateTime             @default(now())
 
   estudiante Estudiante  @relation(fields: [estudiante_id], references: [id], onDelete: Cascade)

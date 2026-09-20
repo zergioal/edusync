@@ -29,6 +29,7 @@ const PadresPage           = lazy(() => import('../secretaria/PadresPage'))
 const ProyectosBTHPage     = lazy(() => import('../coordinador/ProyectosBTHPage'))
 const ReportesPage         = lazy(() => import('../secretaria/reportes/ReportesPage'))
 const AreasSubareasPage    = lazy(() => import('../admin/AreasSubareasPage'))
+const ControlDiarioBusquedaPage = lazy(() => import('../secretaria/ControlDiarioBusquedaPage'))
 
 // ─── Panel principal ──────────────────────────────────────────────────────────
 
@@ -196,6 +197,7 @@ export default function AdminDashboard() {
         <Route path="anuncios"      element={<AnunciosInternosPage />} />
         <Route path="mensajes"      element={<MensajesPage />} />
         <Route path="areas-subareas" element={<AreasSubareasPage />} />
+        <Route path="control-diario" element={<ControlDiarioBusquedaPage />} />
         <Route path="configuracion" element={<ConfiguracionPage />} />
         <Route path="*"             element={<AdminHome />} />
       </Routes>
