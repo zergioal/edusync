@@ -34,6 +34,30 @@ function computePeriodos(
 
 const DIAS_LABEL = ['', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado']
 
+// ─── Abreviaturas (mismo criterio que MiHorarioPage.tsx en el frontend) ───
+
+const STOP_PALABRAS = new Set(['y', 'de', 'del', 'la', 'el', 'en', 'con', 'e', 'los', 'las'])
+
+function abreviarMateria(nombre: string): string {
+  const palabras = nombre.split(/[\s,:()]+/).filter(w => w && !STOP_PALABRAS.has(w.toLowerCase()))
+  if (palabras.length === 0) return nombre.slice(0, 3).toUpperCase()
+  if (palabras.length === 1) return palabras[0]!.slice(0, 3).toUpperCase()
+  return palabras.slice(0, 4).map(w => w[0]).join('').toUpperCase()
+}
+
+function abreviarNivel(nivelNombre: string): string {
+  const n = nivelNombre.toUpperCase()
+  if (n.startsWith('SEC'))  return 'Sec'
+  if (n.startsWith('PRIM')) return 'Pri'
+  if (n.startsWith('INIC')) return 'Ini'
+  return nivelNombre.slice(0, 3)
+}
+
+function abreviarCurso(gradoNombre: string, letra: string, nivelNombre: string): string {
+  const num = gradoNombre.match(/^(\d+°)/)?.[1] ?? gradoNombre.slice(0, 2)
+  return `${num}${letra} ${abreviarNivel(nivelNombre)}`
+}
+
 export class HorariosService {
   private async getDocente(usuario_id: string) {
     const docente = await prisma.docente.findUnique({ where: { usuario_id } })
@@ -125,7 +149,7 @@ export class HorariosService {
       where:   { docente_id: docente.id, gestion_id: gestion.id },
       include: {
         materia:  { select: { nombre: true } },
-        paralelo: { select: { letra: true, grado: { select: { nombre: true } } } },
+        paralelo: { select: { letra: true, grado: { select: { nombre: true, nivel: { select: { nombre: true } } } } } },
       },
     })
   }
@@ -163,7 +187,7 @@ export class HorariosService {
       update: { paralelo_id: asignacion.paralelo_id, materia_id: asignacion.materia_id },
       include: {
         materia:  { select: { nombre: true } },
-        paralelo: { select: { letra: true, grado: { select: { nombre: true } } } },
+        paralelo: { select: { letra: true, grado: { select: { nombre: true, nivel: { select: { nombre: true } } } } } },
       },
     })
   }
@@ -186,7 +210,9 @@ export class HorariosService {
 
     const mapa = new Map<string, string>()
     for (const e of entradas) {
-      mapa.set(`${e.dia_semana}-${e.periodo}`, `${e.materia.nombre}\n${e.paralelo.grado.nombre} "${e.paralelo.letra}"`)
+      const mat = abreviarMateria(e.materia.nombre)
+      const cur = abreviarCurso(e.paralelo.grado.nombre, e.paralelo.letra, e.paralelo.grado.nivel.nombre)
+      mapa.set(`${e.dia_semana}-${e.periodo}`, `${mat}\n${cur}`)
     }
 
     const columnas = [

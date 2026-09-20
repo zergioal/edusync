@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import { api, apiDownload, ApiError } from '../../lib/api'
 import { useToast } from '../../components/ui/Toast'
 import { Modal } from '../../components/ui/Modal'
@@ -21,12 +21,59 @@ interface Entrada {
   dia_semana: number
   periodo:    number
   materia:    { nombre: string }
-  paralelo:   { letra: string; grado: { nombre: string } }
+  paralelo:   { letra: string; grado: { nombre: string; nivel: { nombre: string } } }
 }
 
 const DIAS = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado']
 
 function cellKey(dia: number, periodo: number) { return `${dia}-${periodo}` }
+
+// ─── Abreviaturas (mismo criterio que horarios.service.ts en el backend) ───
+
+const STOP_PALABRAS = new Set(['y', 'de', 'del', 'la', 'el', 'en', 'con', 'e', 'los', 'las'])
+
+function abreviarMateria(nombre: string): string {
+  const palabras = nombre.split(/[\s,:()]+/).filter(w => w && !STOP_PALABRAS.has(w.toLowerCase()))
+  if (palabras.length === 0) return nombre.slice(0, 3).toUpperCase()
+  if (palabras.length === 1) return palabras[0]!.slice(0, 3).toUpperCase()
+  return palabras.slice(0, 4).map(w => w[0]).join('').toUpperCase()
+}
+
+function abreviarNivel(nivelNombre: string): string {
+  const n = nivelNombre.toUpperCase()
+  if (n.startsWith('SEC'))  return 'Sec'
+  if (n.startsWith('PRIM')) return 'Pri'
+  if (n.startsWith('INIC')) return 'Ini'
+  return nivelNombre.slice(0, 3)
+}
+
+function abreviarCurso(gradoNombre: string, letra: string, nivelNombre: string): string {
+  const num = gradoNombre.match(/^(\d+°)/)?.[1] ?? gradoNombre.slice(0, 2)
+  return `${num}${letra} ${abreviarNivel(nivelNombre)}`
+}
+
+// ─── Paleta de colores por materia+curso ───────────────────────────────────
+
+interface ColorCelda { bg: string; border: string; hoverBg: string; text: string }
+
+const PALETA_COLORES: ColorCelda[] = [
+  { bg: 'bg-indigo-50 dark:bg-indigo-500/10',     border: 'border-indigo-200 dark:border-indigo-500/30',     hoverBg: 'hover:bg-indigo-100 dark:hover:bg-indigo-500/20',     text: 'text-indigo-700 dark:text-indigo-300' },
+  { bg: 'bg-emerald-50 dark:bg-emerald-500/10',   border: 'border-emerald-200 dark:border-emerald-500/30',   hoverBg: 'hover:bg-emerald-100 dark:hover:bg-emerald-500/20',   text: 'text-emerald-700 dark:text-emerald-300' },
+  { bg: 'bg-amber-50 dark:bg-amber-500/10',       border: 'border-amber-200 dark:border-amber-500/30',       hoverBg: 'hover:bg-amber-100 dark:hover:bg-amber-500/20',       text: 'text-amber-700 dark:text-amber-300' },
+  { bg: 'bg-violet-50 dark:bg-violet-500/10',     border: 'border-violet-200 dark:border-violet-500/30',     hoverBg: 'hover:bg-violet-100 dark:hover:bg-violet-500/20',     text: 'text-violet-700 dark:text-violet-300' },
+  { bg: 'bg-cyan-50 dark:bg-cyan-500/10',         border: 'border-cyan-200 dark:border-cyan-500/30',         hoverBg: 'hover:bg-cyan-100 dark:hover:bg-cyan-500/20',         text: 'text-cyan-700 dark:text-cyan-300' },
+  { bg: 'bg-fuchsia-50 dark:bg-fuchsia-500/10',   border: 'border-fuchsia-200 dark:border-fuchsia-500/30',   hoverBg: 'hover:bg-fuchsia-100 dark:hover:bg-fuchsia-500/20',   text: 'text-fuchsia-700 dark:text-fuchsia-300' },
+  { bg: 'bg-orange-50 dark:bg-orange-500/10',     border: 'border-orange-200 dark:border-orange-500/30',     hoverBg: 'hover:bg-orange-100 dark:hover:bg-orange-500/20',     text: 'text-orange-700 dark:text-orange-300' },
+  { bg: 'bg-teal-50 dark:bg-teal-500/10',         border: 'border-teal-200 dark:border-teal-500/30',         hoverBg: 'hover:bg-teal-100 dark:hover:bg-teal-500/20',         text: 'text-teal-700 dark:text-teal-300' },
+  { bg: 'bg-sky-50 dark:bg-sky-500/10',           border: 'border-sky-200 dark:border-sky-500/30',           hoverBg: 'hover:bg-sky-100 dark:hover:bg-sky-500/20',           text: 'text-sky-700 dark:text-sky-300' },
+  { bg: 'bg-lime-50 dark:bg-lime-500/10',         border: 'border-lime-200 dark:border-lime-500/30',         hoverBg: 'hover:bg-lime-100 dark:hover:bg-lime-500/20',         text: 'text-lime-700 dark:text-lime-300' },
+  { bg: 'bg-purple-50 dark:bg-purple-500/10',     border: 'border-purple-200 dark:border-purple-500/30',     hoverBg: 'hover:bg-purple-100 dark:hover:bg-purple-500/20',     text: 'text-purple-700 dark:text-purple-300' },
+  { bg: 'bg-pink-50 dark:bg-pink-500/10',         border: 'border-pink-200 dark:border-pink-500/30',         hoverBg: 'hover:bg-pink-100 dark:hover:bg-pink-500/20',         text: 'text-pink-700 dark:text-pink-300' },
+]
+
+function claveAsignacion(materiaNombre: string, gradoNombre: string, letra: string): string {
+  return `${materiaNombre}__${gradoNombre}__${letra}`
+}
 
 // ─── Modal de asignación de celda ──────────────────────────────────────────
 
@@ -137,6 +184,17 @@ export default function MiHorarioPage() {
 
   useEffect(() => { cargar() }, [cargar])
 
+  const coloresPorAsignacion = useMemo(() => {
+    const map = new Map<string, ColorCelda>()
+    if (!config) return map
+    let i = 0
+    for (const a of config.asignaciones) {
+      const key = claveAsignacion(a.materia.nombre, a.paralelo.grado.nombre, a.paralelo.letra)
+      if (!map.has(key)) { map.set(key, PALETA_COLORES[i % PALETA_COLORES.length]!); i++ }
+    }
+    return map
+  }, [config])
+
   async function asignarCelda(dia: number, periodo: number, asignacion_id: string) {
     try {
       const entrada = await api.put<Entrada>('/horarios/celda', { dia_semana: dia, periodo, asignacion_id })
@@ -237,6 +295,9 @@ export default function MiHorarioPage() {
                 </td>
                 {[1, 2, 3, 4, 5, 6].map(dia => {
                   const entrada = mapa.get(cellKey(dia, p.numero))
+                  const color = entrada
+                    ? coloresPorAsignacion.get(claveAsignacion(entrada.materia.nombre, entrada.paralelo.grado.nombre, entrada.paralelo.letra))
+                    : undefined
                   return (
                     <td key={dia} className="border-border p-1 align-top">
                       <button
@@ -244,14 +305,18 @@ export default function MiHorarioPage() {
                         onClick={() => setCelda({ dia, periodo: p.numero })}
                         className={`flex h-16 w-full flex-col items-center justify-center gap-0.5 rounded-lg border px-1.5 py-1 text-center transition-colors duration-150 ${
                           entrada
-                            ? 'border-indigo-200 dark:border-indigo-500/30 bg-indigo-50 dark:bg-indigo-500/10 hover:bg-indigo-100 dark:hover:bg-indigo-500/20'
+                            ? `${color?.border ?? 'border-indigo-200 dark:border-indigo-500/30'} ${color?.bg ?? 'bg-indigo-50 dark:bg-indigo-500/10'} ${color?.hoverBg ?? 'hover:bg-indigo-100 dark:hover:bg-indigo-500/20'}`
                             : 'border-dashed border-border text-fg-muted hover:bg-surface-2 hover:border-fg-muted'
                         }`}
                       >
                         {entrada ? (
                           <>
-                            <span className="text-xs font-semibold text-fg leading-tight line-clamp-2">{entrada.materia.nombre}</span>
-                            <span className="text-[10px] text-fg-muted leading-tight">{entrada.paralelo.grado.nombre} "{entrada.paralelo.letra}"</span>
+                            <span className={`text-sm font-extrabold leading-tight ${color?.text ?? 'text-fg'}`}>
+                              {abreviarMateria(entrada.materia.nombre)}
+                            </span>
+                            <span className="text-xs font-medium text-fg-muted leading-tight">
+                              {abreviarCurso(entrada.paralelo.grado.nombre, entrada.paralelo.letra, entrada.paralelo.grado.nivel.nombre)}
+                            </span>
                           </>
                         ) : (
                           <span className="text-lg leading-none">+</span>

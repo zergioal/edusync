@@ -51,12 +51,18 @@ export class HorariosController {
         this.service.getMiTabla(req.auth!.usuario_id, req.auth!.institucion_id),
         getInstitucionInfo(req.auth!.institucion_id),
       ])
+      const filasHtml = tabla.filas.map(fila => {
+        const nueva: Record<string, string | number | null | undefined> = {}
+        for (const [k, v] of Object.entries(fila)) nueva[k] = typeof v === 'string' ? v.replace(/\n/g, '<br/>') : v
+        return nueva
+      })
       const html = generarHTMLTablaSimple({
         institucion,
-        titulo:    `Horario — ${tabla.docente}`,
-        subtitulo: `Gestión ${tabla.gestion}`,
-        columnas:  tabla.columnas,
-        filas:     tabla.filas,
+        titulo:     `Horario — ${tabla.docente}`,
+        subtitulo:  `Gestión ${tabla.gestion}`,
+        columnas:   tabla.columnas,
+        filas:      filasHtml,
+        anchoIgual: true,
       })
       const pdf = await generatePDFLandscape(html)
       res.setHeader('Content-Type', 'application/pdf')
