@@ -8,6 +8,7 @@ export type IconName =
   | 'document-list' | 'id-card' | 'user-check' | 'trending-up' | 'calendar-check'
   | 'award' | 'users'
   | 'document-x' | 'user-x' | 'door-exit' | 'clipboard-x' | 'mail' | 'alert-triangle' | 'pencil' | 'user-minus'
+  | 'x' | 'download' | 'file-pdf' | 'file-excel' | 'clock'
 
 // Set minimalista de línea, mismo lenguaje visual que components/ui/NavIcon.tsx
 // (viewBox 24x24, trazo redondeado) — para tarjetas de reportes y botones de acción.
@@ -114,6 +115,30 @@ const PATHS: Record<IconName, string[]> = {
     'M9 11a4 4 0 100-8 4 4 0 000 8z',
     'M3 21v-2a4 4 0 014-4h2.5',
     'M15 15h6',
+  ],
+  x: [
+    'M6 6l12 12',
+    'M18 6L6 18',
+  ],
+  download: [
+    'M12 4v10',
+    'M8 10l4 4 4-4',
+    'M5 18h14',
+  ],
+  'file-pdf': [
+    'M7 3h7l4 4v14a1 1 0 01-1 1H7a1 1 0 01-1-1V4a1 1 0 011-1z',
+    'M14 3v4h4',
+    'M9 12.5h6', 'M9 15.5h6', 'M9 18.5h3.5',
+  ],
+  'file-excel': [
+    'M7 3h7l4 4v14a1 1 0 01-1 1H7a1 1 0 01-1-1V4a1 1 0 011-1z',
+    'M14 3v4h4',
+    'M8.5 12h7v6h-7z',
+    'M8.5 15h7', 'M12 12v6',
+  ],
+  clock: [
+    'M12 21a9 9 0 100-18 9 9 0 000 18z',
+    'M12 7v5l3 3',
   ],
 }
 

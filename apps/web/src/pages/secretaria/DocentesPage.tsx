@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { api, ApiError, apiDownload } from '../../lib/api'
 import { useToast } from '../../components/ui/Toast'
 import { Modal } from '../../components/ui/Modal'
+import { Icon } from '../../components/ui/Icon'
 import { Button, Spinner } from '@edusync/ui'
 import { AsignarHorasModal } from '../../components/AsignarHorasModal'
 
@@ -353,10 +354,10 @@ function AsignacionesTab({ doc, onChanged }: { doc: DocenteDetalle; onChanged: (
 // ─── Modal: exportar listado ────────────────────────────────────────────────
 
 const EXPORT_COLUMNS = [
-  { key: 'correo',   label: 'Correo' },
-  { key: 'materias', label: 'Materias asignadas' },
-  { key: 'horas',    label: 'Hs/mes' },
-  { key: 'cursos',   label: 'Cursos' },
+  { key: 'correo',   label: 'Correo',              icon: 'mail'          },
+  { key: 'materias', label: 'Materias asignadas',  icon: 'notebook'      },
+  { key: 'horas',    label: 'Hs/mes',               icon: 'clock'         },
+  { key: 'cursos',   label: 'Cursos',               icon: 'grid'          },
 ] as const
 
 function ExportarDocentesModal({ onClose }: { onClose: () => void }) {
@@ -386,32 +387,55 @@ function ExportarDocentesModal({ onClose }: { onClose: () => void }) {
       onClose={onClose}
       title="Exportar listado de docentes"
       footer={
-        <div className="flex justify-end gap-3">
-          <Button variant="secondary" onClick={onClose} disabled={!!downloading}>Cerrar</Button>
-          <Button variant="secondary" onClick={() => descargar('excel')} loading={downloading === 'excel'} disabled={!!downloading}>
-            📗 Excel
-          </Button>
-          <Button onClick={() => descargar('pdf')} loading={downloading === 'pdf'} disabled={!!downloading}>
-            📄 PDF
-          </Button>
+        <div className="flex items-center justify-between gap-3">
+          <Button variant="ghost" onClick={onClose} disabled={!!downloading}>Cerrar</Button>
+          <div className="flex gap-2">
+            <Button variant="secondary" onClick={() => descargar('excel')} loading={downloading === 'excel'} disabled={!!downloading}>
+              <span className="inline-flex items-center gap-1.5 text-emerald-700">
+                <Icon name="file-excel" className="h-4 w-4" />Excel
+              </span>
+            </Button>
+            <Button variant="secondary" onClick={() => descargar('pdf')} loading={downloading === 'pdf'} disabled={!!downloading}>
+              <span className="inline-flex items-center gap-1.5 text-red-600">
+                <Icon name="file-pdf" className="h-4 w-4" />PDF
+              </span>
+            </Button>
+          </div>
         </div>
       }
     >
-      <p className="text-sm text-fg-muted mb-3">
-        Siempre se incluyen N° y Apellidos y Nombres. Elige qué otras columnas mostrar:
-      </p>
-      <div className="space-y-2">
-        {EXPORT_COLUMNS.map(c => (
-          <label key={c.key} className="flex items-center gap-2 text-sm text-fg cursor-pointer">
-            <input
-              type="checkbox"
-              checked={selected.includes(c.key)}
-              onChange={() => toggle(c.key)}
-              className="rounded border-border"
-            />
-            {c.label}
-          </label>
-        ))}
+      <div className="mb-3 flex items-center justify-between">
+        <p className="text-sm text-fg-muted">
+          Siempre se incluyen <span className="font-medium text-fg">N°</span> y{' '}
+          <span className="font-medium text-fg">Apellidos y Nombres</span>. Elige qué más mostrar:
+        </p>
+        <div className="flex shrink-0 gap-2 text-xs">
+          <button type="button" onClick={() => setSelected(EXPORT_COLUMNS.map(c => c.key))} className="text-blue-600 hover:text-blue-800">Todas</button>
+          <span className="text-fg-muted">·</span>
+          <button type="button" onClick={() => setSelected([])} className="text-fg-muted hover:text-fg">Ninguna</button>
+        </div>
+      </div>
+      <div className="space-y-1.5">
+        {EXPORT_COLUMNS.map(c => {
+          const checked = selected.includes(c.key)
+          return (
+            <label
+              key={c.key}
+              className={`flex cursor-pointer items-center gap-3 rounded-lg border px-3 py-2.5 text-sm transition-colors ${
+                checked ? 'border-blue-400 bg-blue-50 text-blue-800' : 'border-border bg-surface text-fg hover:border-border'
+              }`}
+            >
+              <Icon name={c.icon} className={`h-4 w-4 shrink-0 ${checked ? 'text-blue-600' : 'text-fg-muted'}`} />
+              <span className="flex-1">{c.label}</span>
+              <input
+                type="checkbox"
+                checked={checked}
+                onChange={() => toggle(c.key)}
+                className="rounded border-border"
+              />
+            </label>
+          )
+        })}
       </div>
     </Modal>
   )
@@ -454,7 +478,9 @@ export default function DocentesPage() {
           <p className="text-sm text-fg-muted mt-0.5">Registro y gestión del cuerpo docente</p>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="secondary" onClick={() => setShowExport(true)}>⭳ Exportar</Button>
+          <Button variant="secondary" onClick={() => setShowExport(true)}>
+            <span className="inline-flex items-center gap-1.5"><Icon name="download" className="h-4 w-4" />Exportar</span>
+          </Button>
           <Button onClick={() => setModal('new')}>+ Registrar docente</Button>
         </div>
       </div>

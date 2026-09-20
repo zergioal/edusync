@@ -1,4 +1,5 @@
 import { useEffect, type ReactNode } from 'react'
+import { Icon } from './Icon'
 
 interface ModalProps {
   isOpen:    boolean
@@ -53,9 +54,7 @@ export function Modal({ isOpen, onClose, title, children, maxWidth = 'md', foote
             className="rounded-lg p-1 text-fg-muted hover:bg-surface-2 hover:text-fg-muted transition-colors"
             aria-label="Cerrar"
           >
-            <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-              <path d="M6.28 5.22a.75.75 0 00-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 101.06 1.06L10 11.06l3.72 3.72a.75.75 0 101.06-1.06L11.06 10l3.72-3.72a.75.75 0 00-1.06-1.06L10 8.94 6.28 5.22z" />
-            </svg>
+            <Icon name="x" className="h-5 w-5" />
           </button>
         </div>
 
