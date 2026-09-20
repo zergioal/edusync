@@ -57,15 +57,15 @@ export interface NotasResult {
 
 /**
  * Calcula promedios por dimensión y total para un estudiante dado un conjunto de indicadores.
- * `ajuste` es un valor oculto (ver AjusteNota) que se suma al total tal cual, sin pertenecer a
- * ninguna dimensión — permite importar notas sin desglose (0 + ajuste = ajuste) o sumar puntos
+ * `notaExtracurricular` (ver NotaExtracurricular) se suma al total tal cual, sin pertenecer a
+ * ninguna dimensión — permite importar notas sin desglose (0 + nota = nota) o sumar puntos
  * excepcionales sobre lo que el docente ya cargó.
  */
 export function calcNotasEstudiante(
   indicadores:   IndicadorMin[],
   notasMap:      Map<string, number | null>, // indicador_id → puntaje
   dimensiones:   DimInfo[],
-  ajuste:        number = 0,
+  notaExtracurricular: number = 0,
 ): NotasResult {
   const dimNotas: Record<string, number | null> = {}
   let total  = 0
@@ -87,8 +87,8 @@ export function calcNotasEstudiante(
     total += avg
   }
 
-  total += ajuste
-  hasAny = hasAny || ajuste !== 0
+  total += notaExtracurricular
+  hasAny = hasAny || notaExtracurricular !== 0
 
   return { dimNotas, total, hasAny }
 }

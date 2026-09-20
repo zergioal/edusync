@@ -96,8 +96,8 @@ export const NAV_POR_ROL: Record<string, NavItem[]> = {
       icon: "chart",
     },
     {
-      to: "/dashboard/director/ajustes-nota",
-      label: "Ajustes de Nota",
+      to: "/dashboard/director/nota-extracurricular",
+      label: "Nota Extracurricular",
       icon: "settings",
     },
     {
@@ -187,8 +187,8 @@ export const NAV_POR_ROL: Record<string, NavItem[]> = {
       icon: "chart",
     },
     {
-      to: "/dashboard/coordinador/ajustes-nota",
-      label: "Ajustes de Nota",
+      to: "/dashboard/coordinador/nota-extracurricular",
+      label: "Nota Extracurricular",
       icon: "settings",
     },
     {
@@ -245,8 +245,8 @@ export const NAV_POR_ROL: Record<string, NavItem[]> = {
       icon: "chart",
     },
     {
-      to: "/dashboard/admin/ajustes-nota",
-      label: "Ajustes de Nota",
+      to: "/dashboard/admin/nota-extracurricular",
+      label: "Nota Extracurricular",
       icon: "settings",
     },
     { to: "/dashboard/admin/asistencia", label: "Asistencia", icon: "chart" },
@@ -274,6 +274,11 @@ export const NAV_POR_ROL: Record<string, NavItem[]> = {
     },
     { to: "/dashboard/admin/gestiones", label: "Gestión", icon: "calendar" },
     { to: "/dashboard/admin/reportes", label: "Reportes", icon: "chart" },
+    {
+      to: "/dashboard/admin/nota-extracurricular",
+      label: "Nota Extracurricular",
+      icon: "settings",
+    },
     {
       to: "/dashboard/admin/configuracion",
       label: "Configuración",

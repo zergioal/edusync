@@ -4,7 +4,7 @@ import {
   calcularEscala, calcNotasEstudiante, mapDimToKeys,
   type DimInfo,
 } from './calculo.service'
-import { AjustesService } from './ajustes.service'
+import { NotaExtracurricularService } from './notas-extracurriculares.service'
 import type { DatosBoletin } from '../templates/boletin.template'
 
 export class BoletinesService {
@@ -171,15 +171,15 @@ export class BoletinesService {
     )
     const especialAsigs = asignaciones.filter(a => !!a.materia.es_subarea_de_id && a.materia.es_especial)
 
-    const ajustesMap = await new AjustesService().getMapa(
+    const notaExtraMap = await new NotaExtracurricularService().getMapa(
       [...regularAsigs, ...subareaAsigs].map(a => a.id), trimestre_id,
     )
 
     const materias = regularAsigs.map(asig => {
       const especialesDeEstaMateria = especialAsigs.filter(e => e.materia.es_subarea_de_id === asig.materia_id)
       const indicadoresCombinados = [...asig.indicadores, ...especialesDeEstaMateria.flatMap(e => e.indicadores)]
-      const ajuste = ajustesMap.get(`${asig.id}:${estudiante_id}`) ?? 0
-      const { dimNotas, total, hasAny } = calcNotasEstudiante(indicadoresCombinados, notasMap, dimensiones, ajuste)
+      const notaExtracurricular = notaExtraMap.get(`${asig.id}:${estudiante_id}`) ?? 0
+      const { dimNotas, total, hasAny } = calcNotasEstudiante(indicadoresCombinados, notasMap, dimensiones, notaExtracurricular)
       const dimKeys = mapDimToKeys(dimensiones, dimNotas)
       return {
         nombre:      asig.materia.nombre,
@@ -209,8 +209,8 @@ export class BoletinesService {
       const totalesConNotas: number[] = []
 
       for (const asig of subAsigs) {
-        const ajuste = ajustesMap.get(`${asig.id}:${estudiante_id}`) ?? 0
-        const { dimNotas, total, hasAny } = calcNotasEstudiante(asig.indicadores, notasMap, dimensiones, ajuste)
+        const notaExtracurricular = notaExtraMap.get(`${asig.id}:${estudiante_id}`) ?? 0
+        const { dimNotas, total, hasAny } = calcNotasEstudiante(asig.indicadores, notasMap, dimensiones, notaExtracurricular)
         if (!hasAny) continue
         totalesConNotas.push(total)
         for (const [dimId, val] of Object.entries(dimNotas)) {

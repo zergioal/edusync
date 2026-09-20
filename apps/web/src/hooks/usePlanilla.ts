@@ -34,6 +34,8 @@ export interface EstudiantePlanilla {
   codigo:    string
   notas:     Record<string, number | null>
   promedios: Record<string, number | null>
+  /** Se suma al total — la carga admin/director/coordinador/secretaría, el docente solo la ve. */
+  notaExtracurricular: number | null
   total:     number | null
   escala:    'ED' | 'DA' | 'DO' | 'DP' | null
 }

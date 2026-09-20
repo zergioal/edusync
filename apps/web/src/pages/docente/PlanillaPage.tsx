@@ -425,6 +425,16 @@ function PlanillaMobileView({
         </div>
       ))}
 
+      {/* Nota extracurricular — la carga Admin/Director/Coordinador/Secretaría, solo lectura aquí */}
+      {estudiante && !asignacion.materia.es_especial && (
+        <div className="rounded-xl border border-indigo-200 dark:border-indigo-500/30 bg-indigo-50/60 dark:bg-indigo-500/10 overflow-hidden shadow-sm px-4 py-2.5 flex items-center justify-between">
+          <span className="text-sm font-semibold text-indigo-800 dark:text-indigo-300">Nota extracurricular</span>
+          <span className="text-sm font-bold text-indigo-800 dark:text-indigo-300">
+            {estudiante.notaExtracurricular != null ? estudiante.notaExtracurricular : '—'}
+          </span>
+        </div>
+      )}
+
       {/* Barra inferior fija: Total + Escala del estudiante actual (no aplica a una subárea especial) */}
       {estudiante && !asignacion.materia.es_especial && (
         <div className="fixed bottom-0 left-0 right-0 z-20 border-t border-slate-700 bg-slate-800/95 dark:bg-slate-900/95 backdrop-blur-sm text-white px-4 py-3 flex items-center justify-between shadow-lg">
@@ -740,6 +750,13 @@ export default function PlanillaPage() {
                   <>
                     <th
                       rowSpan={2}
+                      className="bg-indigo-900 dark:bg-indigo-950 text-white px-2 py-2 text-center text-[10px] font-bold uppercase border-b border-slate-700 whitespace-nowrap"
+                      title="Cargada por Admin/Director/Coordinador/Secretaría — no editable desde aquí"
+                    >
+                      Nota<br />Extracurricular
+                    </th>
+                    <th
+                      rowSpan={2}
                       className="bg-slate-800 dark:bg-slate-900 text-white px-3 py-2 text-center text-xs font-bold uppercase border-b border-slate-700 whitespace-nowrap"
                     >
                       TOTAL
@@ -838,7 +855,7 @@ export default function PlanillaPage() {
               {estudiantes.length === 0 && (
                 <tr>
                   <td
-                    colSpan={2 + totalIndicCols + dimsEditables.length + dimensiones.length + (esEspecial ? 0 : 2)}
+                    colSpan={2 + totalIndicCols + dimsEditables.length + dimensiones.length + (esEspecial ? 0 : 3)}
                     className="py-10 text-center text-fg-muted"
                   >
                     No hay estudiantes matriculados en este paralelo.
@@ -894,9 +911,15 @@ export default function PlanillaPage() {
                     </Fragment>
                   ))}
 
-                  {/* TOTAL / ESCALA (no aplica a una subárea especial) */}
+                  {/* Nota extracurricular / TOTAL / ESCALA (no aplica a una subárea especial) */}
                   {!esEspecial && (
                     <>
+                      <td
+                        className="px-2 py-2 text-center text-sm font-semibold text-indigo-700 dark:text-indigo-300 bg-indigo-50/60 dark:bg-indigo-500/10 border-r border-border"
+                        title="Cargada por Admin/Director/Coordinador/Secretaría"
+                      >
+                        {est.notaExtracurricular != null ? est.notaExtracurricular : <span className="text-fg-muted/50 font-normal">—</span>}
+                      </td>
                       <td
                         className={`px-3 py-2 text-center text-sm font-bold border-r border-border ${
                           est.total != null && est.total < 51

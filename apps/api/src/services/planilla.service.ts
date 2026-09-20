@@ -3,7 +3,7 @@ import { AppError } from '../middlewares/errorHandler'
 import { BoletinesService } from './boletines.service'
 import { Instrumento } from '@edusync/types'
 import { calcNotasEstudiante, type DimInfo } from './calculo.service'
-import { AjustesService } from './ajustes.service'
+import { NotaExtracurricularService } from './notas-extracurriculares.service'
 
 type Escala = 'ED' | 'DA' | 'DO' | 'DP'
 
@@ -34,14 +34,14 @@ const INDICADORES_DEFECTO: Record<string, Array<{ nombre: string; instrumento: I
 
 /**
  * Calcula notas/promedios/total/escala de un estudiante a partir de sus dimensiones+indicadores y su
- * mapa de notas. `ajuste` es el valor oculto de AjusteNota (ver ajustes.service.ts): se suma al total
- * sin aparecer como indicador/columna — quien llama a esta función nunca debe exponer `ajuste` a un
- * docente, solo el total/escala ya resultante.
+ * mapa de notas. `notaExtracurricular` (ver NotaExtracurricular / notas-extracurriculares.service.ts)
+ * se suma al total sin pertenecer a ninguna dimensión, y se devuelve tal cual para que el registro del
+ * docente la muestre como una columna más — de solo lectura para él.
  */
 export function calcularFilaEstudiante(
   dimensiones: Array<{ id: string; indicadores: Array<{ id: string }> }>,
   notasDeEstudiante: Map<string, number | null>,
-  ajuste: number = 0,
+  notaExtracurricular: number | null = null,
 ) {
   const notasObj: Record<string, number | null>  = {}
   const promedios: Record<string, number | null> = {}
@@ -65,12 +65,14 @@ export function calcularFilaEstudiante(
     total += avg
   }
 
-  total += ajuste
-  hasAny = hasAny || ajuste !== 0
+  const extra = notaExtracurricular ?? 0
+  total += extra
+  hasAny = hasAny || extra !== 0
 
   return {
     notas:    notasObj,
     promedios,
+    notaExtracurricular,
     total:    hasAny ? total : null,
     escala:   hasAny ? calcEscala(total) : null,
   }
@@ -257,17 +259,17 @@ export class PlanillaService {
       notasMap.get(nota.estudiante_id)!.set(nota.indicador_id, nota.puntaje ?? null)
     }
 
-    // Ajuste oculto (solo admin/director/coordinador) — se suma al total sin aparecer nunca en
-    // esta respuesta como columna/indicador visible para el docente.
-    const ajustesMap = trimestre_id
-      ? await new AjustesService().getMapa([asignacion_id], trimestre_id)
+    // Nota extracurricular (solo editable por admin/director/coordinador/secretaría) — se suma al
+    // total y se muestra como una columna más en el registro, de solo lectura para el docente.
+    const notaExtraMap = trimestre_id
+      ? await new NotaExtracurricularService().getMapa([asignacion_id], trimestre_id)
       : new Map<string, number>()
 
     const estudiantes = matriculas.map(m => {
       const est      = m.estudiante
       const estNotas = notasMap.get(est.id) ?? new Map<string, number | null>()
-      const ajuste   = ajustesMap.get(`${asignacion_id}:${est.id}`) ?? 0
-      const fila     = calcularFilaEstudiante(dimensiones, estNotas, ajuste)
+      const notaExtracurricular = notaExtraMap.get(`${asignacion_id}:${est.id}`) ?? null
+      const fila     = calcularFilaEstudiante(dimensiones, estNotas, notaExtracurricular)
 
       return {
         id:       est.id,
@@ -356,7 +358,7 @@ export class PlanillaService {
 
     const META = 51 * trimestres.length // mínimo aprobado (escala DA) × cantidad de trimestres de la gestión
 
-    const ajustesMap = await new AjustesService().getMapaMultiTrimestre([asignacion.id], trimestres.map(t => t.id))
+    const notaExtraMap = await new NotaExtracurricularService().getMapaMultiTrimestre([asignacion.id], trimestres.map(t => t.id))
 
     const estudiantes = matriculas.map(m => {
       const est      = m.estudiante
@@ -369,8 +371,8 @@ export class PlanillaService {
           id: d.id,
           indicadores: d.indicadores.filter(i => i.trimestre_id === trim.id),
         }))
-        const ajuste = ajustesMap.get(`${asignacion.id}:${est.id}:${trim.id}`) ?? 0
-        const fila = calcularFilaEstudiante(dimsTrim, estNotas, ajuste)
+        const notaExtracurricular = notaExtraMap.get(`${asignacion.id}:${est.id}:${trim.id}`) ?? null
+        const fila = calcularFilaEstudiante(dimsTrim, estNotas, notaExtracurricular)
         totales[trim.id] = fila.total
         escalas[trim.id] = fila.escala
       }
@@ -618,12 +620,12 @@ export class PlanillaService {
       : []
     const notasDeEstudiante = new Map(notas.map(n => [n.indicador_id, n.puntaje ?? null]))
 
-    const ajustesMap = await new AjustesService().getMapa(asignaciones.map(a => a.id), trimestre_id)
+    const notaExtraMap = await new NotaExtracurricularService().getMapa(asignaciones.map(a => a.id), trimestre_id)
 
     const materias = asignaciones.map(asig => {
       // Dimensiones de esta materia: propios indicadores + los de sus subáreas especiales (si tiene)
       const especialesDeEstaMateria = especialAsigs.filter(e => e.materia.es_subarea_de_id === asig.materia_id)
-      const ajuste = ajustesMap.get(`${asig.id}:${estudiante_id}`) ?? 0
+      const notaExtracurricular = notaExtraMap.get(`${asig.id}:${estudiante_id}`) ?? null
       const dimsAsig = dimensiones.map(d => ({
         id:          d.id,
         nombre:      d.nombre,
@@ -633,7 +635,7 @@ export class PlanillaService {
           i.asignacion_id === asig.id || especialesDeEstaMateria.some(e => e.id === i.asignacion_id)
         ),
       }))
-      const fila = calcularFilaEstudiante(dimsAsig, notasDeEstudiante, ajuste)
+      const fila = calcularFilaEstudiante(dimsAsig, notasDeEstudiante, notaExtracurricular)
 
       return {
         asignacion_id: asig.id,

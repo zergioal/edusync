@@ -1,7 +1,7 @@
 import { prisma } from '@edusync/database'
 import { AppError } from '../middlewares/errorHandler'
 
-export class AjustesService {
+export class NotaExtracurricularService {
   /** Confirma que la asignación pertenece a la institución del usuario que hace la petición. */
   private async verificarAcceso(asignacion_id: string, institucion_id: string) {
     const asignacion = await prisma.asignacion.findUnique({
@@ -16,12 +16,13 @@ export class AjustesService {
   }
 
   /**
-   * Mapa reutilizable de ajustes `"${asignacion_id}:${estudiante_id}"` → valor, para un lote de
-   * asignaciones en un trimestre. Usado desde boletines/planilla/reportes al calcular totales.
+   * Mapa reutilizable de notas extracurriculares `"${asignacion_id}:${estudiante_id}"` → valor,
+   * para un lote de asignaciones en un trimestre. Usado desde boletines/planilla/reportes al
+   * calcular totales.
    */
   async getMapa(asignacion_ids: string[], trimestre_id: string): Promise<Map<string, number>> {
     if (asignacion_ids.length === 0) return new Map()
-    const filas = await prisma.ajusteNota.findMany({
+    const filas = await prisma.notaExtracurricular.findMany({
       where:  { asignacion_id: { in: asignacion_ids }, trimestre_id },
       select: { asignacion_id: true, estudiante_id: true, valor: true },
     })
@@ -34,18 +35,18 @@ export class AjustesService {
    */
   async getMapaMultiTrimestre(asignacion_ids: string[], trimestre_ids: string[]): Promise<Map<string, number>> {
     if (asignacion_ids.length === 0 || trimestre_ids.length === 0) return new Map()
-    const filas = await prisma.ajusteNota.findMany({
+    const filas = await prisma.notaExtracurricular.findMany({
       where:  { asignacion_id: { in: asignacion_ids }, trimestre_id: { in: trimestre_ids } },
       select: { asignacion_id: true, estudiante_id: true, trimestre_id: true, valor: true },
     })
     return new Map(filas.map(f => [`${f.asignacion_id}:${f.estudiante_id}:${f.trimestre_id}`, f.valor]))
   }
 
-  /** Lista los matriculados del paralelo de esta asignación con su ajuste actual (o null). */
+  /** Lista los matriculados del paralelo de esta asignación con su nota extracurricular actual (o null). */
   async list(asignacion_id: string, trimestre_id: string, institucion_id: string) {
     const asignacion = await this.verificarAcceso(asignacion_id, institucion_id)
 
-    const [matriculas, ajustes] = await Promise.all([
+    const [matriculas, notas] = await Promise.all([
       prisma.matricula.findMany({
         where:   { paralelo_id: asignacion.paralelo_id, gestion_id: asignacion.gestion_id },
         include: { estudiante: { include: { usuario: { select: { nombre: true, apellido: true } } } } },
@@ -54,25 +55,25 @@ export class AjustesService {
           { estudiante: { usuario: { nombre:   'asc' } } },
         ],
       }),
-      prisma.ajusteNota.findMany({ where: { asignacion_id, trimestre_id } }),
+      prisma.notaExtracurricular.findMany({ where: { asignacion_id, trimestre_id } }),
     ])
 
-    const ajustePorEstudiante = new Map(ajustes.map(a => [a.estudiante_id, a]))
+    const notaPorEstudiante = new Map(notas.map(n => [n.estudiante_id, n]))
 
     return matriculas.map(m => {
-      const ajuste = ajustePorEstudiante.get(m.estudiante_id)
+      const nota = notaPorEstudiante.get(m.estudiante_id)
       return {
         estudiante_id: m.estudiante_id,
         nombre:        m.estudiante.usuario.nombre,
         apellido:      m.estudiante.usuario.apellido,
         codigo:        m.estudiante.codigo,
-        valor:         ajuste?.valor ?? null,
-        motivo:        ajuste?.motivo ?? null,
+        valor:         nota?.valor ?? null,
+        motivo:        nota?.motivo ?? null,
       }
     })
   }
 
-  /** `valor: null` borra el ajuste de ese estudiante; el resto hace upsert. */
+  /** `valor: null` borra la nota extracurricular de ese estudiante; el resto hace upsert. */
   async upsertBulk(
     asignacion_id: string,
     trimestre_id:  string,
@@ -84,12 +85,12 @@ export class AjustesService {
 
     for (const e of entries) {
       if (e.valor === null) {
-        await prisma.ajusteNota.deleteMany({
+        await prisma.notaExtracurricular.deleteMany({
           where: { asignacion_id, trimestre_id, estudiante_id: e.estudiante_id },
         })
         continue
       }
-      await prisma.ajusteNota.upsert({
+      await prisma.notaExtracurricular.upsert({
         where: {
           asignacion_id_estudiante_id_trimestre_id: {
             asignacion_id, estudiante_id: e.estudiante_id, trimestre_id,

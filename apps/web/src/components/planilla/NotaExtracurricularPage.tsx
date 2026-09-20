@@ -15,13 +15,13 @@ interface Asignacion {
   materia: { nombre: string; campo: { nombre: string } }
   docente: { usuario: { nombre: string; apellido: string } }
 }
-interface AjusteRow {
+interface NotaExtraRow {
   estudiante_id: string; nombre: string; apellido: string; codigo: string
   valor: number | null; motivo: string | null
 }
 
-/** Ajustes ocultos de nota (Admin/Director/Coordinador) — compartido entre los 3 roles. */
-export function AjustesNotaPage() {
+/** Nota extracurricular (Admin/Director/Coordinador/Secretaría) — compartido entre los 4 roles. */
+export function NotaExtracurricularPage() {
   const toast    = useToast()
   const toastRef = useRef(toast)
   toastRef.current = toast
@@ -34,7 +34,7 @@ export function AjustesNotaPage() {
   const [asignaciones, setAsignaciones] = useState<Asignacion[]>([])
   const [asignacionId, setAsignacionId] = useState('')
   const [trimestreId,  setTrimestreId]  = useState('')
-  const [filas,        setFilas]        = useState<AjusteRow[]>([])
+  const [filas,        setFilas]        = useState<NotaExtraRow[]>([])
   const [overrides,    setOverrides]    = useState<Record<string, string>>({})
   const [loading,      setLoading]      = useState(false)
   const [saving,       setSaving]       = useState(false)
@@ -68,9 +68,9 @@ export function AjustesNotaPage() {
     setLoading(true)
     setOverrides({})
     try {
-      setFilas(await api.get<AjusteRow[]>(`/planilla/${asignacionId}/ajustes?trimestre_id=${trimestreId}`))
+      setFilas(await api.get<NotaExtraRow[]>(`/planilla/${asignacionId}/nota-extracurricular?trimestre_id=${trimestreId}`))
     } catch {
-      toastRef.current.error('Error cargando ajustes')
+      toastRef.current.error('Error cargando notas extracurriculares')
     } finally {
       setLoading(false)
     }
@@ -99,8 +99,8 @@ export function AjustesNotaPage() {
         estudiante_id,
         valor: val.trim() === '' ? null : parseInt(val, 10),
       }))
-      await api.put(`/planilla/${asignacionId}/ajustes?trimestre_id=${trimestreId}`, entries)
-      toast.success('Ajustes guardados')
+      await api.put(`/planilla/${asignacionId}/nota-extracurricular?trimestre_id=${trimestreId}`, entries)
+      toast.success('Notas extracurriculares guardadas')
       cargar()
     } catch (err) {
       toast.error(err instanceof ApiError ? err.message : 'Error al guardar')
@@ -112,8 +112,9 @@ export function AjustesNotaPage() {
   return (
     <div className="space-y-4">
       <div className="rounded-lg bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-200 dark:border-indigo-500/30 px-4 py-3 text-sm text-indigo-800 dark:text-indigo-300">
-        El ajuste es oculto: se suma al total de la materia junto con las dimensiones, pero el docente
-        nunca lo ve ni lo puede editar. Úsalo para importar notas históricas sin desglose (deja el valor
+        La nota extracurricular se suma al total de la materia junto con las dimensiones, y se ve
+        normal en el registro del docente — pero solo Admin, Director, Coordinador y Secretaría
+        pueden cargarla o editarla. Úsala para importar notas históricas sin desglose (deja el valor
         igual al total que quieres que muestre) o para sumar puntos en casos excepcionales.
       </div>
 
@@ -197,7 +198,7 @@ export function AjustesNotaPage() {
                 <tr className="border-b border-border bg-bg text-left text-xs font-semibold uppercase tracking-wide text-fg-muted">
                   <th className="px-4 py-3">Código</th>
                   <th className="px-4 py-3">Apellidos y Nombres</th>
-                  <th className="px-4 py-3 text-center w-32">Ajuste</th>
+                  <th className="px-4 py-3 text-center w-32">Nota extracurricular</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
@@ -234,7 +235,7 @@ export function AjustesNotaPage() {
           </div>
 
           <div className="flex justify-end">
-            <Button onClick={guardar} loading={saving} disabled={!hasChanges}>Guardar ajustes</Button>
+            <Button onClick={guardar} loading={saving} disabled={!hasChanges}>Guardar notas extracurriculares</Button>
           </div>
         </>
       )}

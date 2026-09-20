@@ -161,7 +161,7 @@ model Usuario {
   certificados_emitidos CertificadoEmitido[] @relation("CertificadosEmitidosPor")
   cambios_estado_estudiante HistorialEstadoEstudiante[]
   alcance_niveles     CoordinadorNivel[]
-  ajustes_nota_creados AjusteNota[]
+  notas_extracurriculares_creadas NotaExtracurricular[]
 
   @@map("usuarios")
 }
@@ -211,7 +211,7 @@ model Estudiante {
   certificados        CertificadoEmitido[]
   historial_estado    HistorialEstadoEstudiante[]
   proyectos_bth       ProyectoBTHEstudiante[]
-  ajustes_nota        AjusteNota[]
+  notas_extracurriculares NotaExtracurricular[]
 
   @@map("estudiantes")
 }
@@ -385,7 +385,7 @@ model Trimestre {
   gestion       Gestion      @relation(fields: [gestion_id], references: [id], onDelete: Cascade)
   observaciones ObservacionInicial[]
   indicadores   Indicador[]
-  ajustes_nota  AjusteNota[]
+  notas_extracurriculares NotaExtracurricular[]
 
   @@unique([gestion_id, numero])
   @@map("trimestres")
@@ -406,17 +406,17 @@ model Asignacion {
   asistencias AsistenciaClase[]
   tareas      Tarea[]
   observaciones_diarias ObservacionDiaria[]
-  ajustes_nota AjusteNota[]
+  notas_extracurriculares NotaExtracurricular[]
 
   @@unique([docente_id, materia_id, paralelo_id, gestion_id])
   @@map("asignaciones")
 }
 
-// Ajuste oculto por estudiante+trimestre, sumado al total junto con las dimensiones. Solo
-// visible/editable por Admin, Director y Coordinador — el docente nunca lo ve. Sirve para
-// importar notas históricas sin desglose por dimensión (0 + ajuste = ajuste) o para sumar
-// puntos excepcionales sobre una nota que el docente ya cargó normalmente.
-model AjusteNota {
+// Nota extracurricular por estudiante+trimestre, sumada al total junto con las dimensiones. Se ve
+// normal en el registro del docente (una columna más), pero el docente no puede editarla — solo
+// Admin, Director, Coordinador y Secretaría. Sirve para importar notas históricas sin desglose por
+// dimensión (0 + nota = nota) o para sumar puntos en casos excepcionales.
+model NotaExtracurricular {
   id             String   @id @default(uuid())
   asignacion_id  String
   estudiante_id  String
