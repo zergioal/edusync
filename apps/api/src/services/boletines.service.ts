@@ -162,14 +162,18 @@ export class BoletinesService {
     // regulares aunque conserve una asignación directa antigua (de antes de convertirse en área con
     // subáreas) — su nota final ahora se arma solo a partir de sus subáreas, para no duplicar la fila.
     // Las subáreas de un área normal se incluyen siempre (todo el curso las cursa); las del área técnica
-    // BTH (padre con solo_si_bth) siguen respetando la electiva por estudiante (lleva_tecnica).
-    const regularAsigs = asignaciones.filter(a => !a.materia.es_subarea_de_id && !a.materia.tiene_subareas)
-    const subareaAsigs = asignaciones.filter(a =>
-      !!a.materia.es_subarea_de_id && (!a.materia.parent_materia?.solo_si_bth || llevaTecnica)
+    // BTH (padre con solo_si_bth) siguen respetando la electiva por estudiante (lleva_tecnica). Las
+    // subáreas especiales nunca forman su propia fila — su nota se diluye dentro del área principal.
+    const regularAsigs  = asignaciones.filter(a => !a.materia.es_subarea_de_id && !a.materia.tiene_subareas)
+    const subareaAsigs  = asignaciones.filter(a =>
+      !!a.materia.es_subarea_de_id && !a.materia.es_especial && (!a.materia.parent_materia?.solo_si_bth || llevaTecnica)
     )
+    const especialAsigs = asignaciones.filter(a => !!a.materia.es_subarea_de_id && a.materia.es_especial)
 
     const materias = regularAsigs.map(asig => {
-      const { dimNotas, total, hasAny } = calcNotasEstudiante(asig.indicadores, notasMap, dimensiones)
+      const especialesDeEstaMateria = especialAsigs.filter(e => e.materia.es_subarea_de_id === asig.materia_id)
+      const indicadoresCombinados = [...asig.indicadores, ...especialesDeEstaMateria.flatMap(e => e.indicadores)]
+      const { dimNotas, total, hasAny } = calcNotasEstudiante(indicadoresCombinados, notasMap, dimensiones)
       const dimKeys = mapDimToKeys(dimensiones, dimNotas)
       return {
         nombre:      asig.materia.nombre,

@@ -77,7 +77,14 @@ export class PlanillaService {
             usuario: { select: { nombre: true, apellido: true, institucion_id: true } },
           },
         },
-        materia:  { include: { campo: true, parent_materia: { select: { nombre: true } } } },
+        materia: {
+          include: {
+            campo: true,
+            parent_materia: { select: { nombre: true } },
+            // Subáreas especiales hermanas: sus columnas se anexan de solo lectura al registro del área.
+            subareas: { where: { es_especial: true, activa: true }, select: { id: true } },
+          },
+        },
         paralelo: { include: { grado: { include: { nivel: true } } } },
         gestion:  { include: { trimestres: { orderBy: { numero: 'asc' as const } } } },
       },
@@ -86,11 +93,19 @@ export class PlanillaService {
 
     const institucion_id = asignacion.docente.usuario.institucion_id
     const gestion_id     = asignacion.gestion.id
+    const esEspecial     = asignacion.materia.es_especial
+    const hijasEspecialesIds = asignacion.materia.subareas.map(s => s.id)
+
+    // Vista de una subárea especial (profesor B): solo sus dimensiones habilitadas — nunca
+    // Ser/Decidir ni Autoevaluación si no fueron marcadas.
+    const dimensionesWhere = esEspecial
+      ? { institucion_id, id: { in: asignacion.materia.dimensiones_especiales } }
+      : { institucion_id }
 
     // Query 2+3: dimensiones y matrículas en paralelo
     const [dimensiones, matriculas] = await Promise.all([
       prisma.dimension.findMany({
-        where: { institucion_id },
+        where: dimensionesWhere,
         include: {
           indicadores: {
             where:   { asignacion_id, ...(trimestre_id ? { trimestre_id } : {}) },
@@ -113,9 +128,10 @@ export class PlanillaService {
       }),
     ])
 
-    // Auto-siembra: la primera vez que se abre la planilla de un trimestre, cada
-    // dimensión sin indicadores propios recibe su set por defecto (ver INDICADORES_DEFECTO).
-    if (trimestre_id) {
+    // Auto-siembra: la primera vez que se abre la planilla de un trimestre, cada dimensión sin
+    // indicadores propios recibe su set por defecto (ver INDICADORES_DEFECTO). No aplica a una
+    // subárea especial: su única columna se crea aparte, fija, justo abajo.
+    if (trimestre_id && !esEspecial) {
       const trimestre = asignacion.gestion.trimestres.find(t => t.id === trimestre_id)
       if (trimestre) {
         await Promise.all(dimensiones.map(async dim => {
@@ -138,6 +154,76 @@ export class PlanillaService {
           dim.indicadores = creados
         }))
       }
+    }
+
+    // Auto-creación de la columna fija de la subárea especial: una nota por dimensión habilitada,
+    // que el docente de la subárea solo puede calificar (no renombrar/eliminar), igual que ya
+    // ocurre con el indicador fijo de Autoevaluación.
+    if (trimestre_id && esEspecial) {
+      const trimestre = asignacion.gestion.trimestres.find(t => t.id === trimestre_id)
+      if (trimestre) {
+        await Promise.all(dimensiones.map(async dim => {
+          if (dim.indicadores.length > 0) return
+          const creado = await prisma.indicador.create({
+            data: {
+              asignacion_id,
+              dimension_id:     dim.id,
+              trimestre_id,
+              nombre:           asignacion.materia.nombre,
+              instrumento:      Instrumento.OBSERVACION,
+              fecha_aplicacion: trimestre.fecha_inicio,
+              orden: 0,
+            },
+          })
+          dim.indicadores = [creado]
+        }))
+      }
+    }
+
+    // Columnas ajenas de solo lectura: del profesor A se anexan las de sus subáreas especiales
+    // hermanas; de una subárea especial (profesor B) se antepone la del área principal.
+    type IndicadorConOrigen = (typeof dimensiones)[number]['indicadores'][number] & {
+      editable: boolean; origen_docente: string | null
+    }
+    let indicadoresAjenos: IndicadorConOrigen[] = []
+
+    if (!esEspecial && hijasEspecialesIds.length > 0) {
+      const hijasAsigs = await prisma.asignacion.findMany({
+        where: { materia_id: { in: hijasEspecialesIds }, paralelo_id: asignacion.paralelo_id, gestion_id },
+        include: {
+          docente:     { include: { usuario: { select: { nombre: true, apellido: true } } } },
+          indicadores: { where: { ...(trimestre_id ? { trimestre_id } : {}) } },
+        },
+      })
+      indicadoresAjenos = hijasAsigs.flatMap(a => a.indicadores.map(i => ({
+        ...i, editable: false, origen_docente: `${a.docente.usuario.nombre} ${a.docente.usuario.apellido}`,
+      })))
+    } else if (esEspecial && asignacion.materia.es_subarea_de_id) {
+      const padreAsig = await prisma.asignacion.findFirst({
+        where: { materia_id: asignacion.materia.es_subarea_de_id, paralelo_id: asignacion.paralelo_id, gestion_id },
+        include: {
+          docente:     { include: { usuario: { select: { nombre: true, apellido: true } } } },
+          indicadores: {
+            where: {
+              dimension_id: { in: asignacion.materia.dimensiones_especiales },
+              ...(trimestre_id ? { trimestre_id } : {}),
+            },
+          },
+        },
+      })
+      if (padreAsig) {
+        indicadoresAjenos = padreAsig.indicadores.map(i => ({
+          ...i, editable: false, origen_docente: `${padreAsig.docente.usuario.nombre} ${padreAsig.docente.usuario.apellido}`,
+        }))
+      }
+    }
+
+    for (const dim of dimensiones) {
+      const propios: IndicadorConOrigen[] = dim.indicadores.map(i => ({ ...i, editable: true, origen_docente: null }))
+      const ajenos  = indicadoresAjenos.filter(i => i.dimension_id === dim.id)
+      // En la vista de la subárea especial, la columna del área principal va antes que la propia;
+      // en la vista del área principal, las columnas de sus subáreas especiales van al final.
+      dim.indicadores = (esEspecial ? [...ajenos, ...propios] : [...propios, ...ajenos]) as typeof dim.indicadores
     }
 
     const indicadorIds  = dimensiones.flatMap(d => d.indicadores.map(i => i.id))
@@ -197,7 +283,7 @@ export class PlanillaService {
       where: { id: asignacion_id },
       include: {
         docente:  { include: { usuario: { select: { nombre: true, apellido: true, institucion_id: true } } } },
-        materia:  true,
+        materia:  { include: { subareas: { where: { es_especial: true, activa: true }, select: { id: true } } } },
         paralelo: { include: { grado: { include: { nivel: true } } } },
         gestion:  { include: { trimestres: { orderBy: { numero: 'asc' as const } } } },
       },
@@ -222,6 +308,20 @@ export class PlanillaService {
         ],
       }),
     ])
+
+    // Si esta materia tiene subáreas especiales hermanas, sus notas se suman aquí también —
+    // el total que ve el profesor A debe coincidir con el que ya ve en su registro.
+    const hijasEspecialesIds = asignacion.materia.subareas.map(s => s.id)
+    if (hijasEspecialesIds.length > 0) {
+      const hijasAsigs = await prisma.asignacion.findMany({
+        where:   { materia_id: { in: hijasEspecialesIds }, paralelo_id: asignacion.paralelo_id, gestion_id: asignacion.gestion_id },
+        include: { indicadores: true },
+      })
+      const extra = hijasAsigs.flatMap(a => a.indicadores)
+      for (const dim of dimensiones) {
+        dim.indicadores = [...dim.indicadores, ...extra.filter(i => i.dimension_id === dim.id)]
+      }
+    }
 
     const indicadorIds  = dimensiones.flatMap(d => d.indicadores.map(i => i.id))
     const estudianteIds = matriculas.map(m => m.estudiante_id)
@@ -459,11 +559,14 @@ export class PlanillaService {
     // Las subáreas de un área normal se ven siempre; las del área técnica BTH (padre solo_si_bth)
     // respetan la electiva por estudiante (lleva_tecnica), igual que en boletines.service.ts. Una
     // asignación regular de una materia que ya "tiene_subareas" se excluye (evita fila duplicada si
-    // quedó una asignación directa de antes de que el área tuviera subáreas).
+    // quedó una asignación directa de antes de que el área tuviera subáreas). Una subárea especial
+    // nunca aparece como fila propia — su nota se diluye dentro del promedio del área principal.
     const asignaciones = asignacionesRaw.filter(a => {
+      if (a.materia.es_especial) return false
       if (a.materia.es_subarea_de_id) return !a.materia.parent_materia?.solo_si_bth || llevaTecnica
       return !a.materia.tiene_subareas
     })
+    const especialAsigs = asignacionesRaw.filter(a => a.materia.es_especial)
 
     const obsRecs = await prisma.observacionInicial.findMany({
       where: {
@@ -474,9 +577,9 @@ export class PlanillaService {
     })
     const obsMap = new Map(obsRecs.map(o => [o.docente_id, o.contenido]))
 
-    const asignacionIds = asignaciones.map(a => a.id)
+    const asignacionIds = [...asignaciones.map(a => a.id), ...especialAsigs.map(a => a.id)]
 
-    // Dimensiones + indicadores de TODAS las materias en una sola consulta
+    // Dimensiones + indicadores de TODAS las materias (incluidas las subáreas especiales) en una sola consulta
     const dimensiones = await prisma.dimension.findMany({
       where: { institucion_id },
       include: {
@@ -496,13 +599,16 @@ export class PlanillaService {
     const notasDeEstudiante = new Map(notas.map(n => [n.indicador_id, n.puntaje ?? null]))
 
     const materias = asignaciones.map(asig => {
-      // Dimensiones de esta materia: mismos objetos de dimensión, filtrando a sus propios indicadores
+      // Dimensiones de esta materia: propios indicadores + los de sus subáreas especiales (si tiene)
+      const especialesDeEstaMateria = especialAsigs.filter(e => e.materia.es_subarea_de_id === asig.materia_id)
       const dimsAsig = dimensiones.map(d => ({
         id:          d.id,
         nombre:      d.nombre,
         puntaje_max: d.puntaje_max,
         orden:       d.orden,
-        indicadores: d.indicadores.filter(i => i.asignacion_id === asig.id),
+        indicadores: d.indicadores.filter(i =>
+          i.asignacion_id === asig.id || especialesDeEstaMateria.some(e => e.id === i.asignacion_id)
+        ),
       }))
       const fila = calcularFilaEstudiante(dimsAsig, notasDeEstudiante)
 

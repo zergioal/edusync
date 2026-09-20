@@ -337,6 +337,8 @@ model Materia {
   tiene_subareas          Boolean @default(false)
   es_subarea_de_id        String?
   horas_semanales         Int?
+  es_especial             Boolean  @default(false)
+  dimensiones_especiales  String[] @default([])
 
   campo              Campo                 @relation(fields: [campo_id], references: [id], onDelete: Cascade)
   nivel              Nivel                 @relation(fields: [nivel_id], references: [id])

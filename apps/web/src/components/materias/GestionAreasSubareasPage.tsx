@@ -6,6 +6,11 @@ import { Button, Badge, Spinner } from '@edusync/ui'
 
 interface Nivel { id: string; nombre: string }
 interface Campo { id: string; nombre: string }
+interface Dimension { id: string; nombre: string }
+
+const DIMENSION_LABELS: Record<string, string> = {
+  SER_DECIDIR: 'Ser/Decidir', SABER: 'Saber', HACER: 'Hacer', AUTOEVALUACION: 'Autoevaluación',
+}
 
 interface Subarea {
   id:                      string
@@ -14,6 +19,8 @@ interface Subarea {
   aplica_solo_desde_grado: number | null
   aplica_hasta_grado:      number | null
   horas_semanales:         number | null
+  es_especial:             boolean
+  dimensiones_especiales:  string[]
   _count:                  { asignaciones: number }
 }
 
@@ -45,13 +52,15 @@ interface SubareaFormState {
   aplica_solo_desde_grado: string
   aplica_hasta_grado:      string
   horas_semanales:         string
+  es_especial:             boolean
+  dimension_ids:           string[]
 }
 
 const EMPTY_AREA_FORM: AreaFormState = {
   nombre: '', campo_id: '', solo_si_bth: false, aplica_solo_desde_grado: '', aplica_hasta_grado: '', horas_semanales: '',
 }
 const EMPTY_SUBAREA_FORM: SubareaFormState = {
-  nombre: '', aplica_solo_desde_grado: '', aplica_hasta_grado: '', horas_semanales: '',
+  nombre: '', aplica_solo_desde_grado: '', aplica_hasta_grado: '', horas_semanales: '', es_especial: false, dimension_ids: [],
 }
 
 /** Nombre base sin el sufijo " (Área Padre)" que el backend agrega automáticamente, para editar cómodamente. */
@@ -66,10 +75,11 @@ export function GestionAreasSubareasPage() {
   const toastRef = useRef(toast)
   toastRef.current = toast
 
-  const [niveles, setNiveles] = useState<Nivel[]>([])
-  const [nivelId, setNivelId] = useState('')
-  const [padres,  setPadres]  = useState<MateriaPadre[]>([])
-  const [campos,  setCampos]  = useState<Campo[]>([])
+  const [niveles,     setNiveles]     = useState<Nivel[]>([])
+  const [nivelId,     setNivelId]     = useState('')
+  const [padres,      setPadres]      = useState<MateriaPadre[]>([])
+  const [campos,      setCampos]      = useState<Campo[]>([])
+  const [dimensiones, setDimensiones] = useState<Dimension[]>([])
   const [loading, setLoading] = useState(false)
   const [saving,  setSaving]  = useState(false)
 
@@ -83,6 +93,9 @@ export function GestionAreasSubareasPage() {
     api.get<Nivel[]>('/niveles')
       .then(data => { setNiveles(data); if (data[0]) setNivelId(data[0].id) })
       .catch(() => toastRef.current.error('Error cargando niveles'))
+    api.get<Dimension[]>('/materias/dimensiones')
+      .then(data => setDimensiones(data.filter(d => d.nombre !== 'AUTOEVALUACION')))
+      .catch(() => toastRef.current.error('Error cargando dimensiones'))
   }, [])
 
   const load = useCallback(async (id: string) => {
@@ -204,7 +217,7 @@ export function GestionAreasSubareasPage() {
       )
       if (!ok) return
     }
-    setSubareaForm(EMPTY_SUBAREA_FORM)
+    setSubareaForm({ ...EMPTY_SUBAREA_FORM, es_especial: tipoSubareaBloqueado(padre) === 'especial' })
     setSubareaModal({ mode: 'create', padre })
   }
 
@@ -214,13 +227,26 @@ export function GestionAreasSubareasPage() {
       aplica_solo_desde_grado: subarea.aplica_solo_desde_grado?.toString() ?? '',
       aplica_hasta_grado:      subarea.aplica_hasta_grado?.toString() ?? '',
       horas_semanales:         subarea.horas_semanales?.toString() ?? '',
+      es_especial:             subarea.es_especial,
+      dimension_ids:           subarea.dimensiones_especiales,
     })
     setSubareaModal({ mode: 'edit', padre, subarea })
+  }
+
+  // Si el área padre ya tiene subáreas de un tipo, la nueva debe ser del mismo tipo.
+  const tipoSubareaBloqueado = (padre: MateriaPadre): 'normal' | 'especial' | null => {
+    if (padre.subareas.some(s => s.es_especial)) return 'especial'
+    if (padre.subareas.some(s => !s.es_especial)) return 'normal'
+    return null
   }
 
   const handleSubmitSubarea = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!subareaModal || !subareaForm.nombre.trim()) return
+    if (subareaForm.es_especial && subareaForm.dimension_ids.length === 0) {
+      toastRef.current.error('Elige al menos una dimensión para la subárea especial')
+      return
+    }
     setSaving(true)
     try {
       const payload = {
@@ -228,9 +254,12 @@ export function GestionAreasSubareasPage() {
         aplica_solo_desde_grado: subareaForm.aplica_solo_desde_grado ? parseInt(subareaForm.aplica_solo_desde_grado, 10) : null,
         aplica_hasta_grado:      subareaForm.aplica_hasta_grado ? parseInt(subareaForm.aplica_hasta_grado, 10) : null,
         horas_semanales:         subareaForm.horas_semanales ? parseInt(subareaForm.horas_semanales, 10) : null,
+        ...(subareaForm.es_especial ? { dimension_ids: subareaForm.dimension_ids } : {}),
       }
       if (subareaModal.mode === 'create') {
-        await api.post('/materias', { ...payload, es_subarea_de_id: subareaModal.padre.id })
+        await api.post('/materias', {
+          ...payload, es_subarea_de_id: subareaModal.padre.id, es_especial: subareaForm.es_especial,
+        })
         toastRef.current.success('Subárea creada correctamente')
       } else {
         await api.patch(`/materias/${subareaModal.subarea!.id}`, payload)
@@ -324,6 +353,11 @@ export function GestionAreasSubareasPage() {
                     <span className={`text-sm truncate ${sub.activa ? 'text-fg' : 'text-fg-muted line-through'}`}>
                       {sub.nombre}
                     </span>
+                    {sub.es_especial && (
+                      <Badge variant="info">
+                        Especial · {sub.dimensiones_especiales.map(id => DIMENSION_LABELS[dimensiones.find(d => d.id === id)?.nombre ?? ''] ?? '').filter(Boolean).join(', ')}
+                      </Badge>
+                    )}
                     {!sub.activa && <Badge variant="warning">Inactiva</Badge>}
                     {sub.horas_semanales != null && (
                       <span className="text-xs text-fg-muted shrink-0">{sub.horas_semanales} hrs/mes</span>
@@ -475,6 +509,62 @@ export function GestionAreasSubareasPage() {
               />
               <p className="text-xs text-fg-muted">Se guardará como: <strong>{previewNombreSubarea}</strong></p>
             </div>
+
+            {subareaModal.mode === 'create' && (
+              <div className="flex flex-col gap-1.5">
+                <label className="text-sm font-medium text-fg">Tipo de subárea</label>
+                <div className="flex rounded-lg border border-border overflow-hidden w-fit">
+                  {(['normal', 'especial'] as const).map(tipo => {
+                    const bloqueado = tipoSubareaBloqueado(subareaModal.padre)
+                    const disabled  = bloqueado !== null && bloqueado !== tipo
+                    const activo    = (tipo === 'especial') === subareaForm.es_especial
+                    return (
+                      <button
+                        key={tipo}
+                        type="button"
+                        disabled={disabled}
+                        onClick={() => setSubareaForm(f => ({ ...f, es_especial: tipo === 'especial' }))}
+                        title={disabled ? `Esta área ya tiene subáreas ${bloqueado === 'especial' ? 'especiales' : 'normales'} — no se pueden mezclar tipos` : ''}
+                        className={`px-3 py-1.5 text-xs font-semibold transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${
+                          activo ? 'bg-brand text-brand-fg' : 'bg-surface text-fg-muted hover:bg-surface-2'
+                        }`}
+                      >
+                        {tipo === 'normal' ? 'Normal' : 'Especial'}
+                      </button>
+                    )
+                  })}
+                </div>
+                <p className="text-xs text-fg-muted">
+                  {subareaForm.es_especial
+                    ? 'No reemplaza al área principal: ambos docentes mantienen su registro y horas normales. Solo aporta una nota adicional implícita en las dimensiones que marques abajo.'
+                    : 'Reemplaza la asignación directa del área principal — se promedia con sus hermanas y tiene nota final propia.'}
+                </p>
+              </div>
+            )}
+
+            {subareaForm.es_especial && (
+              <div className="flex flex-col gap-1.5">
+                <label className="text-sm font-medium text-fg">Dimensiones donde aporta nota</label>
+                <div className="flex flex-wrap gap-3">
+                  {dimensiones.map(d => (
+                    <label key={d.id} className="flex items-center gap-1.5 text-sm text-fg">
+                      <input
+                        type="checkbox"
+                        checked={subareaForm.dimension_ids.includes(d.id)}
+                        onChange={e => setSubareaForm(f => ({
+                          ...f,
+                          dimension_ids: e.target.checked
+                            ? [...f.dimension_ids, d.id]
+                            : f.dimension_ids.filter(id => id !== d.id),
+                        }))}
+                        className="rounded border-border"
+                      />
+                      {DIMENSION_LABELS[d.nombre] ?? d.nombre}
+                    </label>
+                  ))}
+                </div>
+              </div>
+            )}
 
             <div className="grid grid-cols-2 gap-3">
               <div className="flex flex-col gap-1">

@@ -13,6 +13,10 @@ export interface IndicadorPlanilla {
   es_parcial:       boolean
   orden:            number
   dimension_id:     string
+  /** false = indicador de otra asignación (subárea especial / área principal), solo lectura. Ausente/true = propio. */
+  editable?:        boolean
+  /** Nombre del docente dueño, cuando editable === false. */
+  origen_docente?:  string | null
 }
 
 export interface DimensionPlanilla {
@@ -45,7 +49,10 @@ export interface TrimestrePlanilla {
 export interface PlanillaData {
   asignacion: {
     id:      string
-    materia: { nombre: string; campo: { nombre: string }; es_subarea_de_id: string | null; parent_materia: { nombre: string } | null }
+    materia: {
+      nombre: string; campo: { nombre: string }; es_subarea_de_id: string | null; parent_materia: { nombre: string } | null
+      es_especial: boolean
+    }
     paralelo: { letra: string; grado: { nombre: string; nivel: { nombre: string } } }
     gestion: { id: string; anno: number; trimestres: TrimestrePlanilla[] }
     docente: { nombre: string; apellido: string }

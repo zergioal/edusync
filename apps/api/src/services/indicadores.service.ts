@@ -44,6 +44,22 @@ export class IndicadoresService {
       throw new AppError(409, 'La autoevaluación no admite indicadores adicionales', 'AUTOEVAL_FIXED')
     }
 
+    const asignacion = await prisma.asignacion.findUnique({
+      where:  { id: data.asignacion_id },
+      select: { materia: { select: { es_especial: true, dimensiones_especiales: true } } },
+    })
+    if (asignacion?.materia.es_especial) {
+      if (!asignacion.materia.dimensiones_especiales.includes(data.dimension_id)) {
+        throw new AppError(400, 'Esta subárea especial no aporta nota en esa dimensión', 'VALIDATION')
+      }
+      const yaExiste = await prisma.indicador.count({
+        where: { asignacion_id: data.asignacion_id, dimension_id: data.dimension_id },
+      })
+      if (yaExiste > 0) {
+        throw new AppError(409, 'Una subárea especial solo puede tener una nota por dimensión', 'ESPECIAL_UNICO')
+      }
+    }
+
     if (data.instrumento === Instrumento.OTRO && !data.instrumento_otro?.trim()) {
       throw new AppError(400, 'Debes especificar el nombre del instrumento', 'VALIDATION')
     }

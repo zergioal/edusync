@@ -51,14 +51,22 @@ export class MateriasController {
     } catch (e) { next(e) }
   }
 
+  findDimensiones = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      res.json({ data: await this.service.findDimensiones(req.auth!.institucion_id) })
+    } catch (e) { next(e) }
+  }
+
   create = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const {
         nombre, es_subarea_de_id, campo_id, solo_si_bth,
         aplica_solo_desde_grado, aplica_hasta_grado, horas_semanales,
+        es_especial, dimension_ids,
       } = req.body as {
         nombre: string; es_subarea_de_id?: string; campo_id?: string; solo_si_bth?: boolean
         aplica_solo_desde_grado?: number | null; aplica_hasta_grado?: number | null; horas_semanales?: number | null
+        es_especial?: boolean; dimension_ids?: string[]
       }
       if (!nombre) throw new AppError(400, 'nombre es requerido', 'VALIDATION')
       if (!es_subarea_de_id && !campo_id) {
@@ -66,6 +74,7 @@ export class MateriasController {
       }
       const data = await this.service.create(req.auth!.institucion_id, {
         nombre, es_subarea_de_id, campo_id, solo_si_bth, aplica_solo_desde_grado, aplica_hasta_grado, horas_semanales,
+        es_especial, dimension_ids,
       })
       res.status(201).json({ data })
     } catch (e) { next(e) }
@@ -73,12 +82,13 @@ export class MateriasController {
 
   update = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const { nombre, activa, solo_si_bth, aplica_solo_desde_grado, aplica_hasta_grado, horas_semanales } = req.body as {
+      const { nombre, activa, solo_si_bth, aplica_solo_desde_grado, aplica_hasta_grado, horas_semanales, dimension_ids } = req.body as {
         nombre?: string; activa?: boolean; solo_si_bth?: boolean
         aplica_solo_desde_grado?: number | null; aplica_hasta_grado?: number | null; horas_semanales?: number | null
+        dimension_ids?: string[]
       }
       const data = await this.service.update(req.auth!.institucion_id, req.params['id']!, {
-        nombre, activa, solo_si_bth, aplica_solo_desde_grado, aplica_hasta_grado, horas_semanales,
+        nombre, activa, solo_si_bth, aplica_solo_desde_grado, aplica_hasta_grado, horas_semanales, dimension_ids,
       })
       res.json({ data })
     } catch (e) { next(e) }

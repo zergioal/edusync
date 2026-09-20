@@ -249,21 +249,29 @@ function PlanillaMobileView({
             </button>
           ))}
         </div>
-        <button
-          onClick={() => navigate('centralizador')}
-          className="flex-shrink-0 rounded-lg border border-border bg-surface px-3 py-2 text-xs font-semibold text-fg-muted hover:bg-surface-2 hover:text-fg transition-colors"
-        >
-          📊 Centralizador
-        </button>
+        {!asignacion.materia.es_especial && (
+          <button
+            onClick={() => navigate('centralizador')}
+            className="flex-shrink-0 rounded-lg border border-border bg-surface px-3 py-2 text-xs font-semibold text-fg-muted hover:bg-surface-2 hover:text-fg transition-colors"
+          >
+            📊 Centralizador
+          </button>
+        )}
       </div>
 
-      {asignacion.materia.es_subarea_de_id && (
+      {asignacion.materia.es_subarea_de_id && !asignacion.materia.es_especial && (
         <button
           onClick={() => navigate(`subareas?trimestre_id=${selectedTrimestre?.id ?? ''}`)}
           className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-xs font-semibold text-fg-muted hover:bg-surface-2 hover:text-fg transition-colors"
         >
           📚 Ver subáreas de {asignacion.materia.parent_materia?.nombre ?? 'esta área'}
         </button>
+      )}
+
+      {asignacion.materia.es_especial && (
+        <div className="rounded-lg bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-200 dark:border-indigo-500/30 px-4 py-2.5 text-xs text-indigo-800 dark:text-indigo-300">
+          Subárea especial — tus notas se promedian dentro de {asignacion.materia.parent_materia?.nombre ?? 'el área principal'}.
+        </div>
       )}
 
       {/* Exportar el registro del trimestre actual */}
@@ -352,10 +360,11 @@ function PlanillaMobileView({
               <p className="px-4 py-3 text-sm text-fg-muted italic">Sin indicadores</p>
             )}
             {dim.indicadores.map(ind => {
-              const savKey = `${ind.id}-${estudiante.id}`
+              const savKey  = `${ind.id}-${estudiante.id}`
+              const ajeno   = ind.editable === false
               return (
                 <div key={ind.id} className="px-4 py-2.5 flex items-center gap-2">
-                  {!trimestreCerrado && (
+                  {!trimestreCerrado && !ajeno && (
                     <button
                       type="button"
                       onClick={() => setIndicadorModal({ mode: 'edit', dimension: dim, indicador: ind })}
@@ -368,7 +377,14 @@ function PlanillaMobileView({
                     </button>
                   )}
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-fg">{ind.nombre}</p>
+                    <p className="text-sm font-medium text-fg flex items-center gap-1.5">
+                      {ind.nombre}
+                      {ajeno && (
+                        <span className="rounded-full bg-surface-2 px-1.5 py-0.5 text-[10px] font-medium text-fg-muted">
+                          {ind.origen_docente ?? 'otro docente'}
+                        </span>
+                      )}
+                    </p>
                     <p className="text-xs text-fg-muted">
                       {ind.instrumento === 'OTRO' && ind.instrumento_otro ? ind.instrumento_otro : (INSTRUMENTO_LABELS[ind.instrumento] ?? ind.instrumento)}
                       {ind.fecha_aplicacion ? ` · ${ind.fecha_aplicacion.slice(0, 10)}` : ''}
@@ -379,7 +395,7 @@ function PlanillaMobileView({
                     value={estudiante.notas[ind.id] ?? null}
                     max={dim.puntaje_max}
                     isSaving={saving.has(savKey)}
-                    readonly={trimestreCerrado}
+                    readonly={trimestreCerrado || ajeno}
                     onSave={p => onUpdateNota(ind.id, estudiante.id, p)}
                     onSaved={() => focusNext(ind.id)}
                     inputRef={el => {
@@ -390,7 +406,7 @@ function PlanillaMobileView({
                 </div>
               )
             })}
-            {!trimestreCerrado && !ES_AUTOEVAL(dim.nombre) && (
+            {!trimestreCerrado && !ES_AUTOEVAL(dim.nombre) && !asignacion.materia.es_especial && (
               <AgregarIndicadorRow dense onClick={() => setIndicadorModal({ mode: 'create', dimension: dim })} />
             )}
           </div>
@@ -409,8 +425,8 @@ function PlanillaMobileView({
         </div>
       ))}
 
-      {/* Barra inferior fija: Total + Escala del estudiante actual */}
-      {estudiante && (
+      {/* Barra inferior fija: Total + Escala del estudiante actual (no aplica a una subárea especial) */}
+      {estudiante && !asignacion.materia.es_especial && (
         <div className="fixed bottom-0 left-0 right-0 z-20 border-t border-slate-700 bg-slate-800/95 dark:bg-slate-900/95 backdrop-blur-sm text-white px-4 py-3 flex items-center justify-between shadow-lg">
           <div className="min-w-0">
             <p className="text-xs text-white/60 truncate">{estudiante.apellido}, {estudiante.nombre}</p>
@@ -521,9 +537,13 @@ export default function PlanillaPage() {
   const trimestres    = asignacion.gestion.trimestres
   const trimestreCerrado = selectedTrimestre?.cerrado ?? false
 
+  // Una subárea especial nunca ofrece "+" (su única columna se crea sola) ni tiene TOTAL/ESCALA propios.
+  const esEspecial = asignacion.materia.es_especial
+  const mostrarAgregar = (dim: DimensionPlanilla) => !ES_AUTOEVAL(dim.nombre) && !esEspecial
+
   // Total de columnas de indicadores (para calcular colSpan) + columnas "+" (una por dimensión editable, Autoevaluación no)
   const totalIndicCols = dimensiones.reduce((s, d) => s + d.indicadores.length, 0)
-  const dimsEditables   = dimensiones.filter(d => !ES_AUTOEVAL(d.nombre))
+  const dimsEditables   = dimensiones.filter(mostrarAgregar)
 
   async function handleModalSubmit(values: Partial<IndicadorFormValues>) {
     if (!indicadorModal) return
@@ -628,11 +648,13 @@ export default function PlanillaPage() {
               ))}
             </div>
 
-            <Button variant="ghost" size="sm" onClick={() => navigate('centralizador')}>
-              📊 Centralizador
-            </Button>
+            {!esEspecial && (
+              <Button variant="ghost" size="sm" onClick={() => navigate('centralizador')}>
+                📊 Centralizador
+              </Button>
+            )}
 
-            {asignacion.materia.es_subarea_de_id && (
+            {asignacion.materia.es_subarea_de_id && !esEspecial && (
               <Button
                 variant="ghost"
                 size="sm"
@@ -664,6 +686,13 @@ export default function PlanillaPage() {
             </div>
           </div>
         </div>
+
+        {/* Banner subárea especial */}
+        {esEspecial && (
+          <div className="rounded-lg bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-200 dark:border-indigo-500/30 px-4 py-3 text-sm text-indigo-800 dark:text-indigo-300">
+            Subárea especial — tus notas se promedian dentro de {asignacion.materia.parent_materia?.nombre ?? 'el área principal'}, no tienen una nota final propia.
+          </div>
+        )}
 
         {/* Banner trimestre cerrado */}
         {trimestreCerrado && (
@@ -700,38 +729,44 @@ export default function PlanillaPage() {
                 {dimensiones.map((dim, idx) => (
                   <th
                     key={dim.id}
-                    colSpan={dim.indicadores.length + (ES_AUTOEVAL(dim.nombre) ? 0 : 1) + 1}
+                    colSpan={dim.indicadores.length + (mostrarAgregar(dim) ? 1 : 0) + 1}
                     className={`${DIM_HEADER_BG[idx] ?? 'bg-gray-600'} ${DIM_HEADER_TEXT[idx] ?? 'text-white'} px-2 py-1.5 text-center text-xs font-bold uppercase tracking-wider border-b border-r border-white/20`}
                   >
                     {dim.nombre} <span className="font-normal opacity-75">/ {dim.puntaje_max} pts</span>
                   </th>
                 ))}
 
-                <th
-                  rowSpan={2}
-                  className="bg-slate-800 dark:bg-slate-900 text-white px-3 py-2 text-center text-xs font-bold uppercase border-b border-slate-700 whitespace-nowrap"
-                >
-                  TOTAL
-                </th>
-                <th
-                  rowSpan={2}
-                  className="bg-slate-800 dark:bg-slate-900 text-white px-3 py-2 text-center text-xs font-bold uppercase border-b border-slate-700"
-                >
-                  ESCALA
-                </th>
+                {!esEspecial && (
+                  <>
+                    <th
+                      rowSpan={2}
+                      className="bg-slate-800 dark:bg-slate-900 text-white px-3 py-2 text-center text-xs font-bold uppercase border-b border-slate-700 whitespace-nowrap"
+                    >
+                      TOTAL
+                    </th>
+                    <th
+                      rowSpan={2}
+                      className="bg-slate-800 dark:bg-slate-900 text-white px-3 py-2 text-center text-xs font-bold uppercase border-b border-slate-700"
+                    >
+                      ESCALA
+                    </th>
+                  </>
+                )}
               </tr>
 
               {/* Fila 2: Columnas de indicadores + PROM por dimensión */}
               <tr>
                 {dimensiones.map((dim, idx) => (
                   <Fragment key={dim.id}>
-                    {dim.indicadores.map(ind => (
+                    {dim.indicadores.map(ind => {
+                      const ajeno = ind.editable === false
+                      return (
                       <th
                         key={ind.id}
                         className={`group relative ${DIM_CELL_BG[idx] ?? 'bg-bg'} border-r border-border px-1 py-1 text-center align-bottom`}
                         style={{ minWidth: '3.5rem', maxWidth: '4rem' }}
                       >
-                        {!trimestreCerrado && (
+                        {!trimestreCerrado && !ajeno && (
                           <button
                             type="button"
                             onClick={() => setIndicadorModal({ mode: 'edit', dimension: dim, indicador: ind })}
@@ -747,21 +782,34 @@ export default function PlanillaPage() {
                           <div
                             className="text-fg font-medium"
                             style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)', height: '5rem', fontSize: '0.65rem', lineHeight: 1.2, overflow: 'hidden' }}
-                            title={ind.nombre}
+                            title={ajeno ? `${ind.nombre} — ${ind.origen_docente ?? 'otro docente'}` : ind.nombre}
                           >
                             {ind.nombre}
                           </div>
-                          <span className="text-fg-muted block leading-tight" style={{ fontSize: '0.6rem' }}>
-                            {ind.instrumento === 'OTRO' && ind.instrumento_otro ? ind.instrumento_otro : (INSTRUMENTO_LABELS[ind.instrumento] ?? ind.instrumento)}
-                          </span>
-                          <span className="text-fg-muted block leading-tight" style={{ fontSize: '0.6rem' }}>
-                            {ind.fecha_aplicacion ? ind.fecha_aplicacion.slice(0, 10) : ''}
-                          </span>
+                          {ajeno ? (
+                            <span
+                              className="block rounded-full bg-surface-2 px-1 text-fg-muted leading-tight truncate max-w-full"
+                              style={{ fontSize: '0.55rem' }}
+                              title={ind.origen_docente ?? 'otro docente'}
+                            >
+                              {ind.origen_docente ?? 'otro docente'}
+                            </span>
+                          ) : (
+                            <>
+                              <span className="text-fg-muted block leading-tight" style={{ fontSize: '0.6rem' }}>
+                                {ind.instrumento === 'OTRO' && ind.instrumento_otro ? ind.instrumento_otro : (INSTRUMENTO_LABELS[ind.instrumento] ?? ind.instrumento)}
+                              </span>
+                              <span className="text-fg-muted block leading-tight" style={{ fontSize: '0.6rem' }}>
+                                {ind.fecha_aplicacion ? ind.fecha_aplicacion.slice(0, 10) : ''}
+                              </span>
+                            </>
+                          )}
                         </div>
                       </th>
-                    ))}
-                    {/* Columna "+" para añadir un indicador a esta dimensión (no aplica a Autoevaluación) */}
-                    {!ES_AUTOEVAL(dim.nombre) && (
+                      )
+                    })}
+                    {/* Columna "+" para añadir un indicador a esta dimensión (no aplica a Autoevaluación ni a una subárea especial) */}
+                    {mostrarAgregar(dim) && (
                       <th className={`${DIM_CELL_BG[idx] ?? 'bg-bg'} border-r border-dashed border-border px-1 py-1 text-center align-middle`}>
                         {!trimestreCerrado && (
                           <button
@@ -790,7 +838,7 @@ export default function PlanillaPage() {
               {estudiantes.length === 0 && (
                 <tr>
                   <td
-                    colSpan={2 + totalIndicCols + dimsEditables.length + dimensiones.length + 2}
+                    colSpan={2 + totalIndicCols + dimsEditables.length + dimensiones.length + (esEspecial ? 0 : 2)}
                     className="py-10 text-center text-fg-muted"
                   >
                     No hay estudiantes matriculados en este paralelo.
@@ -825,7 +873,7 @@ export default function PlanillaPage() {
                               value={est.notas[ind.id] ?? null}
                               max={dim.puntaje_max}
                               isSaving={saving.has(savKey)}
-                              readonly={trimestreCerrado}
+                              readonly={trimestreCerrado || ind.editable === false}
                               onSave={p => updateNota(ind.id, est.id, p)}
                             />
                           </td>
@@ -833,7 +881,7 @@ export default function PlanillaPage() {
                       })}
 
                       {/* Celda vacía bajo la columna "+" (mantiene alineación de columnas) */}
-                      {!ES_AUTOEVAL(dim.nombre) && (
+                      {mostrarAgregar(dim) && (
                         <td className={`${DIM_CELL_BG[idx] ?? 'bg-bg'} border-r border-dashed border-border`} />
                       )}
 
@@ -846,36 +894,39 @@ export default function PlanillaPage() {
                     </Fragment>
                   ))}
 
-                  {/* TOTAL */}
-                  <td
-                    className={`px-3 py-2 text-center text-sm font-bold border-r border-border ${
-                      est.total != null && est.total < 51
-                        ? 'text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/30'
-                        : 'text-fg bg-surface'
-                    }`}
-                  >
-                    {est.total != null ? (
-                      <span className="inline-flex items-center gap-1">
-                        {est.total}
-                        {est.total === 50 && (
-                          <span title="No recomendable — coincide justo con el límite de aprobación, revisá el registro">
-                            <Icon name="alert-triangle" className="h-3.5 w-3.5 text-amber-500" />
+                  {/* TOTAL / ESCALA (no aplica a una subárea especial) */}
+                  {!esEspecial && (
+                    <>
+                      <td
+                        className={`px-3 py-2 text-center text-sm font-bold border-r border-border ${
+                          est.total != null && est.total < 51
+                            ? 'text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/30'
+                            : 'text-fg bg-surface'
+                        }`}
+                      >
+                        {est.total != null ? (
+                          <span className="inline-flex items-center gap-1">
+                            {est.total}
+                            {est.total === 50 && (
+                              <span title="No recomendable — coincide justo con el límite de aprobación, revisá el registro">
+                                <Icon name="alert-triangle" className="h-3.5 w-3.5 text-amber-500" />
+                              </span>
+                            )}
                           </span>
-                        )}
-                      </span>
-                    ) : <span className="text-fg-muted/50">—</span>}
-                  </td>
+                        ) : <span className="text-fg-muted/50">—</span>}
+                      </td>
 
-                  {/* ESCALA */}
-                  <td className="px-3 py-2 text-center bg-surface">
-                    {est.escala ? (
-                      <span className={`inline-block rounded px-2 py-0.5 text-xs font-bold ${ESCALA_COLORS[est.escala] ?? ''}`}>
-                        {est.escala}
-                      </span>
-                    ) : (
-                      <span className="text-fg-muted/50">—</span>
-                    )}
-                  </td>
+                      <td className="px-3 py-2 text-center bg-surface">
+                        {est.escala ? (
+                          <span className={`inline-block rounded px-2 py-0.5 text-xs font-bold ${ESCALA_COLORS[est.escala] ?? ''}`}>
+                            {est.escala}
+                          </span>
+                        ) : (
+                          <span className="text-fg-muted/50">—</span>
+                        )}
+                      </td>
+                    </>
+                  )}
                 </tr>
               ))}
             </tbody>

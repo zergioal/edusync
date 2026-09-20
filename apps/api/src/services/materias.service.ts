@@ -157,11 +157,36 @@ export class MateriasService {
     })
   }
 
+  /** Dimensiones (Ser/Decidir, Saber, Hacer, Autoevaluación) de la institución, para elegir dónde aporta una subárea especial. */
+  findDimensiones(institucion_id: string) {
+    return prisma.dimension.findMany({
+      where:   { institucion_id },
+      orderBy: { orden: 'asc' },
+    })
+  }
+
   /**
    * Crea una Materia nueva: si viene `es_subarea_de_id`, crea una subárea bajo esa materia padre
    * (heredando campo/nivel/solo_si_bth y con el nombre "Base (Área Padre)"); si no, crea un área de
    * nivel superior nueva bajo el `campo_id` indicado.
    */
+  /** Valida y normaliza los ids de dimensión de una subárea especial (no vacío, existen, sin Autoevaluación). */
+  private async validarDimensionesEspeciales(institucion_id: string, dimension_ids: string[]) {
+    if (!dimension_ids || dimension_ids.length === 0) {
+      throw new AppError(400, 'Elige al menos una dimensión para la subárea especial', 'VALIDATION')
+    }
+    const dimensiones = await prisma.dimension.findMany({
+      where: { id: { in: dimension_ids }, institucion_id },
+    })
+    if (dimensiones.length !== dimension_ids.length) {
+      throw new AppError(400, 'Alguna dimensión seleccionada no es válida', 'VALIDATION')
+    }
+    if (dimensiones.some(d => d.nombre === 'AUTOEVALUACION')) {
+      throw new AppError(400, 'La subárea especial no puede aportar a Autoevaluación', 'VALIDATION')
+    }
+    return dimension_ids
+  }
+
   async create(institucion_id: string, data: {
     nombre: string
     es_subarea_de_id?: string | null | undefined
@@ -170,35 +195,60 @@ export class MateriasService {
     aplica_solo_desde_grado?: number | null | undefined
     aplica_hasta_grado?: number | null | undefined
     horas_semanales?: number | null | undefined
+    es_especial?: boolean | undefined
+    dimension_ids?: string[] | undefined
   }) {
     const base = data.nombre.trim()
     if (!base) throw new AppError(400, 'El nombre es requerido', 'VALIDATION')
 
     if (data.es_subarea_de_id) {
       const padre = await prisma.materia.findFirst({
-        where: { id: data.es_subarea_de_id, nivel: { institucion_id } },
+        where:   { id: data.es_subarea_de_id, nivel: { institucion_id } },
+        include: { subareas: { select: { es_especial: true } } },
       })
       if (!padre) throw new AppError(404, 'Área padre no encontrada', 'NOT_FOUND')
       if (padre.es_subarea_de_id) {
         throw new AppError(400, 'No se pueden crear subáreas dentro de otra subárea', 'VALIDATION')
       }
 
-      const [materia] = await prisma.$transaction([
-        prisma.materia.create({
-          data: {
-            nombre:                  `${base} (${padre.nombre})`,
-            campo_id:                padre.campo_id,
-            nivel_id:                padre.nivel_id,
-            solo_si_bth:             padre.solo_si_bth,
-            es_subarea_de_id:        padre.id,
-            aplica_solo_desde_grado: data.aplica_solo_desde_grado ?? padre.aplica_solo_desde_grado,
-            aplica_hasta_grado:      data.aplica_hasta_grado ?? padre.aplica_hasta_grado,
-            horas_semanales:         data.horas_semanales ?? null,
-          },
-          include: { campo: true, parent_materia: { select: { id: true, nombre: true } } },
-        }),
-        prisma.materia.update({ where: { id: padre.id }, data: { tiene_subareas: true } }),
-      ])
+      const esEspecial = data.es_especial === true
+      const tieneNormales  = padre.subareas.some(s => !s.es_especial)
+      const tieneEspeciales = padre.subareas.some(s => s.es_especial)
+      if (esEspecial && tieneNormales) {
+        throw new AppError(400, 'Esta área ya tiene subáreas normales — no se pueden mezclar tipos', 'VALIDATION')
+      }
+      if (!esEspecial && tieneEspeciales) {
+        throw new AppError(400, 'Esta área ya tiene subáreas especiales — no se pueden mezclar tipos', 'VALIDATION')
+      }
+
+      const dimensionIds = esEspecial
+        ? await this.validarDimensionesEspeciales(institucion_id, data.dimension_ids ?? [])
+        : []
+
+      const crearSubarea = prisma.materia.create({
+        data: {
+          nombre:                  `${base} (${padre.nombre})`,
+          campo_id:                padre.campo_id,
+          nivel_id:                padre.nivel_id,
+          solo_si_bth:             padre.solo_si_bth,
+          es_subarea_de_id:        padre.id,
+          aplica_solo_desde_grado: data.aplica_solo_desde_grado ?? padre.aplica_solo_desde_grado,
+          aplica_hasta_grado:      data.aplica_hasta_grado ?? padre.aplica_hasta_grado,
+          horas_semanales:         data.horas_semanales ?? null,
+          es_especial:             esEspecial,
+          dimensiones_especiales:  dimensionIds,
+        },
+        include: { campo: true, parent_materia: { select: { id: true, nombre: true } } },
+      })
+
+      // Una subárea especial no bloquea la asignación directa del área padre — solo las normales lo hacen.
+      const materia = esEspecial
+        ? (await prisma.$transaction([crearSubarea]))[0]
+        : (await prisma.$transaction([
+            crearSubarea,
+            prisma.materia.update({ where: { id: padre.id }, data: { tiene_subareas: true } }),
+          ]))[0]
+
       if (data.horas_semanales) await this.syncCargaHorariaUniforme(materia, data.horas_semanales)
       return materia
     }
@@ -232,6 +282,7 @@ export class MateriasService {
     aplica_solo_desde_grado?: number | null | undefined
     aplica_hasta_grado?: number | null | undefined
     horas_semanales?: number | null | undefined
+    dimension_ids?: string[] | undefined
   }) {
     const materia = await prisma.materia.findFirst({
       where:   { id, nivel: { institucion_id } },
@@ -246,6 +297,11 @@ export class MateriasService {
       nombre = materia.parent_materia ? `${base} (${materia.parent_materia.nombre})` : base
     }
 
+    let dimensionIds: string[] | undefined
+    if (materia.es_especial && data.dimension_ids !== undefined) {
+      dimensionIds = await this.validarDimensionesEspeciales(institucion_id, data.dimension_ids)
+    }
+
     const actualizada = await prisma.materia.update({
       where: { id },
       data: {
@@ -255,6 +311,7 @@ export class MateriasService {
         ...(data.aplica_solo_desde_grado !== undefined ? { aplica_solo_desde_grado: data.aplica_solo_desde_grado } : {}),
         ...(data.aplica_hasta_grado !== undefined ? { aplica_hasta_grado: data.aplica_hasta_grado } : {}),
         ...(data.horas_semanales !== undefined ? { horas_semanales: data.horas_semanales } : {}),
+        ...(dimensionIds !== undefined ? { dimensiones_especiales: dimensionIds } : {}),
       },
     })
 
