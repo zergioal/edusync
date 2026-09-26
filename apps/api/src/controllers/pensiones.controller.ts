@@ -84,7 +84,8 @@ export class PensionesController {
         fecha_pago: string; comprobante?: string
       }
       const data = await this.service.guardarLote(req.auth!.institucion_id, {
-        paralelo_id, gestion_id, mes: Number(mes), pagos, fecha_pago, comprobante,
+        paralelo_id, gestion_id, mes: Number(mes), pagos, fecha_pago,
+        ...(comprobante !== undefined ? { comprobante } : {}),
         registrado_por: req.auth!.usuario_id,
       })
       res.json({ data })

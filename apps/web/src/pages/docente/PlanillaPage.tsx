@@ -2,11 +2,12 @@ import { useState, useRef, useEffect, Fragment } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { usePlanilla, type PlanillaData, type DimensionPlanilla, type IndicadorPlanilla, type CreateIndicadorData, type TrimestrePlanilla } from '../../hooks/usePlanilla'
 import { useToast } from '../../components/ui/Toast'
-import { ApiError, apiDownload } from '../../lib/api'
+import { ApiError, apiDownload, apiUpload } from '../../lib/api'
 import { Button, Spinner, Badge } from '@edusync/ui'
 import { getTrimestreActivo, trimestreLabel } from '../../lib/trimestre'
 import { useIsMobile } from '../../hooks/useIsMobile'
 import { IndicadorFormModal, type IndicadorFormValues } from '../../components/planilla/IndicadorFormModal'
+import { ImportarNotasResultModal, type ImportarNotasResult } from '../../components/planilla/ImportarNotasResultModal'
 import { Icon } from '../../components/ui/Icon'
 
 const ES_AUTOEVAL = (nombre: string) => nombre === 'AUTOEVALUACION'
@@ -46,6 +47,8 @@ const ESCALA_COLORS: Record<string, string> = {
 
 // ─── Sub-componente: celda de nota editable ───────────────────────────────────
 
+type ArrowDir = 'up' | 'down' | 'left' | 'right'
+
 function NotaCell({
   value,
   max,
@@ -55,6 +58,7 @@ function NotaCell({
   large,
   onSaved,
   inputRef,
+  onArrowMove,
 }: {
   value:    number | null
   max:      number
@@ -64,6 +68,8 @@ function NotaCell({
   large?:   boolean
   onSaved?: () => void
   inputRef?: (el: HTMLInputElement | null) => void
+  /** Navegación estilo Excel: mover el foco a la celda vecina (arriba/abajo/izq/der). */
+  onArrowMove?: (dir: ArrowDir, current: HTMLInputElement) => void
 }) {
   const [local, setLocal] = useState<string>(value != null ? String(value) : '')
   const prevRef = useRef<string>(local)
@@ -108,7 +114,15 @@ function NotaCell({
       value={local}
       onChange={e => setLocal(e.target.value)}
       onBlur={handleBlur}
-      onKeyDown={e => { if (e.key === 'Enter') e.currentTarget.blur() }}
+      onKeyDown={e => {
+        const dir: ArrowDir | undefined =
+          e.key === 'ArrowUp' ? 'up' : e.key === 'ArrowDown' || e.key === 'Enter' ? 'down' :
+          e.key === 'ArrowLeft' ? 'left' : e.key === 'ArrowRight' ? 'right' : undefined
+        if (!dir) return
+        e.preventDefault()
+        if (onArrowMove) onArrowMove(dir, e.currentTarget)
+        else e.currentTarget.blur()
+      }}
       disabled={isSaving || readonly}
       readOnly={readonly}
       className={`
@@ -120,6 +134,58 @@ function NotaCell({
       `}
     />
   )
+}
+
+// ─── Hook: descargar plantilla / importar notas desde Excel-CSV ───────────────
+
+function useImportacionNotas(
+  asignacion_id: string,
+  trimestre: TrimestrePlanilla | null,
+  materiaNombre: string,
+  reload: () => void,
+) {
+  const toast = useToast()
+  const toastRef = useRef(toast)
+  toastRef.current = toast
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const [importing,   setImporting]   = useState(false)
+  const [descargando, setDescargando] = useState(false)
+  const [result,      setResult]      = useState<ImportarNotasResult | null>(null)
+
+  async function descargarPlantilla() {
+    if (!trimestre) return
+    setDescargando(true)
+    try {
+      await apiDownload(
+        `/planilla/${asignacion_id}/plantilla?trimestre_id=${trimestre.id}`,
+        `plantilla_${materiaNombre}_T${trimestre.numero}.xlsx`,
+      )
+    } finally {
+      setDescargando(false)
+    }
+  }
+
+  function elegirArchivo() { fileInputRef.current?.click() }
+
+  async function handleFileSelected(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    e.target.value = ''
+    if (!file || !trimestre) return
+    setImporting(true)
+    try {
+      const data = await apiUpload<ImportarNotasResult>(
+        `/planilla/${asignacion_id}/importar?trimestre_id=${trimestre.id}`, file,
+      )
+      setResult(data)
+      if (data.ok) reload()
+    } catch (err) {
+      toastRef.current.error(err instanceof ApiError ? err.message : 'Error al importar el archivo')
+    } finally {
+      setImporting(false)
+    }
+  }
+
+  return { fileInputRef, importing, descargando, result, setResult, descargarPlantilla, elegirArchivo, handleFileSelected }
 }
 
 // ─── Sub-componente: fila "+" para insertar un nuevo indicador ────────────────
@@ -157,6 +223,7 @@ interface PlanillaMobileViewProps {
   onDeleteIndicador: (id: string) => Promise<void>
   onGuardar:         () => void
   guardando:         boolean
+  onReload:          () => void
 }
 
 function PlanillaMobileView({
@@ -175,12 +242,14 @@ function PlanillaMobileView({
   onDeleteIndicador,
   onGuardar,
   guardando,
+  onReload,
 }: PlanillaMobileViewProps) {
   const navigate = useNavigate()
   const [selectedEstIdx, setSelectedEstIdx] = useState(0)
   const [indicadorModal, setIndicadorModal] = useState<IndicadorModalState | null>(null)
   const [dlState, setDlState] = useState<'idle' | 'pdf' | 'xlsx'>('idle')
   const inputRefs = useRef<Map<string, HTMLInputElement>>(new Map())
+  const importacion = useImportacionNotas(asignacion_id, selectedTrimestre, asignacion.materia.nombre, onReload)
 
   async function descargarRegistro(tipo: 'pdf' | 'xlsx') {
     if (!selectedTrimestre) return
@@ -291,6 +360,33 @@ function PlanillaMobileView({
           {dlState === 'xlsx' ? '…' : '📗 Excel'}
         </button>
       </div>
+
+      {/* Importar notas desde Excel/CSV */}
+      {!trimestreCerrado && !asignacion.materia.es_especial && (
+        <div className="flex gap-2">
+          <button
+            onClick={importacion.descargarPlantilla}
+            disabled={!selectedTrimestre || importacion.descargando}
+            className="flex-1 rounded-lg border border-border px-3 py-1.5 text-xs font-semibold text-fg-muted hover:bg-surface-2 disabled:opacity-50"
+          >
+            {importacion.descargando ? '…' : '⬇️ Plantilla'}
+          </button>
+          <button
+            onClick={importacion.elegirArchivo}
+            disabled={!selectedTrimestre || importacion.importing}
+            className="flex-1 rounded-lg border border-indigo-600 px-3 py-1.5 text-xs font-semibold text-indigo-700 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-950/30 disabled:opacity-50"
+          >
+            {importacion.importing ? 'Importando…' : '⬆️ Importar'}
+          </button>
+          <input
+            ref={importacion.fileInputRef}
+            type="file"
+            accept=".xlsx,.xls,.csv"
+            className="hidden"
+            onChange={importacion.handleFileSelected}
+          />
+        </div>
+      )}
 
       <button
         onClick={onGuardar}
@@ -479,6 +575,10 @@ function PlanillaMobileView({
           onClose={() => setIndicadorModal(null)}
         />
       )}
+
+      {importacion.result && (
+        <ImportarNotasResultModal result={importacion.result} onClose={() => importacion.setResult(null)} />
+      )}
     </div>
   )
 }
@@ -495,11 +595,14 @@ export default function PlanillaPage() {
   const [indicadorModal,    setIndicadorModal]    = useState<IndicadorModalState | null>(null)
   const [dlState,           setDlState]           = useState<'idle' | 'pdf' | 'xlsx'>('idle')
   const [guardando,         setGuardando]         = useState(false)
+  const cellRefs = useRef<Map<string, HTMLInputElement>>(new Map())
 
   const {
-    data, loading, error, saving,
+    data, loading, error, saving, reload,
     updateNota, addIndicador, updateIndicador, deleteIndicador,
   } = usePlanilla(asignacion_id!, initDone ? selectedTrimestre?.id : undefined)
+
+  const importacion = useImportacionNotas(asignacion_id!, selectedTrimestre, data?.asignacion.materia.nombre ?? '', reload)
 
   const savingRef = useRef(saving)
   savingRef.current = saving
@@ -550,6 +653,33 @@ export default function PlanillaPage() {
   // Una subárea especial nunca ofrece "+" (su única columna se crea sola) ni tiene TOTAL/ESCALA propios.
   const esEspecial = asignacion.materia.es_especial
   const mostrarAgregar = (dim: DimensionPlanilla) => !ES_AUTOEVAL(dim.nombre) && !esEspecial
+
+  // ── Navegación con flechas estilo Excel entre celdas de nota ────────────────
+  const flatIndicadores = dimensiones.flatMap(d => d.indicadores)
+  const colIndexById = new Map(flatIndicadores.map((ind, i) => [ind.id, i]))
+  const cellKey = (indicadorId: string, estudianteId: string) => `${indicadorId}::${estudianteId}`
+
+  function handleArrowMove(dir: 'up' | 'down' | 'left' | 'right', colIdx: number, rowIdx: number, current: HTMLInputElement) {
+    let targetRow = rowIdx
+    let targetCol = colIdx
+    if (dir === 'up')   targetRow -= 1
+    if (dir === 'down') targetRow += 1
+    if (dir === 'left') {
+      targetCol -= 1
+      while (targetCol >= 0 && flatIndicadores[targetCol]?.editable === false) targetCol -= 1
+    }
+    if (dir === 'right') {
+      targetCol += 1
+      while (targetCol < flatIndicadores.length && flatIndicadores[targetCol]?.editable === false) targetCol += 1
+    }
+
+    const targetInd = flatIndicadores[targetCol]
+    const targetEst = estudiantes[targetRow]
+    const targetEl  = targetInd && targetEst ? cellRefs.current.get(cellKey(targetInd.id, targetEst.id)) : undefined
+
+    if (targetEl) { targetEl.focus(); targetEl.select() }
+    else current.blur()
+  }
 
   // Total de columnas de indicadores (para calcular colSpan) + columnas "+" (una por dimensión editable, Autoevaluación no)
   const totalIndicCols = dimensiones.reduce((s, d) => s + d.indicadores.length, 0)
@@ -604,6 +734,7 @@ export default function PlanillaPage() {
         onDeleteIndicador={deleteIndicador}
         onGuardar={guardarCalificaciones}
         guardando={guardando}
+        onReload={reload}
       />
     )
   }
@@ -694,6 +825,34 @@ export default function PlanillaPage() {
                 {dlState === 'xlsx' ? '…' : '📗 Excel'}
               </button>
             </div>
+
+            {!trimestreCerrado && !esEspecial && (
+              <div className="flex gap-2">
+                <button
+                  onClick={importacion.descargarPlantilla}
+                  disabled={!selectedTrimestre || importacion.descargando}
+                  title="Descarga una planilla en Excel con los estudiantes y notas actuales, lista para editar"
+                  className="rounded-lg border border-border px-3 py-1.5 text-sm text-fg-muted hover:bg-surface-2 disabled:opacity-50"
+                >
+                  {importacion.descargando ? '…' : '⬇️ Plantilla'}
+                </button>
+                <button
+                  onClick={importacion.elegirArchivo}
+                  disabled={!selectedTrimestre || importacion.importing}
+                  title="Sube la plantilla ya completada para cargar varias notas de una vez"
+                  className="rounded-lg border border-indigo-600 px-3 py-1.5 text-sm text-indigo-700 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-950/30 disabled:opacity-50"
+                >
+                  {importacion.importing ? 'Importando…' : '⬆️ Importar'}
+                </button>
+                <input
+                  ref={importacion.fileInputRef}
+                  type="file"
+                  accept=".xlsx,.xls,.csv"
+                  className="hidden"
+                  onChange={importacion.handleFileSelected}
+                />
+              </div>
+            )}
           </div>
         </div>
 
@@ -881,6 +1040,7 @@ export default function PlanillaPage() {
                     <Fragment key={dim.id}>
                       {dim.indicadores.map(ind => {
                         const savKey = `${ind.id}-${est.id}`
+                        const colIdx = colIndexById.get(ind.id)!
                         return (
                           <td
                             key={ind.id}
@@ -892,6 +1052,12 @@ export default function PlanillaPage() {
                               isSaving={saving.has(savKey)}
                               readonly={trimestreCerrado || ind.editable === false}
                               onSave={p => updateNota(ind.id, est.id, p)}
+                              onArrowMove={(dir, current) => handleArrowMove(dir, colIdx, rowIdx, current)}
+                              inputRef={el => {
+                                const key = cellKey(ind.id, est.id)
+                                if (el) cellRefs.current.set(key, el)
+                                else cellRefs.current.delete(key)
+                              }}
                             />
                           </td>
                         )
@@ -990,6 +1156,10 @@ export default function PlanillaPage() {
             : {})}
           onClose={() => setIndicadorModal(null)}
         />
+      )}
+
+      {importacion.result && (
+        <ImportarNotasResultModal result={importacion.result} onClose={() => importacion.setResult(null)} />
       )}
     </div>
   )

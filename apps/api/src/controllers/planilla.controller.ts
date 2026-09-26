@@ -1,6 +1,7 @@
 import type { Request, Response, NextFunction } from 'express'
 import { PlanillaService } from '../services/planilla.service'
 import { NotaExtracurricularService } from '../services/notas-extracurriculares.service'
+import { NotasImportarService } from '../services/notas-importar.service'
 import { AppError } from '../middlewares/errorHandler'
 import { generarHTMLRegistroMateria, type DatosRegistroMateria } from '../templates/registro-materia.template'
 import { generarHTMLCentralizadorAsignacion, type DatosCentralizadorAsignacion } from '../templates/centralizador-asignacion.template'
@@ -10,6 +11,7 @@ import { generateRegistroMateriaExcel, generateCentralizadorAsignacionExcel } fr
 export class PlanillaController {
   private service = new PlanillaService()
   private notaExtracurricularService = new NotaExtracurricularService()
+  private notasImportarService = new NotasImportarService()
 
   get = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
@@ -166,6 +168,30 @@ export class PlanillaController {
       res.json({
         data: await this.notaExtracurricularService.upsertBulk(
           req.params['asignacion_id']!, trimestre_id, entries, req.auth!.usuario_id, req.auth!.institucion_id,
+        ),
+      })
+    } catch (e) { next(e) }
+  }
+
+  getPlantillaNotas = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const { trimestre_id } = req.query as Record<string, string>
+      if (!trimestre_id) throw new AppError(400, 'trimestre_id es requerido', 'MISSING_PARAM')
+      const buf = await this.notasImportarService.generarPlantilla(req.params['asignacion_id']!, trimestre_id, req.auth!.usuario_id)
+      res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+      res.setHeader('Content-Disposition', 'attachment; filename="plantilla_notas.xlsx"')
+      res.send(buf)
+    } catch (e) { next(e) }
+  }
+
+  postImportarNotas = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const { trimestre_id } = req.query as Record<string, string>
+      if (!trimestre_id) throw new AppError(400, 'trimestre_id es requerido', 'MISSING_PARAM')
+      if (!req.file) throw new AppError(400, 'No se recibió ningún archivo', 'MISSING_FILE')
+      res.json({
+        data: await this.notasImportarService.importar(
+          req.params['asignacion_id']!, trimestre_id, req.auth!.usuario_id, req.file.buffer,
         ),
       })
     } catch (e) { next(e) }

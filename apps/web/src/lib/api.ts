@@ -100,6 +100,24 @@ export async function apiDownload(path: string, filename: string): Promise<void>
   URL.revokeObjectURL(url)
 }
 
+/** Sube un archivo (multipart/form-data) autenticado — no fijar Content-Type: el navegador
+ *  agrega el boundary correcto solo si lo dejamos sin especificar. */
+export async function apiUpload<T = unknown>(path: string, file: File): Promise<T> {
+  const token = await getToken()
+  const form = new FormData()
+  form.append('file', file)
+
+  const res = await fetch(`${API_BASE}${path}`, {
+    method:  'POST',
+    headers: { ...getTenantHeaders(), ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+    body:    form,
+  })
+
+  const body = await res.json() as { data?: T; message?: string; error?: string }
+  if (!res.ok) throw new ApiError(res.status, body.message ?? body.error ?? `Error ${res.status}`)
+  return body.data as T
+}
+
 // Helpers tipados
 export const api = {
   get:    <T>(path: string)                => apiFetch<T>(path),

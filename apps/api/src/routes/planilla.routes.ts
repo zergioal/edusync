@@ -1,4 +1,5 @@
 import { Router } from 'express'
+import multer from 'multer'
 import { PlanillaController } from '../controllers/planilla.controller'
 import { checkAccesoAcademico } from '../middlewares/checkAccesoAcademico'
 import { requireRol } from '../middlewares/requireRol'
@@ -11,6 +12,17 @@ const canManage = requireRol(Rol.DOCENTE, Rol.ADMIN_SISTEMA, Rol.DIRECTOR, Rol.C
 const canViewEstudiante = requireRol(Rol.ADMIN_SISTEMA, Rol.DIRECTOR, Rol.COORDINADOR, Rol.SECRETARIA)
 // Nota extracurricular: el docente la ve en su registro pero no puede editarla — solo estos roles.
 const canGestionarExtracurricular = requireRol(Rol.ADMIN_SISTEMA, Rol.DIRECTOR, Rol.COORDINADOR, Rol.SECRETARIA)
+// Importar/exportar notas: mismo criterio que registrar una nota individual (solo el docente dueño).
+const canImportar = requireRol(Rol.DOCENTE)
+
+const uploadNotas = multer({
+  storage: multer.memoryStorage(),
+  limits:  { fileSize: 5 * 1024 * 1024 },
+  fileFilter: (_req, file, cb) => {
+    if (/\.(xlsx|xls|csv)$/i.test(file.originalname)) cb(null, true)
+    else cb(new Error('Solo se aceptan archivos .xlsx, .xls o .csv'))
+  },
+})
 
 // ── Vistas estudiante/padre: planilla detallada de un solo estudiante ────────
 planillaRouter.get('/mia',                checkAccesoAcademico, ctrl.getMia)
@@ -28,4 +40,6 @@ planillaRouter.get('/:asignacion_id/centralizador',            canManage, ctrl.g
 planillaRouter.get('/:asignacion_id/subareas',                  canManage, ctrl.getCentralizadorSubareas)
 planillaRouter.get('/:asignacion_id/nota-extracurricular', canGestionarExtracurricular, ctrl.getNotaExtracurricular)
 planillaRouter.put('/:asignacion_id/nota-extracurricular', canGestionarExtracurricular, ctrl.putNotaExtracurricular)
+planillaRouter.get('/:asignacion_id/plantilla',  canImportar, ctrl.getPlantillaNotas)
+planillaRouter.post('/:asignacion_id/importar',  canImportar, uploadNotas.single('file'), ctrl.postImportarNotas)
 planillaRouter.get('/:asignacion_id', canManage, ctrl.get)
