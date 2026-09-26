@@ -55,8 +55,9 @@ export class PensionesService {
     const tarifaMap = new Map(tarifas.map(t => [t.nivel_id, t]))
 
     // Obtener todas las matrículas con la cadena paralelo → grado → nivel
+    // Solo estudiantes ACTIVO: uno retirado/trasladado/egresado no debe generar nuevos cobros.
     const matriculas = await prisma.matricula.findMany({
-      where:   { gestion_id },
+      where:   { gestion_id, estudiante: { estado: 'ACTIVO' } },
       include: {
         paralelo:  { include: { grado: { include: { nivel: true } } } },
         estudiante: { select: { id: true, becado: true, media_beca: true } },
@@ -128,7 +129,7 @@ export class PensionesService {
     const tarifaMap = new Map(tarifas.map(t => [t.nivel_id, t]))
 
     const matriculas = await prisma.matricula.findMany({
-      where:   { gestion_id },
+      where:   { gestion_id, estudiante: { estado: 'ACTIVO' } },
       include: {
         paralelo:   { include: { grado: { include: { nivel: true } } } },
         estudiante: { select: { id: true, becado: true, media_beca: true } },
@@ -204,6 +205,10 @@ export class PensionesService {
         ...(filters.estado === 'pagado'    ? { pagado: true }  : {}),
         ...(filters.estado === 'pendiente' ? { pagado: false } : {}),
         ...(estudianteIds ? { estudiante_id: { in: estudianteIds } } : {}),
+        // Buscando un estudiante puntual (ej. para registrarle un pago) sí se le muestra
+        // aunque ya no esté activo; la lista general de cobranza no debe insistir con quien
+        // ya se retiró/trasladó/egresó.
+        ...(!filters.estudiante_id ? { estudiante: { estado: 'ACTIVO' } } : {}),
       },
       include: {
         estudiante: {
@@ -369,7 +374,9 @@ export class PensionesService {
     datos: {
       paralelo_id: string; gestion_id: string; mes: number
       pagos: Array<{ estudiante_id: string; pagado: boolean }>
-      fecha_pago: string; comprobante: string; registrado_por: string
+      // Registro rápido (sin comprobante — aún no hay integración con el SIAT): comprobante
+      // queda null, igual que un registro de asistencia donde solo importa presente/ausente.
+      fecha_pago: string; comprobante?: string; registrado_por: string
     },
   ) {
     const gestion = await prisma.gestion.findFirst({ where: { id: datos.gestion_id, institucion_id } })
@@ -412,13 +419,14 @@ export class PensionesService {
             nivel_id: paralelo.grado.nivel_id, monto,
           },
         })
+        const comprobante = datos.comprobante?.trim() || null
         await prisma.$transaction([
           prisma.pension.update({
             where: { id: pension.id },
-            data:  { pagado: true, fecha_pago: new Date(datos.fecha_pago), comprobante: datos.comprobante, anulado_por: null, anulado_en: null },
+            data:  { pagado: true, fecha_pago: new Date(datos.fecha_pago), comprobante, anulado_por: null, anulado_en: null },
           }),
           prisma.pago.create({
-            data: { pension_id: pension.id, registrado_por: datos.registrado_por, fecha: new Date(datos.fecha_pago), comprobante: datos.comprobante },
+            data: { pension_id: pension.id, registrado_por: datos.registrado_por, fecha: new Date(datos.fecha_pago), comprobante },
           }),
         ])
         pagadas++
@@ -553,6 +561,7 @@ export class PensionesService {
       where: {
         gestion_id,
         pagado: false,
+        estudiante: { estado: 'ACTIVO' },
         ...(estudianteIds ? { estudiante_id: { in: estudianteIds } } : {}),
       },
       include: {

@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { api, ApiError } from '../../lib/api'
 import { useToast } from '../../components/ui/Toast'
+import { hoyLocalStr, parseFechaLocal } from '../../lib/date'
 import { Spinner } from '@edusync/ui'
 
 type Estado = 'PRESENTE' | 'AUSENTE' | 'TARDANZA' | 'LICENCIA'
@@ -48,7 +49,6 @@ function nextEstado(cur: Estado | null | undefined): Estado | null {
   return null
 }
 
-function hoyStr() { return new Date().toISOString().slice(0, 10) }
 function mesStr(d: Date) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
 }
@@ -115,7 +115,7 @@ export default function AsistenciaClasePage() {
   // ── Cell interaction ──────────────────────────────────────────────────────
 
   function clickCell(fecha: string, estudianteId: string) {
-    const today = hoyStr()
+    const today = hoyLocalStr()
     if (fecha > today) return
     setRecords(prev => {
       const dayRec = { ...(prev[fecha] ?? {}) }
@@ -177,7 +177,7 @@ export default function AsistenciaClasePage() {
       schoolDays.push(fecha)
     }
   }
-  const today = hoyStr()
+  const today = hoyLocalStr()
 
   function navMes(delta: number) {
     const [y, m] = mes.split('-').map(Number)
@@ -288,7 +288,7 @@ export default function AsistenciaClasePage() {
 
                     {schoolDays.map(fecha => {
                       const d       = parseInt(fecha.slice(8))
-                      const dow     = new Date(fecha).getDay()
+                      const dow     = parseFechaLocal(fecha).getDay()
                       const isSat   = dow === 6
                       const isFut   = fecha > today
                       const isDirty = dirtyDays.has(fecha)
@@ -367,7 +367,7 @@ export default function AsistenciaClasePage() {
                         {/* Day cells */}
                         {schoolDays.map(fecha => {
                           const isFut  = fecha > today
-                          const isSat  = new Date(fecha).getDay() === 6
+                          const isSat  = parseFechaLocal(fecha).getDay() === 6
                           const estado = records[fecha]?.[est.estudiante_id]
                           const cfg    = estado ? ESTADO_CFG[estado] : null
 

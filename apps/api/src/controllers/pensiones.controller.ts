@@ -81,7 +81,7 @@ export class PensionesController {
       const { paralelo_id, gestion_id, mes, pagos, fecha_pago, comprobante } = req.body as {
         paralelo_id: string; gestion_id: string; mes: number
         pagos: Array<{ estudiante_id: string; pagado: boolean }>
-        fecha_pago: string; comprobante: string
+        fecha_pago: string; comprobante?: string
       }
       const data = await this.service.guardarLote(req.auth!.institucion_id, {
         paralelo_id, gestion_id, mes: Number(mes), pagos, fecha_pago, comprobante,

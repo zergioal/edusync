@@ -7,7 +7,7 @@ export class InicialService {
     if (!trimestre) throw new AppError(404, 'Trimestre no encontrado', 'NOT_FOUND')
 
     const matriculas = await prisma.matricula.findMany({
-      where:   { paralelo_id, gestion_id: trimestre.gestion_id },
+      where:   { paralelo_id, gestion_id: trimestre.gestion_id, estudiante: { estado: 'ACTIVO' } },
       include: {
         estudiante: {
           include: { usuario: { select: { nombre: true, apellido: true } } },

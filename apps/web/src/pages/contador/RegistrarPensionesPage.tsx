@@ -3,6 +3,7 @@ import { api, ApiError } from '../../lib/api'
 import { useToast } from '../../components/ui/Toast'
 import { useGestionActiva } from '../../hooks/useGestionActiva'
 import { SelectParalelo } from '../../components/select/SelectParalelo'
+import { hoyLocalStr } from '../../lib/date'
 import { Spinner, Button } from '@edusync/ui'
 
 interface EstFila {
@@ -15,10 +16,6 @@ const MES_NOMBRE: Record<number, string> = {
   8: 'Agosto', 9: 'Septiembre', 10: 'Octubre', 11: 'Noviembre',
 }
 
-function hoy(): string {
-  return new Date().toISOString().slice(0, 10)
-}
-
 export default function RegistrarPensionesPage() {
   const toast    = useToast()
   const toastRef = useRef(toast)
@@ -27,8 +24,7 @@ export default function RegistrarPensionesPage() {
 
   const [paraleloId,  setParaleloId]  = useState('')
   const [mes,         setMes]         = useState<number | ''>('')
-  const [fechaPago,   setFechaPago]   = useState(hoy())
-  const [comprobante, setComprobante] = useState('')
+  const [fechaPago,   setFechaPago]   = useState(hoyLocalStr())
   const [lista,       setLista]       = useState<EstFila[]>([])
   const [loadingList, setLoadingList] = useState(false)
   const [saving,      setSaving]      = useState(false)
@@ -68,12 +64,11 @@ export default function RegistrarPensionesPage() {
 
   async function guardar() {
     if (!paraleloId || !mes || !gestionId || lista.length === 0) return
-    if (!comprobante.trim()) { toast.error('Ingresa el número de comprobante'); return }
     setSaving(true)
     try {
       const data = await api.post<{ pagadas: number; anuladas: number; sin_cambio: number }>('/pensiones/grid', {
         paralelo_id: paraleloId, gestion_id: gestionId, mes,
-        fecha_pago: fechaPago, comprobante: comprobante.trim(),
+        fecha_pago: fechaPago,
         pagos: lista.filter(e => !e.becado).map(e => ({ estudiante_id: e.estudiante_id, pagado: e.pagado })),
       })
       toast.success(`Guardado: ${data.pagadas} pago(s), ${data.anuladas} anulación(es)`)
@@ -92,8 +87,10 @@ export default function RegistrarPensionesPage() {
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-fg">Registrar Pensiones</h1>
-          <p className="text-sm text-fg-muted mt-0.5">Marca quién pagó, por curso — igual que la lista de asistencia.</p>
+          <h1 className="text-2xl font-bold text-fg">Registro rápido de pensiones</h1>
+          <p className="text-sm text-fg-muted mt-0.5">
+            Marca quién pagó, por curso — igual que la lista de asistencia. Sin comprobante; para eso usa el registro manual desde el estado de cuenta.
+          </p>
         </div>
         <Button onClick={guardar} loading={saving} disabled={lista.length === 0 || !paraleloId || !mes}>
           Guardar
@@ -120,15 +117,8 @@ export default function RegistrarPensionesPage() {
         </div>
         <div className="flex flex-col gap-1">
           <label className="text-sm font-medium text-fg">Fecha de pago</label>
-          <input type="date" value={fechaPago} max={hoy()} onChange={e => setFechaPago(e.target.value)}
+          <input type="date" value={fechaPago} max={hoyLocalStr()} onChange={e => setFechaPago(e.target.value)}
             className="rounded-lg border border-border px-3 py-2 text-sm focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand" />
-        </div>
-        <div className="flex flex-col gap-1">
-          <label className="text-sm font-medium text-fg">N° de comprobante</label>
-          <input type="text" value={comprobante} onChange={e => setComprobante(e.target.value)}
-            placeholder="Ej: 001234"
-            className="rounded-lg border border-border px-3 py-2 text-sm focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand w-40" />
-          <span className="text-xs text-fg-muted">Aplica a todos los que marques como pagados ahora.</span>
         </div>
         {lista.length > 0 && (
           <div className="flex items-end gap-2">

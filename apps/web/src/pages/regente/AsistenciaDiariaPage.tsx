@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { api, ApiError } from '../../lib/api'
 import { useGestionActiva } from '../../hooks/useGestionActiva'
 import { useToast } from '../../components/ui/Toast'
+import { hoyLocalStr } from '../../lib/date'
 import { Spinner, Button } from '@edusync/ui'
 
 type Estado = 'PRESENTE' | 'AUSENTE' | 'TARDANZA'
@@ -26,10 +27,6 @@ const ESTADO_COLOR: Record<Estado, string> = {
   TARDANZA: 'bg-amber-500 text-white',
 }
 
-function hoy(): string {
-  return new Date().toISOString().slice(0, 10)
-}
-
 export default function AsistenciaDiariaPage() {
   const toast    = useToast()
   const toastRef = useRef(toast)
@@ -38,7 +35,7 @@ export default function AsistenciaDiariaPage() {
 
   const [paralelos,    setParalelos]    = useState<Paralelo[]>([])
   const [paraleloId,   setParaleloId]   = useState('')
-  const [fecha,        setFecha]        = useState(hoy())
+  const [fecha,        setFecha]        = useState(hoyLocalStr())
   const [lista,        setLista]        = useState<Estudiante[]>([])
   const [loading,      setLoading]      = useState(false)
   const [loadingList,  setLoadingList]  = useState(false)
@@ -145,7 +142,7 @@ export default function AsistenciaDiariaPage() {
               type="date"
               value={fecha}
               onChange={e => setFecha(e.target.value)}
-              max={hoy()}
+              max={hoyLocalStr()}
               className="rounded-lg border border-border px-3 py-2.5 text-sm focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand"
             />
           </div>

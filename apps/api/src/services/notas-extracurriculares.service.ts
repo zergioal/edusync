@@ -48,7 +48,7 @@ export class NotaExtracurricularService {
 
     const [matriculas, notas] = await Promise.all([
       prisma.matricula.findMany({
-        where:   { paralelo_id: asignacion.paralelo_id, gestion_id: asignacion.gestion_id },
+        where:   { paralelo_id: asignacion.paralelo_id, gestion_id: asignacion.gestion_id, estudiante: { estado: 'ACTIVO' } },
         include: { estudiante: { include: { usuario: { select: { nombre: true, apellido: true } } } } },
         orderBy: [
           { estudiante: { usuario: { apellido: 'asc' } } },

@@ -361,7 +361,7 @@ export class AsistenciaService {
 
     const [matriculas, registros] = await Promise.all([
       prisma.matricula.findMany({
-        where:   { paralelo_id: asig.paralelo_id, gestion_id: asig.gestion_id },
+        where:   { paralelo_id: asig.paralelo_id, gestion_id: asig.gestion_id, estudiante: { estado: 'ACTIVO' } },
         include: { estudiante: { include: { usuario: { select: { nombre: true, apellido: true } } } } },
         orderBy: { estudiante: { usuario: { apellido: 'asc' } } },
       }),

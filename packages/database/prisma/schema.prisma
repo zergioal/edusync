@@ -546,7 +546,9 @@ model Pago {
   pension_id      String
   registrado_por  String
   fecha           DateTime @db.Date
-  comprobante     String
+  // Nulo para el registro rápido (solo pagó/no pagó, sin número de comprobante — aún no hay
+  // integración con el SIAT). El registro manual sí lo exige.
+  comprobante     String?
 
   pension     Pension @relation(fields: [pension_id], references: [id], onDelete: Cascade)
   registrador Usuario @relation(fields: [registrado_por], references: [id])

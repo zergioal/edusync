@@ -182,7 +182,7 @@ export default function PensionesPage() {
         <div className="flex items-center gap-3">
           <Link to="/dashboard/admin/finanzas/registrar"
             className="text-sm text-green-600 hover:underline font-medium">
-            Registrar pensiones →
+            Registro rápido →
           </Link>
           <Link to="/dashboard/admin/finanzas/tarifas"
             className="text-sm text-indigo-600 hover:underline font-medium">

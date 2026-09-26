@@ -302,6 +302,28 @@ export class EstudiantesService {
             usuario_id:      actorUsuarioId,
           },
         })
+
+        // Al retirar/trasladar: su cobro de pensión sigue vigente hasta el mes del retiro
+        // (inclusive) — lo generado para meses posteriores, si aún no se pagó, se descarta para
+        // que deje de aparecer en la lista de cobranza del contador.
+        if (data.estado === 'RETIRADO' || data.estado === 'TRASLADADO') {
+          const matriculaActual = await tx.matricula.findFirst({
+            where:   { estudiante_id: id },
+            orderBy: { gestion: { anno: 'desc' } },
+            select:  { gestion_id: true },
+          })
+          if (matriculaActual) {
+            const mesRetiro = (estData.estado_fecha as Date).getMonth() + 1
+            await tx.pension.deleteMany({
+              where: {
+                estudiante_id: id,
+                gestion_id:    matriculaActual.gestion_id,
+                mes:           { gt: mesRetiro },
+                pagado:        false,
+              },
+            })
+          }
+        }
       }
     })
 

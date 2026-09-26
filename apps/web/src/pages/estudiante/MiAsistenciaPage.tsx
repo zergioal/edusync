@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { api } from '../../lib/api'
+import { hoyLocalStr } from '../../lib/date'
 import { useAuth } from '../../context/AuthContext'
 import { useGestionActiva } from '../../hooks/useGestionActiva'
 import { PensionBlockModal } from '../../components/ui/PensionBlockModal'
@@ -123,7 +124,7 @@ function TablaMes({ year, month, diasMap }: {
               const estado = diasMap.get(key)
               const cfg    = estado ? ESTADO_CFG[estado] : null
               const isSat  = new Date(year, month, d).getDay() === 6
-              const isToday = key === new Date().toISOString().slice(0, 10)
+              const isToday = key === hoyLocalStr()
               return (
                 <td
                   key={d}

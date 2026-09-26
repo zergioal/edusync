@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { api } from '../../lib/api'
+import { hoyLocalStr, parseFechaLocal } from '../../lib/date'
 import { Spinner } from '@edusync/ui'
 
 type Estado = 'PRESENTE' | 'AUSENTE' | 'TARDANZA' | 'LICENCIA'
@@ -17,7 +18,6 @@ const ESTADO_CFG = {
   LICENCIA: { bg: 'bg-blue-400',    text: 'text-white', label: 'L', title: 'Licencia' },
 } as const
 
-function hoyStr() { return new Date().toISOString().slice(0, 10) }
 function mesStr(d: Date) { return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}` }
 function mesLabel(m: string) {
   const [y, mo] = m.split('-')
@@ -55,7 +55,7 @@ export function AsistenciaMateriaDetalle({ asignacionId, materiaNombre, estudian
     const dow = new Date(yearN!, monthN! - 1, d).getDay()
     if (dow !== 0) schoolDays.push(`${mes}-${String(d).padStart(2, '0')}`)
   }
-  const today = hoyStr()
+  const today = hoyLocalStr()
 
   function navMes(delta: number) {
     const [y, m] = mes.split('-').map(Number)
@@ -121,7 +121,7 @@ export function AsistenciaMateriaDetalle({ asignacionId, materiaNombre, estudian
                   </th>
                   {schoolDays.map(fecha => {
                     const d     = parseInt(fecha.slice(8))
-                    const dow   = new Date(fecha).getDay()
+                    const dow   = parseFechaLocal(fecha).getDay()
                     const isSat = dow === 6
                     const isFut = fecha > today
                     return (
@@ -146,7 +146,7 @@ export function AsistenciaMateriaDetalle({ asignacionId, materiaNombre, estudian
                   </td>
                   {schoolDays.map(fecha => {
                     const isFut  = fecha > today
-                    const isSat  = new Date(fecha).getDay() === 6
+                    const isSat  = parseFechaLocal(fecha).getDay() === 6
                     const estado = records[fecha]
                     const cfg    = estado ? ESTADO_CFG[estado] : null
                     return (
