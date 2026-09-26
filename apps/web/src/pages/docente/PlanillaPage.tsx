@@ -310,20 +310,21 @@ function PlanillaMobileView({
             <button
               key={t.id}
               onClick={() => onSelectTrimestre(t)}
-              className={`flex-1 px-3 py-2 text-xs font-semibold transition-colors ${
+              className={`flex-1 flex items-center justify-center gap-1 px-3 py-2 text-xs font-semibold transition-colors ${
                 selectedTrimestre?.id === t.id ? 'bg-brand text-brand-fg' : 'bg-surface text-fg-muted'
               } ${t.cerrado ? 'opacity-60' : ''}`}
             >
-              {trimestreLabel(t.numero)}{t.cerrado ? ' 🔒' : ''}
+              {trimestreLabel(t.numero)}
+              {t.cerrado && <Icon name="lock" className="h-3 w-3" />}
             </button>
           ))}
         </div>
         {!asignacion.materia.es_especial && (
           <button
             onClick={() => navigate('centralizador')}
-            className="flex-shrink-0 rounded-lg border border-border bg-surface px-3 py-2 text-xs font-semibold text-fg-muted hover:bg-surface-2 hover:text-fg transition-colors"
+            className="flex-shrink-0 inline-flex items-center gap-1.5 rounded-lg border border-border bg-surface px-3 py-2 text-xs font-semibold text-fg-muted hover:bg-surface-2 hover:text-fg transition-colors"
           >
-            📊 Centralizador
+            <Icon name="document-list" className="h-4 w-4" /> Centralizador
           </button>
         )}
       </div>
@@ -331,9 +332,9 @@ function PlanillaMobileView({
       {asignacion.materia.es_subarea_de_id && !asignacion.materia.es_especial && (
         <button
           onClick={() => navigate(`subareas?trimestre_id=${selectedTrimestre?.id ?? ''}`)}
-          className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-xs font-semibold text-fg-muted hover:bg-surface-2 hover:text-fg transition-colors"
+          className="w-full inline-flex items-center justify-center gap-1.5 rounded-lg border border-border bg-surface px-3 py-2 text-xs font-semibold text-fg-muted hover:bg-surface-2 hover:text-fg transition-colors"
         >
-          📚 Ver subáreas de {asignacion.materia.parent_materia?.nombre ?? 'esta área'}
+          <Icon name="notebook" className="h-4 w-4" /> Ver subáreas de {asignacion.materia.parent_materia?.nombre ?? 'esta área'}
         </button>
       )}
 
@@ -348,16 +349,16 @@ function PlanillaMobileView({
         <button
           onClick={() => descargarRegistro('pdf')}
           disabled={!selectedTrimestre || dlState !== 'idle'}
-          className="flex-1 rounded-lg border border-blue-600 px-3 py-1.5 text-xs font-semibold text-blue-700 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/30 disabled:opacity-50"
+          className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-lg border border-blue-600 px-3 py-1.5 text-xs font-semibold text-blue-700 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/30 disabled:opacity-50 transition-colors"
         >
-          {dlState === 'pdf' ? '…' : '📄 PDF'}
+          {dlState === 'pdf' ? '…' : <><Icon name="file-pdf" className="h-4 w-4" /> PDF</>}
         </button>
         <button
           onClick={() => descargarRegistro('xlsx')}
           disabled={!selectedTrimestre || dlState !== 'idle'}
-          className="flex-1 rounded-lg border border-green-600 px-3 py-1.5 text-xs font-semibold text-green-700 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-950/30 disabled:opacity-50"
+          className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-lg border border-green-600 px-3 py-1.5 text-xs font-semibold text-green-700 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-950/30 disabled:opacity-50 transition-colors"
         >
-          {dlState === 'xlsx' ? '…' : '📗 Excel'}
+          {dlState === 'xlsx' ? '…' : <><Icon name="file-excel" className="h-4 w-4" /> Excel</>}
         </button>
       </div>
 
@@ -367,16 +368,16 @@ function PlanillaMobileView({
           <button
             onClick={importacion.descargarPlantilla}
             disabled={!selectedTrimestre || importacion.descargando}
-            className="flex-1 rounded-lg border border-border px-3 py-1.5 text-xs font-semibold text-fg-muted hover:bg-surface-2 disabled:opacity-50"
+            className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs font-semibold text-fg-muted hover:bg-surface-2 hover:text-fg disabled:opacity-50 transition-colors"
           >
-            {importacion.descargando ? '…' : '⬇️ Plantilla'}
+            {importacion.descargando ? '…' : <><Icon name="download" className="h-4 w-4" /> Plantilla</>}
           </button>
           <button
             onClick={importacion.elegirArchivo}
             disabled={!selectedTrimestre || importacion.importing}
-            className="flex-1 rounded-lg border border-indigo-600 px-3 py-1.5 text-xs font-semibold text-indigo-700 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-950/30 disabled:opacity-50"
+            className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-lg border border-indigo-600 px-3 py-1.5 text-xs font-semibold text-indigo-700 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-950/30 disabled:opacity-50 transition-colors"
           >
-            {importacion.importing ? 'Importando…' : '⬆️ Importar'}
+            {importacion.importing ? 'Importando…' : <><Icon name="upload" className="h-4 w-4" /> Importar</>}
           </button>
           <input
             ref={importacion.fileInputRef}
@@ -391,14 +392,14 @@ function PlanillaMobileView({
       <button
         onClick={onGuardar}
         disabled={guardando}
-        className="w-full rounded-lg bg-emerald-600 px-3 py-2.5 text-sm font-semibold text-white hover:bg-emerald-700 disabled:opacity-60 transition-colors"
+        className="w-full inline-flex items-center justify-center gap-1.5 rounded-lg bg-emerald-600 px-3 py-2.5 text-sm font-semibold text-white hover:bg-emerald-700 disabled:opacity-60 transition-colors"
       >
-        {guardando ? 'Guardando…' : '💾 Guardar calificaciones'}
+        {guardando ? 'Guardando…' : <><Icon name="save" className="h-4 w-4" /> Guardar calificaciones</>}
       </button>
 
       {trimestreCerrado && (
-        <div className="rounded-lg bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900 px-4 py-2.5 text-sm text-amber-800 dark:text-amber-400">
-          🔒 Trimestre cerrado — solo lectura.
+        <div className="rounded-lg bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900 px-4 py-2.5 text-sm text-amber-800 dark:text-amber-400 flex items-center gap-2">
+          <Icon name="lock" className="h-4 w-4 flex-shrink-0" /> Trimestre cerrado — solo lectura.
         </div>
       )}
 
@@ -464,12 +465,10 @@ function PlanillaMobileView({
                     <button
                       type="button"
                       onClick={() => setIndicadorModal({ mode: 'edit', dimension: dim, indicador: ind })}
-                      className="flex-shrink-0 text-fg-muted hover:text-brand p-1 -ml-1"
+                      className="flex-shrink-0 text-fg-muted hover:text-brand p-1 -ml-1 transition-colors"
                       aria-label="Editar indicador"
                     >
-                      <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                      </svg>
+                      <Icon name="pencil" className="h-3.5 w-3.5" />
                     </button>
                   )}
                   <div className="flex-1 min-w-0">
@@ -776,7 +775,7 @@ export default function PlanillaPage() {
                 <button
                   key={t.id}
                   onClick={() => setSelectedTrimestre(t)}
-                  className={`px-3 py-1.5 text-xs font-semibold transition-colors ${
+                  className={`inline-flex items-center gap-1 px-3 py-1.5 text-xs font-semibold transition-colors ${
                     selectedTrimestre?.id === t.id
                       ? 'bg-brand text-brand-fg'
                       : 'bg-surface text-fg-muted hover:bg-surface-2'
@@ -784,14 +783,14 @@ export default function PlanillaPage() {
                   title={t.cerrado ? 'Cerrado' : 'Abierto'}
                 >
                   {trimestreLabel(t.numero)}
-                  {t.cerrado && ' 🔒'}
+                  {t.cerrado && <Icon name="lock" className="h-3 w-3" />}
                 </button>
               ))}
             </div>
 
             {!esEspecial && (
               <Button variant="ghost" size="sm" onClick={() => navigate('centralizador')}>
-                📊 Centralizador
+                <Icon name="document-list" className="h-4 w-4" /> Centralizador
               </Button>
             )}
 
@@ -801,28 +800,28 @@ export default function PlanillaPage() {
                 size="sm"
                 onClick={() => navigate(`subareas?trimestre_id=${selectedTrimestre?.id ?? ''}`)}
               >
-                📚 Subáreas de {asignacion.materia.parent_materia?.nombre ?? 'esta área'}
+                <Icon name="notebook" className="h-4 w-4" /> Subáreas de {asignacion.materia.parent_materia?.nombre ?? 'esta área'}
               </Button>
             )}
 
             <Button size="sm" onClick={guardarCalificaciones} loading={guardando}>
-              💾 Guardar calificaciones
+              <Icon name="save" className="h-4 w-4" /> Guardar calificaciones
             </Button>
 
             <div className="flex gap-2">
               <button
                 onClick={() => descargarRegistro('pdf')}
                 disabled={!selectedTrimestre || dlState !== 'idle'}
-                className="rounded-lg border border-blue-600 px-3 py-1.5 text-sm text-blue-700 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/30 disabled:opacity-50"
+                className="inline-flex items-center gap-1.5 rounded-lg border border-blue-600 px-3 py-1.5 text-sm text-blue-700 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/30 disabled:opacity-50 transition-colors"
               >
-                {dlState === 'pdf' ? '…' : '📄 PDF'}
+                {dlState === 'pdf' ? '…' : <><Icon name="file-pdf" className="h-4 w-4" /> PDF</>}
               </button>
               <button
                 onClick={() => descargarRegistro('xlsx')}
                 disabled={!selectedTrimestre || dlState !== 'idle'}
-                className="rounded-lg border border-green-600 px-3 py-1.5 text-sm text-green-700 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-950/30 disabled:opacity-50"
+                className="inline-flex items-center gap-1.5 rounded-lg border border-green-600 px-3 py-1.5 text-sm text-green-700 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-950/30 disabled:opacity-50 transition-colors"
               >
-                {dlState === 'xlsx' ? '…' : '📗 Excel'}
+                {dlState === 'xlsx' ? '…' : <><Icon name="file-excel" className="h-4 w-4" /> Excel</>}
               </button>
             </div>
 
@@ -832,17 +831,17 @@ export default function PlanillaPage() {
                   onClick={importacion.descargarPlantilla}
                   disabled={!selectedTrimestre || importacion.descargando}
                   title="Descarga una planilla en Excel con los estudiantes y notas actuales, lista para editar"
-                  className="rounded-lg border border-border px-3 py-1.5 text-sm text-fg-muted hover:bg-surface-2 disabled:opacity-50"
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-sm text-fg-muted hover:bg-surface-2 hover:text-fg disabled:opacity-50 transition-colors"
                 >
-                  {importacion.descargando ? '…' : '⬇️ Plantilla'}
+                  {importacion.descargando ? '…' : <><Icon name="download" className="h-4 w-4" /> Plantilla</>}
                 </button>
                 <button
                   onClick={importacion.elegirArchivo}
                   disabled={!selectedTrimestre || importacion.importing}
                   title="Sube la plantilla ya completada para cargar varias notas de una vez"
-                  className="rounded-lg border border-indigo-600 px-3 py-1.5 text-sm text-indigo-700 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-950/30 disabled:opacity-50"
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-indigo-600 px-3 py-1.5 text-sm text-indigo-700 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-950/30 disabled:opacity-50 transition-colors"
                 >
-                  {importacion.importing ? 'Importando…' : '⬆️ Importar'}
+                  {importacion.importing ? 'Importando…' : <><Icon name="upload" className="h-4 w-4" /> Importar</>}
                 </button>
                 <input
                   ref={importacion.fileInputRef}
@@ -866,7 +865,7 @@ export default function PlanillaPage() {
         {/* Banner trimestre cerrado */}
         {trimestreCerrado && (
           <div className="rounded-lg bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900 px-4 py-3 text-sm text-amber-800 dark:text-amber-400 flex items-center gap-2">
-            🔒 <strong>Trimestre cerrado</strong> — solo lectura. No se pueden registrar ni modificar notas.
+            <Icon name="lock" className="h-4 w-4 flex-shrink-0" /> <strong>Trimestre cerrado</strong> — solo lectura. No se pueden registrar ni modificar notas.
           </div>
         )}
 
@@ -946,12 +945,10 @@ export default function PlanillaPage() {
                           <button
                             type="button"
                             onClick={() => setIndicadorModal({ mode: 'edit', dimension: dim, indicador: ind })}
-                            className="absolute top-1 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 rounded bg-surface p-0.5 text-fg-muted hover:text-brand shadow transition-opacity z-10"
+                            className="absolute top-1 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 rounded bg-surface p-0.5 text-fg-muted hover:text-brand shadow transition-all z-10"
                             aria-label="Editar indicador"
                           >
-                            <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                            </svg>
+                            <Icon name="pencil" className="h-3 w-3" />
                           </button>
                         )}
                         <div className="flex flex-col items-center gap-0.5">
