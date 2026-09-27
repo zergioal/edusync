@@ -32,7 +32,10 @@ export default function RegistrarPensionesPage() {
 
   // Cambios sin guardar por curso+pensión (clave `paraleloId:mes`) — si el usuario cambia de curso
   // por error antes de guardar, al volver encuentra su registro intacto en vez de tener que rehacerlo.
+  // `dirtyRef` marca cuáles de esos cursos tienen cambios reales, para que "Guardar" los incluya a
+  // todos aunque en ese momento no sea el curso que se está viendo.
   const cacheRef = useRef<Map<string, EstFila[]>>(new Map())
+  const dirtyRef = useRef<Set<string>>(new Set())
   const cacheKey = (p: string, m: number | '') => `${p}:${m}`
 
   const cargar = useCallback(async () => {
@@ -61,7 +64,9 @@ export default function RegistrarPensionesPage() {
     )) return
     setLista(prev => {
       const next = prev.map(e => e.estudiante_id === estudianteId ? { ...e, pagado: !e.pagado } : e)
-      cacheRef.current.set(cacheKey(paraleloId, mes), next)
+      const k = cacheKey(paraleloId, mes)
+      cacheRef.current.set(k, next)
+      dirtyRef.current.add(k)
       return next
     })
   }
@@ -75,29 +80,59 @@ export default function RegistrarPensionesPage() {
     }
     setLista(prev => {
       const next = prev.map(e => e.becado ? e : { ...e, pagado })
-      cacheRef.current.set(cacheKey(paraleloId, mes), next)
+      const k = cacheKey(paraleloId, mes)
+      cacheRef.current.set(k, next)
+      dirtyRef.current.add(k)
       return next
     })
   }
 
+  /** Guarda todos los cursos con cambios pendientes, no solo el que se está viendo ahora mismo. */
   async function guardar() {
-    if (!paraleloId || !mes || !gestionId || lista.length === 0) return
+    if (!gestionId || dirtyRef.current.size === 0) return
     setSaving(true)
+    const pendientes = [...dirtyRef.current]
+    let totalPagadas = 0
+    let totalAnuladas = 0
+    let cursosConError = 0
+    let ultimoError = ''
     try {
-      const data = await api.post<{ pagadas: number; anuladas: number; sin_cambio: number }>('/pensiones/grid', {
-        paralelo_id: paraleloId, gestion_id: gestionId, mes,
-        fecha_pago: fechaPago,
-        pagos: lista.filter(e => !e.becado).map(e => ({ estudiante_id: e.estudiante_id, pagado: e.pagado })),
-      })
-      toast.success(`Guardado: ${data.pagadas} pago(s), ${data.anuladas} anulación(es)`)
-      cacheRef.current.delete(cacheKey(paraleloId, mes))
+      for (const k of pendientes) {
+        const [pId, mesStr] = k.split(':')
+        const filaLista = cacheRef.current.get(k)
+        if (!pId || !mesStr || !filaLista) { dirtyRef.current.delete(k); continue }
+        try {
+          const data = await api.post<{ pagadas: number; anuladas: number; sin_cambio: number }>('/pensiones/grid', {
+            paralelo_id: pId, gestion_id: gestionId, mes: Number(mesStr),
+            fecha_pago: fechaPago,
+            pagos: filaLista.filter(e => !e.becado).map(e => ({ estudiante_id: e.estudiante_id, pagado: e.pagado })),
+          })
+          totalPagadas  += data.pagadas
+          totalAnuladas += data.anuladas
+          dirtyRef.current.delete(k)
+          cacheRef.current.delete(k)
+        } catch (err) {
+          cursosConError++
+          ultimoError = err instanceof ApiError ? err.message : 'Error al guardar'
+        }
+      }
+      if (cursosConError === 0) {
+        toast.success(
+          `Guardado: ${totalPagadas} pago(s), ${totalAnuladas} anulación(es)` +
+          (pendientes.length > 1 ? ` en ${pendientes.length} cursos` : '')
+        )
+      } else if (cursosConError === pendientes.length && pendientes.length === 1) {
+        toast.error(ultimoError)
+      } else {
+        toast.error(`Se guardaron ${pendientes.length - cursosConError} de ${pendientes.length} curso(s) — reintenta los que fallaron`)
+      }
       cargar()
-    } catch (err) {
-      toast.error(err instanceof ApiError ? err.message : 'Error al guardar')
     } finally {
       setSaving(false)
     }
   }
+
+  const cursosPendientes = dirtyRef.current.size
 
   const pagadosCount = lista.filter(e => e.pagado).length
 
@@ -112,9 +147,16 @@ export default function RegistrarPensionesPage() {
             Marca quién pagó, por curso — igual que la lista de asistencia. Sin comprobante; para eso usa el registro manual desde el estado de cuenta.
           </p>
         </div>
-        <Button onClick={guardar} loading={saving} disabled={lista.length === 0 || !paraleloId || !mes}>
-          Guardar
-        </Button>
+        <div className="flex items-center gap-2">
+          {cursosPendientes > 0 && (
+            <span className="rounded-full bg-amber-100 px-2.5 py-1 text-xs font-semibold text-amber-700">
+              {cursosPendientes} curso{cursosPendientes !== 1 ? 's' : ''} con cambios sin guardar
+            </span>
+          )}
+          <Button onClick={guardar} loading={saving} disabled={cursosPendientes === 0}>
+            {cursosPendientes > 1 ? `Guardar todo (${cursosPendientes})` : 'Guardar'}
+          </Button>
+        </div>
       </div>
 
       {/* Filtros */}
