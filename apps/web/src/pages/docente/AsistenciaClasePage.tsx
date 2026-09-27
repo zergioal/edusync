@@ -1,8 +1,9 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useParams } from 'react-router-dom'
 import { api, ApiError } from '../../lib/api'
 import { useToast } from '../../components/ui/Toast'
 import { hoyLocalStr, parseFechaLocal } from '../../lib/date'
+import { BackButton } from '../../components/ui/BackButton'
 import { Spinner } from '@edusync/ui'
 
 type Estado = 'PRESENTE' | 'AUSENTE' | 'TARDANZA' | 'LICENCIA'
@@ -61,7 +62,6 @@ function mesLabel(m: string) {
 
 export default function AsistenciaClasePage() {
   const { asignacion_id } = useParams<{ asignacion_id: string }>()
-  const navigate = useNavigate()
   const toast    = useToast()
   const toastRef = useRef(toast)
   toastRef.current = toast
@@ -212,12 +212,7 @@ export default function AsistenciaClasePage() {
       {/* Header */}
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <button
-            onClick={() => navigate(-1)}
-            className="mb-1 flex items-center gap-1 text-xs text-indigo-500 hover:text-indigo-700 font-medium transition-colors"
-          >
-            ← Volver
-          </button>
+          <BackButton className="mb-2" />
           <h1 className="text-xl font-bold text-fg">Asistencia de Clase</h1>
           <p className="text-sm text-fg-muted mt-0.5">{titulo}</p>
         </div>

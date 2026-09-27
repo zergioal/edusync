@@ -1,8 +1,9 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useParams } from 'react-router-dom'
 import { api, ApiError } from '../../lib/api'
 import { useToast } from '../../components/ui/Toast'
 import { Icon, type IconName } from '../../components/ui/Icon'
+import { BackButton } from '../../components/ui/BackButton'
 import { Spinner } from '@edusync/ui'
 
 type Categoria =
@@ -41,7 +42,6 @@ function toDatetimeLocal(d: Date): string {
 
 export default function ControlDiarioParaleloPage() {
   const { paralelo_id } = useParams<{ paralelo_id: string }>()
-  const navigate = useNavigate()
   const toast    = useToast()
   const toastRef = useRef(toast)
   toastRef.current = toast
@@ -116,12 +116,7 @@ export default function ControlDiarioParaleloPage() {
     <div className="space-y-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <button
-            onClick={() => navigate(-1)}
-            className="mb-1 flex items-center gap-1 text-xs text-indigo-500 hover:text-indigo-700 font-medium transition-colors"
-          >
-            ← Volver
-          </button>
+          <BackButton className="mb-2" />
           <h1 className="text-xl font-bold text-fg">Control diario</h1>
           <p className="text-sm text-fg-muted mt-0.5">Clic en una categoría para anotar al toque — igual que el cuaderno.</p>
         </div>

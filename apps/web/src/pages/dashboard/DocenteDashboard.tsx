@@ -9,6 +9,7 @@ import { Badge } from '@edusync/ui'
 import { api } from '../../lib/api'
 import { AvatarDisplay, AvatarPickerModal, useAvatar } from '../../components/ui/AvatarSelector'
 import { EditarPerfilModal } from '../../components/EditarPerfilModal'
+import { Icon } from '../../components/ui/Icon'
 
 const MisMateriasPage          = lazy(() => import('../docente/MisMateriasPage'))
 const MisAreasPage             = lazy(() => import('../docente/MisAreasPage'))
@@ -18,7 +19,6 @@ const CentralizadorSubareasPage   = lazy(() => import('../docente/CentralizadorS
 const ObservacionesInicialPage = lazy(() => import('../docente/ObservacionesInicialPage'))
 const AsistenciaClasePage      = lazy(() => import('../docente/AsistenciaClasePage'))
 const DocenteAsistenciaPage    = lazy(() => import('../docente/DocenteAsistenciaPage'))
-const ControlDiarioPage        = lazy(() => import('../docente/ControlDiarioPage'))
 const ControlDiarioParaleloPage = lazy(() => import('../docente/ControlDiarioParaleloPage'))
 const DocenteEstudiantesPage   = lazy(() => import('../docente/DocenteEstudiantesPage'))
 const TareasPage               = lazy(() => import('../docente/TareasPage'))
@@ -71,9 +71,9 @@ function DocenteHome() {
           <AvatarDisplay userId={user?.id ?? ''} avatarId={avatarId} size="xl" />
           <button
             onClick={openPicker}
-            className="absolute -bottom-1.5 -right-1.5 h-6 w-6 rounded-full bg-indigo-600 text-white text-xs flex items-center justify-center shadow hover:bg-indigo-700 transition-colors"
+            className="absolute -bottom-1.5 -right-1.5 h-6 w-6 rounded-full bg-indigo-600 text-white flex items-center justify-center shadow hover:bg-indigo-700 transition-colors"
             title="Cambiar avatar"
-          >✎</button>
+          ><Icon name="pencil" className="h-3.5 w-3.5" /></button>
         </div>
 
         <div className="flex-1 min-w-0">
@@ -165,8 +165,12 @@ function DocenteHome() {
                   </div>
                   <div className="mt-1 flex items-center gap-3 text-xs text-fg-muted truncate">
                     <span className="truncate">{a.materia.campo.nombre}</span>
-                    <span className="shrink-0">👥 {a.n_estudiantes}</span>
-                    <span className="shrink-0">📊 {a._count.indicadores}</span>
+                    <span className="shrink-0 inline-flex items-center gap-1">
+                      <Icon name="users" className="h-3.5 w-3.5" /> {a.n_estudiantes}
+                    </span>
+                    <span className="shrink-0 inline-flex items-center gap-1">
+                      <Icon name="document-list" className="h-3.5 w-3.5" /> {a._count.indicadores}
+                    </span>
                   </div>
                 </div>
               )
@@ -222,7 +226,6 @@ export default function DocenteDashboard() {
         <Route path="estudiante/:id"            element={<PerfilEstudiantePage visibleTabs={['datos', 'calificaciones']} basePath="/dashboard/docente" />} />
         <Route path="calificaciones"            element={<MisMateriasPage />} />
         <Route path="asistencia"                element={<DocenteAsistenciaPage />} />
-        <Route path="control-diario"            element={<ControlDiarioPage />} />
         <Route path="control-diario/:paralelo_id" element={<ControlDiarioParaleloPage />} />
         <Route path="horario"                   element={<MiHorarioPage />} />
         <Route path="anuncios"                  element={<AnunciosInternosPage />} />

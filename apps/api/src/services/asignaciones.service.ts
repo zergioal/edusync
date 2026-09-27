@@ -3,7 +3,7 @@ import { AppError } from '../middlewares/errorHandler'
 
 const INCLUDE = {
   docente:  { include: { usuario: { select: { nombre: true, apellido: true } } } },
-  materia:  { include: { campo: true, nivel: true } },
+  materia:  { include: { campo: true, nivel: true, parent_materia: { select: { nombre: true } } } },
   paralelo: { include: { grado: { include: { nivel: true } } } },
   gestion:  true,
 } as const

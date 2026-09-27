@@ -9,6 +9,7 @@ import { useIsMobile } from '../../hooks/useIsMobile'
 import { IndicadorFormModal, type IndicadorFormValues } from '../../components/planilla/IndicadorFormModal'
 import { ImportarNotasResultModal, type ImportarNotasResult } from '../../components/planilla/ImportarNotasResultModal'
 import { Icon } from '../../components/ui/Icon'
+import { BackButton } from '../../components/ui/BackButton'
 
 const ES_AUTOEVAL = (nombre: string) => nombre === 'AUTOEVALUACION'
 
@@ -294,9 +295,7 @@ function PlanillaMobileView({
     <div className="space-y-4 pb-24">
       {/* Cabecera */}
       <div>
-        <button onClick={() => navigate(-1)} className="mb-1 text-xs text-fg-muted hover:text-fg">
-          ← Volver
-        </button>
+        <BackButton className="mb-2" />
         <h1 className="text-lg font-bold text-fg">{asignacion.materia.nombre}</h1>
         <p className="text-sm text-fg-muted">
           {asignacion.paralelo.grado.nombre} "{asignacion.paralelo.letra}" · Gestión {asignacion.gestion.anno}
@@ -638,9 +637,7 @@ export default function PlanillaPage() {
     return (
       <div className="rounded-xl border border-red-200 dark:border-red-900 bg-red-50 dark:bg-red-950/40 p-8 text-center">
         <p className="text-red-600 dark:text-red-400">{error ?? 'Error al cargar planilla'}</p>
-        <Button variant="ghost" size="sm" onClick={() => navigate(-1)} className="mt-4">
-          ← Volver
-        </Button>
+        <BackButton className="mt-4" />
       </div>
     )
   }
@@ -746,12 +743,7 @@ export default function PlanillaPage() {
         {/* Header */}
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
-            <button
-              onClick={() => navigate(-1)}
-              className="mb-1 text-xs text-fg-muted hover:text-fg"
-            >
-              ← Volver a mis materias
-            </button>
+            <BackButton label="Volver a mis materias" className="mb-2" />
             <h1 className="text-xl font-bold text-fg">
               {asignacion.materia.nombre}
             </h1>

@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useParams } from 'react-router-dom'
 import { api, ApiError } from '../../lib/api'
 import { useToast } from '../../components/ui/Toast'
+import { BackButton } from '../../components/ui/BackButton'
 import { Button, Spinner } from '@edusync/ui'
 
 // ─── Tipos ────────────────────────────────────────────────────────────────────
@@ -31,7 +32,6 @@ interface ObsEntry {
 
 export default function ObservacionesInicialPage() {
   const { asignacion_id } = useParams<{ asignacion_id: string }>()
-  const navigate = useNavigate()
   const toast    = useToast()
   const toastRef = useRef(toast)
   toastRef.current = toast
@@ -134,12 +134,7 @@ export default function ObservacionesInicialPage() {
       {/* Header */}
       <div className="flex items-start justify-between flex-wrap gap-4">
         <div>
-          <button
-            onClick={() => navigate(-1)}
-            className="mb-2 text-sm text-blue-600 hover:text-blue-800 flex items-center gap-1"
-          >
-            ← Volver
-          </button>
+          <BackButton className="mb-2" />
           <h1 className="text-2xl font-bold text-fg">Observaciones — Nivel Inicial</h1>
           <p className="mt-0.5 text-sm text-fg-muted">
             {asignacion.materia.campo.nombre} · {asignacion.materia.nombre} ·{' '}
