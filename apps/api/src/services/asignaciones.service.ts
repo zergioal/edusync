@@ -96,7 +96,13 @@ export class AsignacionesService {
     const asignaciones = await prisma.asignacion.findMany({
       where:   { docente_id: docente.id },
       include: { ...INCLUDE, _count: { select: { indicadores: true } } },
-      orderBy: [{ materia: { nombre: 'asc' } }],
+      // Agrupadas por curso (nivel → grado → paralelo), no alfabéticamente por materia.
+      orderBy: [
+        { paralelo: { grado: { nivel: { nombre: 'asc' } } } },
+        { paralelo: { grado: { orden: 'asc' } } },
+        { paralelo: { letra: 'asc' } },
+        { materia: { nombre: 'asc' } },
+      ],
     })
 
     return Promise.all(

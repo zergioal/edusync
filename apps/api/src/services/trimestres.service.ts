@@ -27,7 +27,12 @@ export class TrimestresesService {
     })
   }
 
-  async cerrar(id: string) {
+  /**
+   * Al cerrar, si hay asignaciones sin notas en el trimestre se reportan como "observaciones" en
+   * vez de simplemente rechazar el cierre — quien cierra decide si corresponde forzarlo (`forzar`)
+   * pese a esas observaciones, o corregirlas primero y reintentar.
+   */
+  async cerrar(id: string, forzar = false) {
     const t = await this.findOne(id)
     if (t.cerrado) throw new AppError(400, 'El trimestre ya está cerrado', 'ALREADY_CLOSED')
 
@@ -40,7 +45,15 @@ export class TrimestresesService {
           include: { notas: true },
         },
         docente: { include: { usuario: { select: { nombre: true, apellido: true } } } },
+        materia: { select: { nombre: true } },
+        paralelo: { include: { grado: true } },
       },
+      orderBy: [
+        { paralelo: { grado: { nivel: { nombre: 'asc' } } } },
+        { paralelo: { grado: { orden: 'asc' } } },
+        { paralelo: { letra: 'asc' } },
+        { materia: { nombre: 'asc' } },
+      ],
     })
 
     const sinNotas = asignaciones.filter(a =>
@@ -48,17 +61,14 @@ export class TrimestresesService {
       a.indicadores.every(i => i.notas.length === 0)
     )
 
-    if (sinNotas.length > 0) {
-      const nombres = sinNotas.slice(0, 3).map(a =>
-        `${a.docente.usuario.apellido}, ${a.docente.usuario.nombre}`
-      ).join('; ')
-      throw new AppError(
-        422,
-        `${sinNotas.length} asignación(es) sin indicadores o notas en este trimestre (ej: ${nombres})`,
-        'INCOMPLETE_GRADES'
+    if (sinNotas.length > 0 && !forzar) {
+      const observaciones = sinNotas.map(a =>
+        `${a.paralelo.grado.nombre} "${a.paralelo.letra}" — ${a.materia.nombre} — Prof. ${a.docente.usuario.apellido}, ${a.docente.usuario.nombre}: sin indicadores o notas registradas en este trimestre`
       )
+      return { ok: false as const, observaciones }
     }
 
-    return prisma.trimestre.update({ where: { id }, data: { cerrado: true } })
+    await prisma.trimestre.update({ where: { id }, data: { cerrado: true } })
+    return { ok: true as const }
   }
 }

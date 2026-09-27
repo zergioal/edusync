@@ -46,6 +46,9 @@ export default function GestionesPage() {
 
   // Cerrar trimestre
   const [cerrando, setCerrando] = useState<string | null>(null)
+  const [observacionesModal, setObservacionesModal] = useState<
+    { trimestre: Trimestre; anno: number; observaciones: string[] } | null
+  >(null)
 
   const load = async () => {
     setLoading(true)
@@ -111,14 +114,59 @@ export default function GestionesPage() {
     if (!confirm(`¿Cerrar el ${t.numero}° Trimestre ${anno}? Esta acción no se puede revertir.`)) return
     setCerrando(t.id)
     try {
-      await api.put(`/trimestres/${t.id}/cerrar`, {})
-      toastRef.current.success(`${t.numero}° Trimestre ${anno} cerrado`)
-      load()
+      const result = await api.put<{ ok: boolean; observaciones?: string[] }>(`/trimestres/${t.id}/cerrar`, {})
+      if (result.ok) {
+        toastRef.current.success(`${t.numero}° Trimestre ${anno} cerrado`)
+        load()
+      } else {
+        setObservacionesModal({ trimestre: t, anno, observaciones: result.observaciones ?? [] })
+      }
     } catch (err) {
       toastRef.current.error(err instanceof ApiError ? err.message : 'Error al cerrar trimestre')
     } finally {
       setCerrando(null)
     }
+  }
+
+  const handleForzarCierre = async () => {
+    if (!observacionesModal) return
+    const { trimestre: t, anno, observaciones } = observacionesModal
+    if (!confirm(
+      `¿Forzar el cierre del ${t.numero}° Trimestre ${anno} pese a ${observaciones.length} observación(es)?\n\nEsta acción no se puede revertir.`
+    )) return
+    setCerrando(t.id)
+    try {
+      await api.put(`/trimestres/${t.id}/cerrar`, { forzar: true })
+      toastRef.current.success(`${t.numero}° Trimestre ${anno} cerrado (forzado)`)
+      setObservacionesModal(null)
+      load()
+    } catch (err) {
+      toastRef.current.error(err instanceof ApiError ? err.message : 'Error al forzar el cierre')
+    } finally {
+      setCerrando(null)
+    }
+  }
+
+  const descargarInformeObservaciones = () => {
+    if (!observacionesModal) return
+    const { trimestre: t, anno, observaciones } = observacionesModal
+    const lineas = [
+      `Informe de cierre — ${t.numero}° Trimestre ${anno}`,
+      `Generado: ${new Date().toLocaleString('es-BO')}`,
+      '',
+      `Se encontraron ${observaciones.length} observación(es) que impiden el cierre normal:`,
+      '',
+      ...observaciones.map((o, i) => `${i + 1}. ${o}`),
+    ]
+    const blob = new Blob([lineas.join('\n')], { type: 'text/plain;charset=utf-8' })
+    const url  = URL.createObjectURL(blob)
+    const a    = document.createElement('a')
+    a.href     = url
+    a.download = `informe_cierre_T${t.numero}_${anno}.txt`
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
   }
 
   if (loading) return <div className="flex justify-center py-16"><Spinner /></div>
@@ -261,6 +309,33 @@ export default function GestionesPage() {
             />
           </div>
         </form>
+      </Modal>
+
+      {/* Modal observaciones al no poder cerrar el trimestre */}
+      <Modal
+        isOpen={!!observacionesModal}
+        onClose={() => setObservacionesModal(null)}
+        title={`No se pudo cerrar el ${observacionesModal?.trimestre.numero}° Trimestre ${observacionesModal?.anno ?? ''}`}
+        footer={
+          <div className="flex justify-end gap-3">
+            <Button variant="secondary" onClick={() => setObservacionesModal(null)}>Cancelar</Button>
+            <Button variant="ghost" onClick={descargarInformeObservaciones}>Descargar informe (.txt)</Button>
+            <Button variant="danger" loading={cerrando === observacionesModal?.trimestre.id} onClick={handleForzarCierre}>
+              Forzar cierre
+            </Button>
+          </div>
+        }
+      >
+        <div className="space-y-3">
+          <p className="text-sm text-fg-muted">
+            Se encontraron <strong>{observacionesModal?.observaciones.length ?? 0}</strong> observación(es) — asignaciones sin
+            indicadores o notas registradas en este trimestre. Puedes descargar el detalle, corregirlas y volver a intentar el
+            cierre normal, o forzar el cierre igualmente.
+          </p>
+          <ul className="max-h-64 space-y-1 overflow-y-auto rounded-lg bg-amber-50 dark:bg-amber-950/30 p-3 text-sm text-amber-800 dark:text-amber-400">
+            {observacionesModal?.observaciones.map((o, i) => <li key={i}>• {o}</li>)}
+          </ul>
+        </div>
       </Modal>
     </div>
   )

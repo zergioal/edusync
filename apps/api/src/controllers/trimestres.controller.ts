@@ -20,7 +20,8 @@ export class TrimestresesController {
 
   cerrar = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      res.json({ data: await this.service.cerrar(req.params['id']!) })
+      const forzar = req.body?.forzar === true
+      res.json({ data: await this.service.cerrar(req.params['id']!, forzar) })
     } catch (e) { next(e) }
   }
 }
