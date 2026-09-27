@@ -16,14 +16,14 @@ interface RosterData { estudiantes: Estudiante[]; hoy: Hoy[] }
 interface AsignacionOpcion { id: string; materia: { nombre: string }; paralelo: { id: string } }
 
 const CATEGORIAS: { value: Categoria; label: string; icon: IconName; chip: string }[] = [
-  { value: 'NO_ENTREGO_TAREA',     label: 'No entregó tarea',      icon: 'document-x',    chip: 'bg-amber-100 text-amber-700 hover:bg-amber-200' },
-  { value: 'FALTO',                label: 'Faltó',                 icon: 'user-x',         chip: 'bg-red-100 text-red-700 hover:bg-red-200' },
-  { value: 'SALIO_SIN_PERMISO',    label: 'Salió sin permiso',     icon: 'door-exit',      chip: 'bg-orange-100 text-orange-700 hover:bg-orange-200' },
-  { value: 'NO_RINDIO_EVALUACION', label: 'No rindió evaluación',  icon: 'clipboard-x',    chip: 'bg-purple-100 text-purple-700 hover:bg-purple-200' },
-  { value: 'CITACION_AGENDA',      label: 'Citación en agenda',    icon: 'mail',           chip: 'bg-blue-100 text-blue-700 hover:bg-blue-200' },
-  { value: 'INDISCIPLINA',         label: 'Indisciplina',          icon: 'alert-triangle', chip: 'bg-rose-100 text-rose-700 hover:bg-rose-200' },
-  { value: 'NO_TRABAJA_EN_CLASE',  label: 'No trabaja en clase',   icon: 'user-minus',    chip: 'bg-teal-100 text-teal-700 hover:bg-teal-200' },
-  { value: 'OTRO',                 label: 'Otro',                  icon: 'pencil',         chip: 'bg-surface-2 text-fg-muted hover:bg-surface-2/80' },
+  { value: 'NO_ENTREGO_TAREA',     label: 'No entregó tarea',      icon: 'document-x',    chip: 'bg-amber-600 text-white hover:bg-amber-700' },
+  { value: 'FALTO',                label: 'Faltó',                 icon: 'user-x',         chip: 'bg-red-600 text-white hover:bg-red-700' },
+  { value: 'SALIO_SIN_PERMISO',    label: 'Salió sin permiso',     icon: 'door-exit',      chip: 'bg-orange-600 text-white hover:bg-orange-700' },
+  { value: 'NO_RINDIO_EVALUACION', label: 'No rindió evaluación',  icon: 'clipboard-x',    chip: 'bg-purple-600 text-white hover:bg-purple-700' },
+  { value: 'CITACION_AGENDA',      label: 'Citación en agenda',    icon: 'mail',           chip: 'bg-blue-600 text-white hover:bg-blue-700' },
+  { value: 'INDISCIPLINA',         label: 'Indisciplina',          icon: 'alert-triangle', chip: 'bg-rose-600 text-white hover:bg-rose-700' },
+  { value: 'NO_TRABAJA_EN_CLASE',  label: 'No trabaja en clase',   icon: 'user-minus',    chip: 'bg-teal-600 text-white hover:bg-teal-700' },
+  { value: 'OTRO',                 label: 'Otro',                  icon: 'pencil',         chip: 'bg-slate-600 text-white hover:bg-slate-700' },
 ]
 const CATEGORIA_LABEL = Object.fromEntries(CATEGORIAS.map(c => [c.value, c.label])) as Record<Categoria, string>
 

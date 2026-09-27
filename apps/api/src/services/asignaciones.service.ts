@@ -89,13 +89,23 @@ export class AsignacionesService {
     return a
   }
 
+  /** Trimestre que se vería por defecto al abrir la planilla — mismo criterio que `getTrimestreActivo` en el frontend (lib/trimestre.ts). */
+  private trimestreActivoId(
+    trimestres: { id: string; fecha_inicio: Date; fecha_fin: Date; cerrado: boolean }[]
+  ): string | null {
+    const hoy = new Date()
+    hoy.setHours(0, 0, 0, 0)
+    const activo = trimestres.find(t => hoy >= t.fecha_inicio && hoy <= t.fecha_fin && !t.cerrado)
+    return (activo ?? trimestres.find(t => !t.cerrado) ?? trimestres[0])?.id ?? null
+  }
+
   async findMias(usuario_id: string) {
     const docente = await prisma.docente.findUnique({ where: { usuario_id } })
     if (!docente) throw new AppError(404, 'Perfil de docente no encontrado', 'NOT_FOUND')
 
     const asignaciones = await prisma.asignacion.findMany({
       where:   { docente_id: docente.id },
-      include: { ...INCLUDE, _count: { select: { indicadores: true } } },
+      include: INCLUDE,
       // Agrupadas por curso (nivel → grado → paralelo), no alfabéticamente por materia.
       orderBy: [
         { paralelo: { grado: { nivel: { nombre: 'asc' } } } },
@@ -105,19 +115,38 @@ export class AsignacionesService {
       ],
     })
 
+    // El total de indicadores de TODOS los trimestres inflaba el conteo mostrado en las tarjetas
+    // de "Mis Materias" — lo que debe verse ahí es cuántos indicadores aparecen en el registro que
+    // el docente va a encontrar al abrir la planilla (el trimestre activo de esa gestión).
+    const gestionIds  = [...new Set(asignaciones.map(a => a.gestion_id))]
+    const trimestres  = await prisma.trimestre.findMany({
+      where:   { gestion_id: { in: gestionIds } },
+      orderBy: { numero: 'asc' },
+    })
+    const trimestreActivoPorGestion = new Map(
+      gestionIds.map(id => [id, this.trimestreActivoId(trimestres.filter(t => t.gestion_id === id))])
+    )
+
     return Promise.all(
       asignaciones.map(async a => {
         const carga = await prisma.cargaHorariaMateria.findUnique({
           where: { materia_id_grado_id: { materia_id: a.materia_id, grado_id: a.paralelo.grado_id } },
         })
         const horas_mes = carga?.horas_mes ?? a.materia.horas_semanales ?? 0
+        const trimestreActivoId = trimestreActivoPorGestion.get(a.gestion_id) ?? null
+
+        const [n_estudiantes, n_indicadores] = await Promise.all([
+          prisma.matricula.count({ where: { paralelo_id: a.paralelo_id, gestion_id: a.gestion_id } }),
+          trimestreActivoId
+            ? prisma.indicador.count({ where: { asignacion_id: a.id, trimestre_id: trimestreActivoId } })
+            : Promise.resolve(0),
+        ])
 
         return {
           ...a,
           horas_mes,
-          n_estudiantes: await prisma.matricula.count({
-            where: { paralelo_id: a.paralelo_id, gestion_id: a.gestion_id },
-          }),
+          n_estudiantes,
+          _count: { indicadores: n_indicadores },
         }
       })
     )

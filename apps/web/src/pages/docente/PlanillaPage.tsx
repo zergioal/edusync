@@ -8,6 +8,7 @@ import { getTrimestreActivo, trimestreLabel } from '../../lib/trimestre'
 import { useIsMobile } from '../../hooks/useIsMobile'
 import { IndicadorFormModal, type IndicadorFormValues } from '../../components/planilla/IndicadorFormModal'
 import { ImportarNotasResultModal, type ImportarNotasResult } from '../../components/planilla/ImportarNotasResultModal'
+import { ExportarButton } from '../../components/planilla/ExportarButton'
 import { Icon } from '../../components/ui/Icon'
 import { BackButton } from '../../components/ui/BackButton'
 
@@ -328,6 +329,13 @@ function PlanillaMobileView({
         )}
       </div>
 
+      {/* Banner trimestre cerrado — justo debajo del selector, para que no lo desplace */}
+      {trimestreCerrado && (
+        <div className="rounded-lg bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900 px-4 py-2.5 text-sm text-amber-800 dark:text-amber-400 flex items-center gap-2">
+          <Icon name="lock" className="h-4 w-4 flex-shrink-0" /> Trimestre cerrado — solo lectura.
+        </div>
+      )}
+
       {asignacion.materia.es_subarea_de_id && !asignacion.materia.es_especial && (
         <button
           onClick={() => navigate(`subareas?trimestre_id=${selectedTrimestre?.id ?? ''}`)}
@@ -343,50 +351,36 @@ function PlanillaMobileView({
         </div>
       )}
 
-      {/* Exportar el registro del trimestre actual */}
-      <div className="flex gap-2">
-        <button
-          onClick={() => descargarRegistro('pdf')}
-          disabled={!selectedTrimestre || dlState !== 'idle'}
-          className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-lg border border-blue-600 px-3 py-1.5 text-xs font-semibold text-blue-700 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/30 disabled:opacity-50 transition-colors"
-        >
-          {dlState === 'pdf' ? '…' : <><Icon name="file-pdf" className="h-4 w-4" /> PDF</>}
-        </button>
-        <button
-          onClick={() => descargarRegistro('xlsx')}
-          disabled={!selectedTrimestre || dlState !== 'idle'}
-          className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-lg border border-green-600 px-3 py-1.5 text-xs font-semibold text-green-700 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-950/30 disabled:opacity-50 transition-colors"
-        >
-          {dlState === 'xlsx' ? '…' : <><Icon name="file-excel" className="h-4 w-4" /> Excel</>}
-        </button>
+      {/* Datos: exportar el registro, y cargar notas por lote desde Excel/CSV */}
+      <div className="flex flex-wrap items-center gap-2 rounded-lg border border-border bg-surface-2/40 px-3 py-2">
+        <span className="w-full text-xs font-semibold uppercase tracking-wide text-fg-muted">Datos</span>
+        <ExportarButton disabled={!selectedTrimestre} dlState={dlState} onExport={descargarRegistro} className="flex-1" />
+        {!trimestreCerrado && !asignacion.materia.es_especial && (
+          <>
+            <button
+              onClick={importacion.descargarPlantilla}
+              disabled={!selectedTrimestre || importacion.descargando}
+              className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs font-semibold text-fg-muted hover:bg-surface-2 hover:text-fg disabled:opacity-50 transition-colors"
+            >
+              {importacion.descargando ? '…' : <><Icon name="download" className="h-4 w-4" /> Plantilla</>}
+            </button>
+            <button
+              onClick={importacion.elegirArchivo}
+              disabled={!selectedTrimestre || importacion.importing}
+              className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-lg border border-indigo-600 px-3 py-1.5 text-xs font-semibold text-indigo-700 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-950/30 disabled:opacity-50 transition-colors"
+            >
+              {importacion.importing ? 'Importando…' : <><Icon name="upload" className="h-4 w-4" /> Importar</>}
+            </button>
+            <input
+              ref={importacion.fileInputRef}
+              type="file"
+              accept=".xlsx,.xls,.csv"
+              className="hidden"
+              onChange={importacion.handleFileSelected}
+            />
+          </>
+        )}
       </div>
-
-      {/* Importar notas desde Excel/CSV */}
-      {!trimestreCerrado && !asignacion.materia.es_especial && (
-        <div className="flex gap-2">
-          <button
-            onClick={importacion.descargarPlantilla}
-            disabled={!selectedTrimestre || importacion.descargando}
-            className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs font-semibold text-fg-muted hover:bg-surface-2 hover:text-fg disabled:opacity-50 transition-colors"
-          >
-            {importacion.descargando ? '…' : <><Icon name="download" className="h-4 w-4" /> Plantilla</>}
-          </button>
-          <button
-            onClick={importacion.elegirArchivo}
-            disabled={!selectedTrimestre || importacion.importing}
-            className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-lg border border-indigo-600 px-3 py-1.5 text-xs font-semibold text-indigo-700 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-950/30 disabled:opacity-50 transition-colors"
-          >
-            {importacion.importing ? 'Importando…' : <><Icon name="upload" className="h-4 w-4" /> Importar</>}
-          </button>
-          <input
-            ref={importacion.fileInputRef}
-            type="file"
-            accept=".xlsx,.xls,.csv"
-            className="hidden"
-            onChange={importacion.handleFileSelected}
-          />
-        </div>
-      )}
 
       <button
         onClick={onGuardar}
@@ -395,12 +389,6 @@ function PlanillaMobileView({
       >
         {guardando ? 'Guardando…' : <><Icon name="save" className="h-4 w-4" /> Guardar calificaciones</>}
       </button>
-
-      {trimestreCerrado && (
-        <div className="rounded-lg bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900 px-4 py-2.5 text-sm text-amber-800 dark:text-amber-400 flex items-center gap-2">
-          <Icon name="lock" className="h-4 w-4 flex-shrink-0" /> Trimestre cerrado — solo lectura.
-        </div>
-      )}
 
       {/* Selector de estudiante */}
       {estudiantes.length > 0 && (
@@ -760,32 +748,48 @@ export default function PlanillaPage() {
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
-            {/* Selector de trimestre */}
-            <div className="flex rounded-lg border border-border overflow-hidden">
-              {trimestres.map(t => (
-                <button
-                  key={t.id}
-                  onClick={() => setSelectedTrimestre(t)}
-                  className={`inline-flex items-center gap-1 px-3 py-1.5 text-xs font-semibold transition-colors ${
-                    selectedTrimestre?.id === t.id
-                      ? 'bg-brand text-brand-fg'
-                      : 'bg-surface text-fg-muted hover:bg-surface-2'
-                  } ${t.cerrado ? 'opacity-60' : ''}`}
-                  title={t.cerrado ? 'Cerrado' : 'Abierto'}
-                >
-                  {trimestreLabel(t.numero)}
-                  {t.cerrado && <Icon name="lock" className="h-3 w-3" />}
-                </button>
-              ))}
-            </div>
+          {/* Selector de trimestre — fila propia y fija: no cambia de posición al ocultarse otros botones */}
+          <div className="flex rounded-lg border border-border overflow-hidden flex-shrink-0">
+            {trimestres.map(t => (
+              <button
+                key={t.id}
+                onClick={() => setSelectedTrimestre(t)}
+                className={`inline-flex items-center gap-1 px-3 py-1.5 text-xs font-semibold transition-colors ${
+                  selectedTrimestre?.id === t.id
+                    ? 'bg-brand text-brand-fg'
+                    : 'bg-surface text-fg-muted hover:bg-surface-2'
+                } ${t.cerrado ? 'opacity-60' : ''}`}
+                title={t.cerrado ? 'Cerrado' : 'Abierto'}
+              >
+                {trimestreLabel(t.numero)}
+                {t.cerrado && <Icon name="lock" className="h-3 w-3" />}
+              </button>
+            ))}
+          </div>
+        </div>
 
+        {/* Banner trimestre cerrado — justo debajo del selector, para que no lo desplace */}
+        {trimestreCerrado && (
+          <div className="rounded-lg bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900 px-4 py-3 text-sm text-amber-800 dark:text-amber-400 flex items-center gap-2">
+            <Icon name="lock" className="h-4 w-4 flex-shrink-0" /> <strong>Trimestre cerrado</strong> — solo lectura. No se pueden registrar ni modificar notas.
+          </div>
+        )}
+
+        {/* Banner subárea especial */}
+        {esEspecial && (
+          <div className="rounded-lg bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-200 dark:border-indigo-500/30 px-4 py-3 text-sm text-indigo-800 dark:text-indigo-300">
+            Subárea especial — tus notas se promedian dentro de {asignacion.materia.parent_materia?.nombre ?? 'el área principal'}, no tienen una nota final propia.
+          </div>
+        )}
+
+        {/* Navegación a otras vistas de esta asignación */}
+        {(!esEspecial || asignacion.materia.es_subarea_de_id) && (
+          <div className="flex flex-wrap items-center gap-2">
             {!esEspecial && (
               <Button variant="ghost" size="sm" onClick={() => navigate('centralizador')}>
                 <Icon name="document-list" className="h-4 w-4" /> Centralizador
               </Button>
             )}
-
             {asignacion.materia.es_subarea_de_id && !esEspecial && (
               <Button
                 variant="ghost"
@@ -795,77 +799,52 @@ export default function PlanillaPage() {
                 <Icon name="notebook" className="h-4 w-4" /> Subáreas de {asignacion.materia.parent_materia?.nombre ?? 'esta área'}
               </Button>
             )}
-
-            <Button size="sm" onClick={guardarCalificaciones} loading={guardando}>
-              <Icon name="save" className="h-4 w-4" /> Guardar calificaciones
-            </Button>
-
-            <div className="flex gap-2">
-              <button
-                onClick={() => descargarRegistro('pdf')}
-                disabled={!selectedTrimestre || dlState !== 'idle'}
-                className="inline-flex items-center gap-1.5 rounded-lg border border-blue-600 px-3 py-1.5 text-sm text-blue-700 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/30 disabled:opacity-50 transition-colors"
-              >
-                {dlState === 'pdf' ? '…' : <><Icon name="file-pdf" className="h-4 w-4" /> PDF</>}
-              </button>
-              <button
-                onClick={() => descargarRegistro('xlsx')}
-                disabled={!selectedTrimestre || dlState !== 'idle'}
-                className="inline-flex items-center gap-1.5 rounded-lg border border-green-600 px-3 py-1.5 text-sm text-green-700 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-950/30 disabled:opacity-50 transition-colors"
-              >
-                {dlState === 'xlsx' ? '…' : <><Icon name="file-excel" className="h-4 w-4" /> Excel</>}
-              </button>
-            </div>
-
-            {!trimestreCerrado && !esEspecial && (
-              <div className="flex gap-2">
-                <button
-                  onClick={importacion.descargarPlantilla}
-                  disabled={!selectedTrimestre || importacion.descargando}
-                  title="Descarga una planilla en Excel con los estudiantes y notas actuales, lista para editar"
-                  className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-sm text-fg-muted hover:bg-surface-2 hover:text-fg disabled:opacity-50 transition-colors"
-                >
-                  {importacion.descargando ? '…' : <><Icon name="download" className="h-4 w-4" /> Plantilla</>}
-                </button>
-                <button
-                  onClick={importacion.elegirArchivo}
-                  disabled={!selectedTrimestre || importacion.importing}
-                  title="Sube la plantilla ya completada para cargar varias notas de una vez"
-                  className="inline-flex items-center gap-1.5 rounded-lg border border-indigo-600 px-3 py-1.5 text-sm text-indigo-700 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-950/30 disabled:opacity-50 transition-colors"
-                >
-                  {importacion.importing ? 'Importando…' : <><Icon name="upload" className="h-4 w-4" /> Importar</>}
-                </button>
-                <input
-                  ref={importacion.fileInputRef}
-                  type="file"
-                  accept=".xlsx,.xls,.csv"
-                  className="hidden"
-                  onChange={importacion.handleFileSelected}
-                />
-              </div>
-            )}
           </div>
+        )}
+
+        {/* Datos: exportar el registro, y cargar notas por lote desde Excel/CSV */}
+        <div className="flex flex-wrap items-center gap-2 rounded-lg border border-border bg-surface-2/40 px-3 py-2">
+          <span className="text-xs font-semibold uppercase tracking-wide text-fg-muted mr-1">Datos</span>
+          <ExportarButton disabled={!selectedTrimestre} dlState={dlState} onExport={descargarRegistro} />
+          {!trimestreCerrado && !esEspecial && (
+            <>
+              <button
+                onClick={importacion.descargarPlantilla}
+                disabled={!selectedTrimestre || importacion.descargando}
+                title="Descarga una planilla en Excel con los estudiantes y notas actuales, lista para editar"
+                className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-sm text-fg-muted hover:bg-surface-2 hover:text-fg disabled:opacity-50 transition-colors"
+              >
+                {importacion.descargando ? '…' : <><Icon name="download" className="h-4 w-4" /> Plantilla</>}
+              </button>
+              <button
+                onClick={importacion.elegirArchivo}
+                disabled={!selectedTrimestre || importacion.importing}
+                title="Sube la plantilla ya completada para cargar varias notas de una vez"
+                className="inline-flex items-center gap-1.5 rounded-lg border border-indigo-600 px-3 py-1.5 text-sm text-indigo-700 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-950/30 disabled:opacity-50 transition-colors"
+              >
+                {importacion.importing ? 'Importando…' : <><Icon name="upload" className="h-4 w-4" /> Importar</>}
+              </button>
+              <input
+                ref={importacion.fileInputRef}
+                type="file"
+                accept=".xlsx,.xls,.csv"
+                className="hidden"
+                onChange={importacion.handleFileSelected}
+              />
+            </>
+          )}
         </div>
 
-        {/* Banner subárea especial */}
-        {esEspecial && (
-          <div className="rounded-lg bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-200 dark:border-indigo-500/30 px-4 py-3 text-sm text-indigo-800 dark:text-indigo-300">
-            Subárea especial — tus notas se promedian dentro de {asignacion.materia.parent_materia?.nombre ?? 'el área principal'}, no tienen una nota final propia.
-          </div>
-        )}
-
-        {/* Banner trimestre cerrado */}
-        {trimestreCerrado && (
-          <div className="rounded-lg bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900 px-4 py-3 text-sm text-amber-800 dark:text-amber-400 flex items-center gap-2">
-            <Icon name="lock" className="h-4 w-4 flex-shrink-0" /> <strong>Trimestre cerrado</strong> — solo lectura. No se pueden registrar ni modificar notas.
-          </div>
-        )}
-
-        {/* Resumen */}
-        <p className="text-sm text-fg-muted">
-          {selectedTrimestre && <span>{trimestreLabel(selectedTrimestre.numero)} · </span>}
-          {estudiantes.length} estudiante{estudiantes.length !== 1 ? 's' : ''} · {totalIndicCols} indicador{totalIndicCols !== 1 ? 'es' : ''}
-        </p>
+        {/* Barra superior de la tabla: resumen + acción principal de guardar, justo encima del registro */}
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border bg-surface px-4 py-3 shadow-sm">
+          <p className="text-sm text-fg-muted">
+            {selectedTrimestre && <span className="font-medium text-fg">{trimestreLabel(selectedTrimestre.numero)}</span>} ·{' '}
+            {estudiantes.length} estudiante{estudiantes.length !== 1 ? 's' : ''} · {totalIndicCols} indicador{totalIndicCols !== 1 ? 'es' : ''}
+          </p>
+          <Button onClick={guardarCalificaciones} loading={guardando}>
+            <Icon name="save" className="h-4 w-4" /> Guardar calificaciones
+          </Button>
+        </div>
 
         {/* ── TABLA ─────────────────────────────────────────────────────────── */}
         <div className="overflow-x-auto rounded-xl border border-border shadow-sm">

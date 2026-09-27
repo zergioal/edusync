@@ -128,7 +128,7 @@ export default function MisMateriasPage() {
                   >
                     <Icon name="clipboard-check" className="h-5 w-5" />
                     <span className="text-xs font-semibold leading-none">
-                      {isInicial ? 'Observ.' : 'Planilla'}
+                      {isInicial ? 'Observ.' : 'Registro de notas'}
                     </span>
                   </button>
                   <button
@@ -143,7 +143,7 @@ export default function MisMateriasPage() {
                     className="flex flex-col items-center gap-1 rounded-lg bg-violet-600 px-2 py-2.5 text-white transition-colors hover:bg-violet-700"
                   >
                     <Icon name="notebook" className="h-5 w-5" />
-                    <span className="text-xs font-semibold leading-none">C. Diario</span>
+                    <span className="text-xs font-semibold leading-none">Control diario</span>
                   </button>
                 </div>
               </div>

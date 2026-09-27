@@ -317,7 +317,7 @@ export const NAV_POR_ROL: Record<string, NavItem[]> = {
     },
     {
       to: "/dashboard/docente/calificaciones",
-      label: "Registro de notas y asistencia",
+      label: "Registro",
       icon: "chart",
     },
     { to: "/dashboard/docente/tareas", label: "Tareas", icon: "folder" },
