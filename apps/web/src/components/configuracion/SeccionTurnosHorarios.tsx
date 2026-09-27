@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef } from 'react'
 import { api, ApiError } from '../../lib/api'
 import { useToast } from '../ui/Toast'
+import { useAuth } from '../../context/AuthContext'
+import { Rol } from '@edusync/types'
 import { Button, Spinner } from '@edusync/ui'
 
 // ─── Tipos ────────────────────────────────────────────────────────────────────
@@ -119,12 +121,13 @@ function PreviewHorario({
 // ─── Sub-componente: config de nivel dentro de un turno ──────────────────────
 
 function NivelHorarioConfig({
-  hn, duracionPeriodo, maxPeriodos,
+  hn, duracionPeriodo, maxPeriodos, readOnly,
   onChange,
 }: {
   hn:              HorarioNivel
   duracionPeriodo: number
   maxPeriodos:     number
+  readOnly?:       boolean
   onChange:        (updated: HorarioNivel) => void
 }) {
   const [showPreview, setShowPreview] = useState(false)
@@ -159,7 +162,8 @@ function NivelHorarioConfig({
             type="time"
             value={hn.hora_inicio}
             onChange={e => update({ hora_inicio: e.target.value })}
-            className="w-full rounded border border-border px-2 py-1.5 text-sm focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand"
+            disabled={readOnly}
+            className="w-full rounded border border-border px-2 py-1.5 text-sm focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand disabled:opacity-60"
           />
         </div>
         <div>
@@ -168,7 +172,8 @@ function NivelHorarioConfig({
             type="number" min={0} max={60}
             value={hn.minutos_lectura}
             onChange={e => update({ minutos_lectura: parseInt(e.target.value) || 0 })}
-            className="w-full rounded border border-border px-2 py-1.5 text-sm focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand"
+            disabled={readOnly}
+            className="w-full rounded border border-border px-2 py-1.5 text-sm focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand disabled:opacity-60"
           />
         </div>
         <div>
@@ -177,7 +182,8 @@ function NivelHorarioConfig({
             type="number" min={1} max={12}
             value={hn.max_periodos_dia}
             onChange={e => update({ max_periodos_dia: parseInt(e.target.value) || 1 })}
-            className="w-full rounded border border-border px-2 py-1.5 text-sm focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand"
+            disabled={readOnly}
+            className="w-full rounded border border-border px-2 py-1.5 text-sm focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand disabled:opacity-60"
           />
         </div>
       </div>
@@ -186,7 +192,7 @@ function NivelHorarioConfig({
       <div className="mb-2">
         <div className="flex items-center justify-between mb-1">
           <span className="text-xs font-medium text-fg-muted">Recreos</span>
-          {hn.recreos.length < maxPeriodos && (
+          {!readOnly && hn.recreos.length < maxPeriodos && (
             <button
               type="button"
               onClick={addRecreo}
@@ -206,23 +212,27 @@ function NivelHorarioConfig({
               type="number" min={1} max={maxPeriodos}
               value={r.despues_de_periodo}
               onChange={e => setRecreo(i, 'despues_de_periodo', parseInt(e.target.value) || 1)}
-              className="w-14 rounded border border-border px-2 py-1 text-xs focus:border-brand focus:outline-none"
+              disabled={readOnly}
+              className="w-14 rounded border border-border px-2 py-1 text-xs focus:border-brand focus:outline-none disabled:opacity-60"
             />
             <span className="text-xs text-fg-muted shrink-0">Duración</span>
             <input
               type="number" min={5} max={60}
               value={r.duracion_min}
               onChange={e => setRecreo(i, 'duracion_min', parseInt(e.target.value) || 5)}
-              className="w-14 rounded border border-border px-2 py-1 text-xs focus:border-brand focus:outline-none"
+              disabled={readOnly}
+              className="w-14 rounded border border-border px-2 py-1 text-xs focus:border-brand focus:outline-none disabled:opacity-60"
             />
             <span className="text-xs text-fg-muted">min</span>
-            <button
-              type="button"
-              onClick={() => removeRecreo(i)}
-              className="ml-auto text-xs text-red-500 hover:text-red-700"
-            >
-              ×
-            </button>
+            {!readOnly && (
+              <button
+                type="button"
+                onClick={() => removeRecreo(i)}
+                className="ml-auto text-xs text-red-500 hover:text-red-700"
+              >
+                ×
+              </button>
+            )}
           </div>
         ))}
       </div>
@@ -249,6 +259,8 @@ export function SeccionTurnosHorarios() {
   const toast    = useToast()
   const toastRef = useRef(toast)
   toastRef.current = toast
+  const { user } = useAuth()
+  const readOnly = user?.rol === Rol.SECRETARIA
 
   const [config,  setConfig]  = useState<ConfigData | null>(null)
   const [loading, setLoading] = useState(true)
@@ -338,7 +350,8 @@ export function SeccionTurnosHorarios() {
                 id={`turno-${turno.id}`}
                 checked={turno.activo}
                 onChange={e => updateTurno(ti, { activo: e.target.checked })}
-                className="h-4 w-4"
+                disabled={readOnly}
+                className="h-4 w-4 disabled:opacity-60"
               />
               <label htmlFor={`turno-${turno.id}`} className="flex-1 cursor-pointer">
                 <span className="font-semibold text-fg">{turno.nombre}</span>
@@ -356,6 +369,7 @@ export function SeccionTurnosHorarios() {
                     hn={hn}
                     duracionPeriodo={config.duracion_periodo_min}
                     maxPeriodos={hn.max_periodos_dia}
+                    readOnly={readOnly}
                     onChange={updated => updateHorarioNivel(ti, hi, updated)}
                   />
                 ))}
@@ -365,11 +379,13 @@ export function SeccionTurnosHorarios() {
         ))}
       </div>
 
-      <div className="flex justify-end pt-2">
-        <Button onClick={save} loading={saving}>
-          Guardar horarios
-        </Button>
-      </div>
+      {!readOnly && (
+        <div className="flex justify-end pt-2">
+          <Button onClick={save} loading={saving}>
+            Guardar horarios
+          </Button>
+        </div>
+      )}
     </div>
   )
 }

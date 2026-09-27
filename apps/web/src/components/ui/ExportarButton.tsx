@@ -1,15 +1,17 @@
 import { useState, useRef, useEffect } from 'react'
-import { Icon } from '../ui/Icon'
+import { Icon } from './Icon'
 
 interface Props {
   disabled?:  boolean
   dlState:    'idle' | 'pdf' | 'xlsx'
   onExport:   (tipo: 'pdf' | 'xlsx') => void
   className?: string
+  /** Lado desde el que se ancla el menú desplegado — 'left' (por defecto) o 'right' si el botón queda pegado al borde derecho. */
+  align?:     'left' | 'right'
 }
 
 /** Un solo botón "Exportar" que despliega la elección de formato, en vez de dos botones PDF/Excel separados. */
-export function ExportarButton({ disabled, dlState, onExport, className = '' }: Props) {
+export function ExportarButton({ disabled, dlState, onExport, className = '', align = 'left' }: Props) {
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
   const exporting = dlState !== 'idle'
@@ -33,7 +35,7 @@ export function ExportarButton({ disabled, dlState, onExport, className = '' }: 
         {exporting ? '…' : <><Icon name="download" className="h-4 w-4" /> Exportar</>}
       </button>
       {open && (
-        <div className="absolute left-0 top-full mt-1 z-30 w-36 rounded-lg border border-border bg-surface shadow-lg overflow-hidden">
+        <div className={`absolute ${align === 'right' ? 'right-0' : 'left-0'} top-full mt-1 z-30 w-36 rounded-lg border border-border bg-surface shadow-lg overflow-hidden`}>
           <button
             type="button"
             onClick={() => { setOpen(false); onExport('pdf') }}

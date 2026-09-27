@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { api, ApiError } from '../../lib/api'
+import { api, ApiError, apiDownload } from '../../lib/api'
 import { useToast } from '../../components/ui/Toast'
 import { useAuth } from '../../context/AuthContext'
 import { Button, Badge, Spinner } from '@edusync/ui'
@@ -9,6 +9,7 @@ import { NuevoEstudianteModal } from './NuevoEstudianteModal'
 import { TutorField, type TutorMatch } from '../../components/TutorField'
 import { useGestionActiva } from '../../hooks/useGestionActiva'
 import { ResetPasswordModal } from '../../components/ResetPasswordModal'
+import { ExportarButton } from '../../components/ui/ExportarButton'
 import { Rol } from '@edusync/types'
 
 const BASE_PATHS_CON_REPORTES = new Set(['/dashboard/coordinador', '/dashboard/director'])
@@ -519,6 +520,7 @@ export default function EstudiantesPage({ basePath = '/dashboard/admin' }: { bas
   const [buscar,       setBuscar]       = useState('')
   const [buscarInput,  setBuscarInput]  = useState('')
   const [estadoFiltro, setEstadoFiltro] = useState<'ACTIVO' | 'TODOS' | EstadoEstudiante>('ACTIVO')
+  const [dlState,      setDlState]      = useState<'idle' | 'pdf' | 'xlsx'>('idle')
 
   // Cargar paralelos para la grilla de cursos
   useEffect(() => {
@@ -569,6 +571,25 @@ export default function EstudiantesPage({ basePath = '/dashboard/admin' }: { bas
     setSelectedParalelo(null)
     setEstudiantes([])
     setSearchParams({}, { replace: true })
+  }
+
+  async function descargarNomina(tipo: 'pdf' | 'xlsx') {
+    if (!selectedParalelo) return
+    setDlState(tipo)
+    try {
+      const qs = new URLSearchParams({
+        paralelo_id: selectedParalelo.id,
+        gestion_id:  gestionId || gestionActivaId || '',
+      })
+      await apiDownload(
+        `/reportes/nomina/${tipo === 'pdf' ? 'pdf' : 'excel'}?${qs}`,
+        `estudiantes_${selectedParalelo.grado.nombre}_${selectedParalelo.letra}.${tipo === 'pdf' ? 'pdf' : 'xlsx'}`,
+      )
+    } catch {
+      toast.error('Error al generar el archivo')
+    } finally {
+      setDlState('idle')
+    }
   }
 
   // Arma la URL al perfil del estudiante, llevando el curso actual para que
@@ -719,6 +740,12 @@ export default function EstudiantesPage({ basePath = '/dashboard/admin' }: { bas
                 Centralizador {t.numero}° Trimestre
               </Button>
             ))}
+            <ExportarButton
+              align="right"
+              disabled={!selectedParalelo}
+              dlState={dlState}
+              onExport={descargarNomina}
+            />
             {canManage && <Button onClick={() => setModalNuevo(true)}>+ Matricular estudiante</Button>}
           </div>
         </div>

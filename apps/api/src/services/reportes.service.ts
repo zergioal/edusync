@@ -289,9 +289,9 @@ export class ReportesService {
     })
     if (!gestion) throw new AppError(404, 'Gestión no encontrada', 'NOT_FOUND')
     if (gestion.institucion.id !== institucion_id) throw new AppError(403, 'Sin acceso', 'FORBIDDEN')
-    if (gestion.trimestres.some(t => !t.cerrado)) {
-      throw new AppError(422, 'Todos los trimestres deben estar cerrados para calcular la promoción', 'TRIMESTERS_OPEN')
-    }
+    // Se puede calcular con trimestres abiertos, como vista previa — el resultado se marca
+    // `provisional` para dejar claro que puede cambiar hasta que se cierren los 3 trimestres.
+    const provisional = gestion.trimestres.some(t => !t.cerrado)
 
     const [dimensionesRaw, asignaciones, matriculas] = await Promise.all([
       prisma.dimension.findMany({ where: { institucion_id }, orderBy: { orden: 'asc' } }),
@@ -324,7 +324,7 @@ export class ReportesService {
       asignaciones.map(a => a.id), trimestres.map(t => t.id),
     )
 
-    return matriculas.map(m => {
+    const resultados = matriculas.map(m => {
       const est = m.estudiante
 
       // For each asignacion (materia), calculate T1/T2/T3 totals
@@ -376,6 +376,8 @@ export class ReportesService {
         materias_reprobadas,
       }
     })
+
+    return { provisional, resultados }
   }
 
   // ── Reportes de Secretaría ───────────────────────────────────────────────

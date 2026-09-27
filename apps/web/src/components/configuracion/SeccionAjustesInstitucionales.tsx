@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef } from 'react'
 import { api, ApiError } from '../../lib/api'
 import { useToast } from '../ui/Toast'
+import { useAuth } from '../../context/AuthContext'
+import { Rol } from '@edusync/types'
 import { Button, Spinner } from '@edusync/ui'
 
 interface SubareaBTH {
@@ -26,6 +28,8 @@ export function SeccionAjustesInstitucionales() {
   const toast    = useToast()
   const toastRef = useRef(toast)
   toastRef.current = toast
+  const { user } = useAuth()
+  const readOnly = user?.rol === Rol.SECRETARIA
 
   const [loading, setLoading] = useState(true)
   const [saving,  setSaving]  = useState(false)
@@ -90,6 +94,7 @@ export function SeccionAjustesInstitucionales() {
                 value={opt.value}
                 checked={draft.tipo_ue === opt.value}
                 onChange={() => setDraft(d => d ? { ...d, tipo_ue: opt.value } : d)}
+                disabled={readOnly}
                 className="mt-0.5"
               />
               <div>
@@ -116,7 +121,8 @@ export function SeccionAjustesInstitucionales() {
               value={draft.carrera_tecnica ?? ''}
               onChange={e => setDraft(d => d ? { ...d, carrera_tecnica: e.target.value || null } : d)}
               placeholder="Ej: Administración de Empresas"
-              className="w-full max-w-md rounded-lg border border-border px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              disabled={readOnly}
+              className="w-full max-w-md rounded-lg border border-border px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-60"
             />
           </div>
 
@@ -159,18 +165,21 @@ export function SeccionAjustesInstitucionales() {
             type="number" min={20} max={120}
             value={draft.duracion_periodo_min}
             onChange={e => setDraft(d => d ? { ...d, duracion_periodo_min: parseInt(e.target.value) || 40 } : d)}
-            className="w-24 rounded-lg border border-border px-3 py-2 text-sm focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand"
+            disabled={readOnly}
+            className="w-24 rounded-lg border border-border px-3 py-2 text-sm focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand disabled:opacity-60"
           />
           <span className="text-sm text-fg-muted">minutos</span>
           <span className="text-xs text-fg-muted">(recomendado: 40 o 45 min)</span>
         </div>
       </section>
 
-      <div className="flex justify-end pt-1">
-        <Button onClick={save} loading={saving}>
-          Guardar ajustes institucionales
-        </Button>
-      </div>
+      {!readOnly && (
+        <div className="flex justify-end pt-1">
+          <Button onClick={save} loading={saving}>
+            Guardar ajustes institucionales
+          </Button>
+        </div>
+      )}
     </div>
   )
 }

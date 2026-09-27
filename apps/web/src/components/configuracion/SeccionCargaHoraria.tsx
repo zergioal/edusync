@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef, useCallback, Fragment } from 'react'
 import { api, ApiError } from '../../lib/api'
 import { useToast } from '../ui/Toast'
+import { useAuth } from '../../context/AuthContext'
+import { Rol } from '@edusync/types'
 import { Button, Spinner } from '@edusync/ui'
 
 interface Nivel  { id: string; nombre: string }
@@ -23,6 +25,8 @@ export function SeccionCargaHoraria() {
   const toast    = useToast()
   const toastRef = useRef(toast)
   toastRef.current = toast
+  const { user } = useAuth()
+  const readOnly = user?.rol === Rol.SECRETARIA
 
   const [niveles,   setNiveles]   = useState<Nivel[]>([])
   const [nivelId,   setNivelId]   = useState('')
@@ -192,7 +196,8 @@ export function SeccionCargaHoraria() {
                               type="number" min={0} max={999}
                               value={h}
                               onChange={e => setHoras(mat.id, g.id, parseInt(e.target.value) || 0)}
-                              className={`w-16 rounded border text-center text-sm px-1 py-1 focus:outline-none focus:ring-1 focus:ring-brand ${
+                              disabled={readOnly}
+                              className={`w-16 rounded border text-center text-sm px-1 py-1 focus:outline-none focus:ring-1 focus:ring-brand disabled:opacity-60 ${
                                 ov ? 'border-blue-400 bg-blue-50 dark:bg-blue-950/30' : 'border-border'
                               }`}
                             />
@@ -219,7 +224,8 @@ export function SeccionCargaHoraria() {
                                 type="number" min={0} max={999}
                                 value={h}
                                 onChange={e => setHoras(sub.id, g.id, parseInt(e.target.value) || 0)}
-                                className={`w-16 rounded border text-center text-sm px-1 py-1 focus:outline-none focus:ring-1 focus:ring-brand ${
+                                disabled={readOnly}
+                                className={`w-16 rounded border text-center text-sm px-1 py-1 focus:outline-none focus:ring-1 focus:ring-brand disabled:opacity-60 ${
                                   ov ? 'border-blue-400 bg-blue-50 dark:bg-blue-950/30' : 'border-border'
                                 }`}
                               />
@@ -246,7 +252,8 @@ export function SeccionCargaHoraria() {
                                 type="number" min={0} max={999}
                                 value={h}
                                 onChange={e => setHoras(sub.id, g.id, parseInt(e.target.value) || 0)}
-                                className={`w-16 rounded border text-center text-sm px-1 py-1 focus:outline-none focus:ring-1 focus:ring-brand ${
+                                disabled={readOnly}
+                                className={`w-16 rounded border text-center text-sm px-1 py-1 focus:outline-none focus:ring-1 focus:ring-brand disabled:opacity-60 ${
                                   ov ? 'border-blue-400 bg-blue-50 dark:bg-blue-950/30' : 'border-border'
                                 }`}
                               />
@@ -280,11 +287,13 @@ export function SeccionCargaHoraria() {
             </table>
           </div>
 
-          <div className="flex justify-end">
-            <Button onClick={save} loading={saving} disabled={!hasChanges}>
-              Guardar carga horaria
-            </Button>
-          </div>
+          {!readOnly && (
+            <div className="flex justify-end">
+              <Button onClick={save} loading={saving} disabled={!hasChanges}>
+                Guardar carga horaria
+              </Button>
+            </div>
+          )}
         </>
       )}
     </div>

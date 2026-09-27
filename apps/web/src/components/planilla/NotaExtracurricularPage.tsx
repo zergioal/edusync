@@ -38,10 +38,16 @@ export function NotaExtracurricularPage() {
   const [overrides,    setOverrides]    = useState<Record<string, string>>({})
   const [loading,      setLoading]      = useState(false)
   const [saving,       setSaving]       = useState(false)
+  const inputRefs = useRef<Map<string, HTMLInputElement>>(new Map())
 
   useEffect(() => {
     api.get<Nivel[]>('/niveles')
-      .then(data => { setNiveles(data); if (data[0]) setNivelId(data[0].id) })
+      // Nota extracurricular no aplica a Inicial (evaluación cualitativa, sin nota numérica).
+      .then(data => {
+        const disponibles = data.filter(n => n.nombre !== 'INICIAL')
+        setNiveles(disponibles)
+        if (disponibles[0]) setNivelId(disponibles[0].id)
+      })
       .catch(() => toastRef.current.error('Error cargando niveles'))
     api.get<Paralelo[]>('/paralelos')
       .then(setParalelos)
@@ -89,6 +95,15 @@ export function NotaExtracurricularPage() {
   }
   const setValor = (estudiante_id: string, val: string) =>
     setOverrides(prev => ({ ...prev, [estudiante_id]: val }))
+
+  // Navegación estilo Excel: solo hay una columna de notas, así que arriba/abajo pasan de fila y,
+  // al llegar al primer o último estudiante, el foco se queda ahí en vez de perderse.
+  function handleArrowMove(dir: 'up' | 'down' | 'left' | 'right', idx: number) {
+    if (dir === 'left' || dir === 'right') return
+    const targetFila = filas[dir === 'up' ? idx - 1 : idx + 1]
+    const targetEl = targetFila ? inputRefs.current.get(targetFila.estudiante_id) : undefined
+    if (targetEl) { targetEl.focus(); targetEl.select() }
+  }
 
   const hasChanges = Object.keys(overrides).length > 0
 
@@ -205,7 +220,7 @@ export function NotaExtracurricularPage() {
                 {filas.length === 0 && (
                   <tr><td colSpan={3} className="py-10 text-center text-fg-muted">No hay estudiantes matriculados en este curso.</td></tr>
                 )}
-                {filas.map(f => {
+                {filas.map((f, idx) => {
                   const val = getValor(f.estudiante_id)
                   const modificado = overrides[f.estudiante_id] !== undefined
                   return (
@@ -218,9 +233,21 @@ export function NotaExtracurricularPage() {
                       </td>
                       <td className="px-4 py-2.5 text-center">
                         <input
+                          ref={el => {
+                            if (el) inputRefs.current.set(f.estudiante_id, el)
+                            else inputRefs.current.delete(f.estudiante_id)
+                          }}
                           type="number"
                           value={val}
                           onChange={e => setValor(f.estudiante_id, e.target.value)}
+                          onKeyDown={e => {
+                            const dir =
+                              e.key === 'ArrowUp' ? 'up' : e.key === 'ArrowDown' || e.key === 'Enter' ? 'down' :
+                              e.key === 'ArrowLeft' ? 'left' : e.key === 'ArrowRight' ? 'right' : undefined
+                            if (!dir) return
+                            e.preventDefault()
+                            handleArrowMove(dir, idx)
+                          }}
                           placeholder="—"
                           className={`w-20 rounded border text-center text-sm px-1 py-1.5 focus:outline-none focus:ring-1 focus:ring-brand ${
                             modificado ? 'border-blue-400 bg-blue-50 dark:bg-blue-950/30' : 'border-border'

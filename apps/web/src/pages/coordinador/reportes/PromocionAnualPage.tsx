@@ -23,6 +23,7 @@ export default function PromocionAnualPage() {
   const [gestionId,  setGestionId]  = useState('')
   const [paraleloId, setParaleloId] = useState('')
   const [data,       setData]       = useState<EstRow[] | null>(null)
+  const [provisional, setProvisional] = useState(false)
   const [loading,    setLoading]    = useState(false)
   const [error,      setError]      = useState<string | null>(null)
   const [expanded,   setExpanded]   = useState<string | null>(null)
@@ -32,8 +33,11 @@ export default function PromocionAnualPage() {
     if (!gestionId || !paraleloId) return
     setLoading(true); setError(null)
     try {
-      const res = await api.get<EstRow[]>(`/reportes/promocion-anual?paralelo_id=${paraleloId}&gestion_id=${gestionId}`)
-      setData(res)
+      const res = await api.get<{ provisional: boolean; resultados: EstRow[] }>(
+        `/reportes/promocion-anual?paralelo_id=${paraleloId}&gestion_id=${gestionId}`
+      )
+      setData(res.resultados)
+      setProvisional(res.provisional)
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : 'Error al cargar')
     } finally { setLoading(false) }
@@ -47,10 +51,6 @@ export default function PromocionAnualPage() {
       <div className="flex items-center gap-3">
         <Link to=".." className="text-sm text-blue-600 hover:underline">← Reportes</Link>
         <h1 className="text-xl font-bold text-fg">🎓 Resultado Final / Promoción</h1>
-      </div>
-
-      <div className="rounded-lg bg-amber-50 border border-amber-200 p-3 text-sm text-amber-800">
-        ⚠️ Este reporte solo está disponible cuando los 3 trimestres de la gestión están <strong>cerrados</strong>.
       </div>
 
       <div className="rounded-xl border border-border bg-surface p-5">
@@ -70,6 +70,13 @@ export default function PromocionAnualPage() {
       </div>
 
       {error && <div className="rounded-lg bg-red-50 p-3 text-sm text-red-700">{error}</div>}
+
+      {data && provisional && (
+        <div className="rounded-lg bg-amber-50 border border-amber-200 p-3 text-sm text-amber-800">
+          ⚠️ Resultado <strong>provisional</strong> — todavía hay trimestres de esta gestión sin cerrar, así que el
+          resultado final podría cambiar cuando se cierren.
+        </div>
+      )}
 
       {data && (
         <div className="space-y-4">

@@ -2,15 +2,22 @@ import { prisma } from '@edusync/database'
 import { AppError } from '../middlewares/errorHandler'
 
 export class NotaExtracurricularService {
-  /** Confirma que la asignación pertenece a la institución del usuario que hace la petición. */
+  /** Confirma que la asignación pertenece a la institución del usuario que hace la petición y que
+   *  no es de Inicial (evaluación cualitativa, sin nota numérica — no aplica nota extracurricular). */
   private async verificarAcceso(asignacion_id: string, institucion_id: string) {
     const asignacion = await prisma.asignacion.findUnique({
       where:   { id: asignacion_id },
-      include: { docente: { include: { usuario: { select: { institucion_id: true } } } } },
+      include: {
+        docente: { include: { usuario: { select: { institucion_id: true } } } },
+        materia: { include: { nivel: true } },
+      },
     })
     if (!asignacion) throw new AppError(404, 'Asignación no encontrada', 'NOT_FOUND')
     if (asignacion.docente.usuario.institucion_id !== institucion_id) {
       throw new AppError(403, 'Sin acceso', 'FORBIDDEN')
+    }
+    if (asignacion.materia.nivel.nombre === 'INICIAL') {
+      throw new AppError(422, 'La nota extracurricular no aplica a Nivel Inicial', 'VALIDATION')
     }
     return asignacion
   }

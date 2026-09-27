@@ -8,7 +8,7 @@ import { getTrimestreActivo, trimestreLabel } from '../../lib/trimestre'
 import { useIsMobile } from '../../hooks/useIsMobile'
 import { IndicadorFormModal, type IndicadorFormValues } from '../../components/planilla/IndicadorFormModal'
 import { ImportarNotasResultModal, type ImportarNotasResult } from '../../components/planilla/ImportarNotasResultModal'
-import { ExportarButton } from '../../components/planilla/ExportarButton'
+import { ExportarButton } from '../../components/ui/ExportarButton'
 import { Icon } from '../../components/ui/Icon'
 import { BackButton } from '../../components/ui/BackButton'
 
