@@ -660,6 +660,12 @@ export default function PlanillaPage() {
     if (dir === 'right') {
       targetCol += 1
       while (targetCol < flatIndicadores.length && flatIndicadores[targetCol]?.editable === false) targetCol += 1
+      if (targetCol >= flatIndicadores.length) {
+        // Fin de la fila: seguir en la primera casilla editable de la fila siguiente (si existe).
+        targetRow += 1
+        targetCol = 0
+        while (targetCol < flatIndicadores.length && flatIndicadores[targetCol]?.editable === false) targetCol += 1
+      }
     }
 
     const targetInd = flatIndicadores[targetCol]
@@ -667,7 +673,8 @@ export default function PlanillaPage() {
     const targetEl  = targetInd && targetEst ? cellRefs.current.get(cellKey(targetInd.id, targetEst.id)) : undefined
 
     if (targetEl) { targetEl.focus(); targetEl.select() }
-    else current.blur()
+    // Si no hay celda destino (ej. flecha derecha en la última fila), se mantiene el foco actual.
+    else if (dir !== 'right') current.blur()
   }
 
   // Total de columnas de indicadores (para calcular colSpan) + columnas "+" (una por dimensión editable, Autoevaluación no)
