@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { api, ApiError } from '../../lib/api'
 import { useAuth } from '../../context/AuthContext'
 import { RegistrarPagoMultipleModal } from '../../components/pensiones/RegistrarPagoMultipleModal'
+import { Icon } from '../../components/ui/Icon'
 
 // ─── Tipos ────────────────────────────────────────────────────────────────────
 
@@ -177,20 +178,26 @@ export default function PensionesPage() {
 
   return (
     <div className="space-y-5">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-2xl font-bold text-fg">Pensiones escolares</h1>
-        <div className="flex items-center gap-3">
-          <Link to="/dashboard/admin/finanzas/registrar"
-            className="text-sm text-green-600 hover:underline font-medium">
-            Registro rápido →
+        <div className="flex flex-wrap items-center gap-2">
+          <Link
+            to="/dashboard/admin/finanzas/registrar"
+            className="inline-flex items-center gap-1.5 rounded-lg bg-green-600 px-3 py-1.5 text-sm font-semibold text-white transition-colors hover:bg-green-700"
+          >
+            <Icon name="save" className="h-4 w-4" /> Registro rápido
           </Link>
-          <Link to="/dashboard/admin/finanzas/tarifas"
-            className="text-sm text-indigo-600 hover:underline font-medium">
-            Tarifas →
+          <Link
+            to="/dashboard/admin/finanzas/tarifas"
+            className="inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-3 py-1.5 text-sm font-semibold text-white transition-colors hover:bg-indigo-700"
+          >
+            <Icon name="settings" className="h-4 w-4" /> Tarifas
           </Link>
-          <Link to="/dashboard/admin/finanzas/morosidad"
-            className="text-sm text-blue-600 hover:underline font-medium">
-            Morosidad →
+          <Link
+            to="/dashboard/admin/finanzas/morosidad"
+            className="inline-flex items-center gap-1.5 rounded-lg bg-red-600 px-3 py-1.5 text-sm font-semibold text-white transition-colors hover:bg-red-700"
+          >
+            <Icon name="alert-triangle" className="h-4 w-4" /> Morosidad
           </Link>
         </div>
       </div>
@@ -212,11 +219,9 @@ export default function PensionesPage() {
         {buscar && (
           <button
             onClick={() => setBuscar('')}
-            className="absolute inset-y-0 right-0 flex items-center pr-4 text-fg-muted hover:text-fg-muted"
+            className="absolute inset-y-0 right-0 flex items-center pr-4 text-fg-muted transition-colors hover:text-fg"
           >
-            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-            </svg>
+            <Icon name="x" className="h-4 w-4" />
           </button>
         )}
       </div>
@@ -252,9 +257,9 @@ export default function PensionesPage() {
           <div className="ml-auto">
             <button
               onClick={abrirPreview}
-              className="bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg px-4 py-1.5 transition-colors"
+              className="inline-flex items-center gap-1.5 rounded-lg bg-blue-600 px-4 py-1.5 text-sm font-semibold text-white transition-colors hover:bg-blue-700"
             >
-              Generar mes
+              <Icon name="calendar-check" className="h-4 w-4" /> Generar mes
             </button>
           </div>
         </div>
@@ -382,23 +387,23 @@ export default function PensionesPage() {
                         {!p.pagado && (
                           <button
                             onClick={() => setPagoModal(p.estudiante)}
-                            className="bg-green-600 hover:bg-green-700 text-white text-xs font-medium px-2.5 py-1 rounded-lg transition-colors whitespace-nowrap"
+                            className="inline-flex items-center gap-1 whitespace-nowrap rounded-lg bg-green-600 px-2.5 py-1 text-xs font-semibold text-white transition-colors hover:bg-green-700"
                           >
-                            Registrar pago
+                            <Icon name="save" className="h-3.5 w-3.5" /> Registrar pago
                           </button>
                         )}
                         <Link
                           to={`/dashboard/admin/finanzas/estudiante/${p.estudiante.id}`}
-                          className="text-blue-600 hover:text-blue-800 text-xs font-medium px-2.5 py-1 rounded-lg hover:bg-blue-50 transition-colors whitespace-nowrap"
+                          className="inline-flex items-center gap-1 whitespace-nowrap rounded-lg px-2.5 py-1 text-xs font-semibold text-blue-700 transition-colors hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-950/30"
                         >
-                          Ver cuenta
+                          <Icon name="id-card" className="h-3.5 w-3.5" /> Ver cuenta
                         </Link>
                         {p.pagado && canAnular && (
                           <button
                             onClick={() => anular(p.id)}
-                            className="text-red-500 hover:text-red-700 text-xs px-2 py-1 rounded hover:bg-red-50 transition-colors"
+                            className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium text-red-500 transition-colors hover:bg-red-50 hover:text-red-700 dark:hover:bg-red-950/30"
                           >
-                            Anular
+                            <Icon name="x" className="h-3.5 w-3.5" /> Anular
                           </button>
                         )}
                       </div>

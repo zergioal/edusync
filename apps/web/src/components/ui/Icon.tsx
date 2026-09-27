@@ -9,7 +9,7 @@ export type IconName =
   | 'award' | 'users'
   | 'document-x' | 'user-x' | 'door-exit' | 'clipboard-x' | 'mail' | 'alert-triangle' | 'pencil' | 'user-minus'
   | 'x' | 'download' | 'upload' | 'file-pdf' | 'file-excel' | 'clock' | 'save' | 'lock'
-  | 'arrow-left'
+  | 'arrow-left' | 'settings'
 
 // Set minimalista de línea, mismo lenguaje visual que components/ui/NavIcon.tsx
 // (viewBox 24x24, trazo redondeado) — para tarjetas de reportes y botones de acción.
@@ -159,6 +159,11 @@ const PATHS: Record<IconName, string[]> = {
   'arrow-left': [
     'M19 12H5',
     'M11 18l-6-6 6-6',
+  ],
+  settings: [
+    'M12 8.5a3.5 3.5 0 100 7 3.5 3.5 0 000-7z',
+    'M12 2.5v3M12 18.5v3M21.5 12h-3M5.5 12h-3',
+    'M18.5 5.5l-2.1 2.1M7.6 16.4l-2.1 2.1M18.5 18.5l-2.1-2.1M7.6 7.6L5.5 5.5',
   ],
 }
 
