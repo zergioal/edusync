@@ -39,6 +39,13 @@ enum Instrumento {
   EVALUACION_ORAL
   DEFENSA
   PIZARRA
+  // Lista vigente para nuevos indicadores (ver IndicadorFormModal). Los valores de arriba se
+  // mantienen solo para no romper indicadores ya creados con la lista anterior.
+  LISTA_COTEJO
+  RUBRICA
+  GUIA_OBSERVACION
+  PRUEBA_ESCRITA
+  FICHA_TRABAJO
   OTRO
 }
 

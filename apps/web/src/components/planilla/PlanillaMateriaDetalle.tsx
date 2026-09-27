@@ -11,6 +11,12 @@ const INSTRUMENTO_LABELS: Record<string, string> = {
   EVALUACION_ORAL:    'Eval. Oral',
   DEFENSA:            'Defensa',
   PIZARRA:            'Pizarra',
+  LISTA_COTEJO:       'Lista de cotejo',
+  RUBRICA:            'Rúbrica',
+  GUIA_OBSERVACION:   'Guía de observación',
+  PRUEBA_ESCRITA:     'Prueba escrita',
+  FICHA_TRABAJO:      'Ficha de trabajo',
+  OTRO:               'Otro',
 }
 
 const ESCALA_COLORS: Record<string, string> = {

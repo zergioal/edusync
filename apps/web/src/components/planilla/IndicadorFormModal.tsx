@@ -4,6 +4,18 @@ import { Button } from '@edusync/ui'
 import { useToast } from '../ui/Toast'
 import { ApiError } from '../../lib/api'
 
+// Lista vigente que se ofrece al crear/editar un indicador. OBSERVACION/CUADERNO/EVALUACION_ESCRITA/
+// EVALUACION_ORAL/DEFENSA/PIZARRA ya no se ofrecen aquí, pero se conservan como valores válidos del
+// enum para que los indicadores antiguos que ya los usan sigan mostrándose correctamente.
+const INSTRUMENTOS_SELECCIONABLES = [
+  Instrumento.LISTA_COTEJO,
+  Instrumento.RUBRICA,
+  Instrumento.GUIA_OBSERVACION,
+  Instrumento.PRUEBA_ESCRITA,
+  Instrumento.FICHA_TRABAJO,
+  Instrumento.OTRO,
+]
+
 const INSTRUMENTO_LABELS: Record<string, string> = {
   OBSERVACION:        'Observación',
   CUADERNO:           'Cuaderno',
@@ -11,7 +23,19 @@ const INSTRUMENTO_LABELS: Record<string, string> = {
   EVALUACION_ORAL:     'Evaluación oral',
   DEFENSA:             'Defensa',
   PIZARRA:             'Pizarra',
+  LISTA_COTEJO:        'Lista de cotejo',
+  RUBRICA:             'Rúbrica',
+  GUIA_OBSERVACION:    'Guía de observación',
+  PRUEBA_ESCRITA:      'Prueba escrita',
+  FICHA_TRABAJO:       'Ficha de trabajo',
   OTRO:                'Otro',
+}
+
+/** Ejemplos de redacción del nombre del indicador, según la dimensión — para guiar al docente. */
+const NOMBRE_EJEMPLOS: Record<string, string> = {
+  SABER:       'Ej: "Identifica correctamente los elementos y propiedades de las ecuaciones de primer grado."',
+  HACER:       'Ej: "Resuelve ecuaciones de primer grado aplicando procedimientos algebraicos adecuados."',
+  SER_DECIDIR: 'Ej: "Demuestra responsabilidad y orden en el desarrollo de las actividades."',
 }
 
 export interface IndicadorFormValues {
@@ -35,7 +59,7 @@ interface IndicadorFormModalProps {
 }
 
 const EMPTY: IndicadorFormValues = {
-  nombre: '', instrumento: Instrumento.EVALUACION_ESCRITA, instrumento_otro: '', fecha_aplicacion: '', es_parcial: false,
+  nombre: '', instrumento: Instrumento.PRUEBA_ESCRITA, instrumento_otro: '', fecha_aplicacion: '', es_parcial: false,
 }
 
 export function IndicadorFormModal({
@@ -96,7 +120,7 @@ export function IndicadorFormModal({
                 type="text"
                 value={form.nombre}
                 onChange={e => setForm(f => ({ ...f, nombre: e.target.value }))}
-                placeholder="Ej: Examen parcial unidad 1"
+                placeholder={NOMBRE_EJEMPLOS[dimensionNombre] ?? 'Ej: Examen parcial unidad 1'}
                 required
                 autoFocus
                 className="rounded-lg border border-border bg-surface px-3 py-2 text-sm text-fg focus:border-brand focus:outline-none"
@@ -112,7 +136,12 @@ export function IndicadorFormModal({
                 onChange={e => setForm(f => ({ ...f, instrumento: e.target.value as Instrumento }))}
                 className="rounded-lg border border-border bg-surface px-3 py-2 text-sm text-fg focus:border-brand focus:outline-none"
               >
-                {Object.values(Instrumento).map(v => (
+                {[
+                  ...INSTRUMENTOS_SELECCIONABLES,
+                  // Si se edita un indicador antiguo con un instrumento ya retirado de la lista,
+                  // se agrega al final para no perder ni ocultar el valor guardado.
+                  ...(INSTRUMENTOS_SELECCIONABLES.includes(form.instrumento) ? [] : [form.instrumento]),
+                ].map(v => (
                   <option key={v} value={v}>{INSTRUMENTO_LABELS[v] ?? v}</option>
                 ))}
               </select>
@@ -126,7 +155,7 @@ export function IndicadorFormModal({
                 type="text"
                 value={form.instrumento_otro ?? ''}
                 onChange={e => setForm(f => ({ ...f, instrumento_otro: e.target.value }))}
-                placeholder="Ej: Exposición grupal"
+                placeholder='Ej. "Portafolio o ficha de seguimiento"'
                 required
                 className="rounded-lg border border-border bg-surface px-3 py-2 text-sm text-fg focus:border-brand focus:outline-none"
               />

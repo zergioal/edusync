@@ -23,6 +23,13 @@ export enum Instrumento {
   EVALUACION_ORAL = 'EVALUACION_ORAL',
   DEFENSA = 'DEFENSA',
   PIZARRA = 'PIZARRA',
+  // Lista vigente para nuevos indicadores. Los valores de arriba se mantienen solo para no
+  // romper indicadores ya creados con la lista anterior (ver IndicadorFormModal).
+  LISTA_COTEJO = 'LISTA_COTEJO',
+  RUBRICA = 'RUBRICA',
+  GUIA_OBSERVACION = 'GUIA_OBSERVACION',
+  PRUEBA_ESCRITA = 'PRUEBA_ESCRITA',
+  FICHA_TRABAJO = 'FICHA_TRABAJO',
   OTRO = 'OTRO',
 }
 
