@@ -678,10 +678,9 @@ export default function PlanillaPage() {
     const targetEst = estudiantes[targetRow]
     const targetEl  = targetInd && targetEst ? cellRefs.current.get(cellKey(targetInd.id, targetEst.id)) : undefined
 
+    // Si no hay celda destino (ej. flecha abajo en la última fila, o arriba en la primera),
+    // se mantiene el foco en la casilla actual — nunca se pierde el foco por llegar a un borde.
     if (targetEl) { targetEl.focus(); targetEl.select() }
-    // Si no hay celda destino (ej. flecha derecha en la última fila, o izquierda en la primera),
-    // se mantiene el foco en la casilla actual.
-    else if (dir !== 'right' && dir !== 'left') current.blur()
   }
 
   // Total de columnas de indicadores (para calcular colSpan) + columnas "+" (una por dimensión editable, Autoevaluación no)
