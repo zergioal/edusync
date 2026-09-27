@@ -656,6 +656,12 @@ export default function PlanillaPage() {
     if (dir === 'left') {
       targetCol -= 1
       while (targetCol >= 0 && flatIndicadores[targetCol]?.editable === false) targetCol -= 1
+      if (targetCol < 0) {
+        // Inicio de la fila: seguir en la última casilla editable de la fila anterior (si existe).
+        targetRow -= 1
+        targetCol = flatIndicadores.length - 1
+        while (targetCol >= 0 && flatIndicadores[targetCol]?.editable === false) targetCol -= 1
+      }
     }
     if (dir === 'right') {
       targetCol += 1
@@ -673,8 +679,9 @@ export default function PlanillaPage() {
     const targetEl  = targetInd && targetEst ? cellRefs.current.get(cellKey(targetInd.id, targetEst.id)) : undefined
 
     if (targetEl) { targetEl.focus(); targetEl.select() }
-    // Si no hay celda destino (ej. flecha derecha en la última fila), se mantiene el foco actual.
-    else if (dir !== 'right') current.blur()
+    // Si no hay celda destino (ej. flecha derecha en la última fila, o izquierda en la primera),
+    // se mantiene el foco en la casilla actual.
+    else if (dir !== 'right' && dir !== 'left') current.blur()
   }
 
   // Total de columnas de indicadores (para calcular colSpan) + columnas "+" (una por dimensión editable, Autoevaluación no)
