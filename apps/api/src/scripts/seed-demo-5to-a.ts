@@ -14,15 +14,15 @@ import { PensionesService } from '../services/pensiones.service'
 
 const INDICADORES_DEFECTO: Record<string, Array<{ nombre: string; instrumento: Instrumento }>> = {
   SER_DECIDIR: [
-    { nombre: 'Observación de valores', instrumento: Instrumento.OBSERVACION },
+    { nombre: 'Responsabilidad', instrumento: Instrumento.GUIA_OBSERVACION },
   ],
   SABER: [
-    { nombre: 'Prueba escrita 1', instrumento: Instrumento.EVALUACION_ESCRITA },
-    { nombre: 'Prueba escrita 2', instrumento: Instrumento.EVALUACION_ESCRITA },
+    { nombre: 'Prueba escrita 1', instrumento: Instrumento.PRUEBA_ESCRITA },
+    { nombre: 'Prueba escrita 2', instrumento: Instrumento.PRUEBA_ESCRITA },
   ],
   HACER: [
-    { nombre: 'Cuaderno de trabajo', instrumento: Instrumento.CUADERNO },
-    { nombre: 'Trabajo práctico', instrumento: Instrumento.DEFENSA },
+    { nombre: 'Cuaderno de trabajo', instrumento: Instrumento.FICHA_TRABAJO },
+    { nombre: 'Trabajo práctico', instrumento: Instrumento.LISTA_COTEJO },
   ],
   AUTOEVALUACION: [
     { nombre: 'Autoevaluación', instrumento: Instrumento.OBSERVACION },

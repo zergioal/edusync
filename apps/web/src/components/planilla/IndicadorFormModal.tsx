@@ -33,9 +33,9 @@ const INSTRUMENTO_LABELS: Record<string, string> = {
 
 /** Ejemplos de redacción del nombre del indicador, según la dimensión — para guiar al docente. */
 const NOMBRE_EJEMPLOS: Record<string, string> = {
-  SABER:       'Ej: "Identifica correctamente los elementos y propiedades de las ecuaciones de primer grado."',
-  HACER:       'Ej: "Resuelve ecuaciones de primer grado aplicando procedimientos algebraicos adecuados."',
-  SER_DECIDIR: 'Ej: "Demuestra responsabilidad y orden en el desarrollo de las actividades."',
+  SER_DECIDIR: 'Ej: "Participa en clase"',
+  SABER:       'Ej: "Identifica y comprende conceptos"',
+  HACER:       'Ej: "Aplica procedimientos"',
 }
 
 export interface IndicadorFormValues {
