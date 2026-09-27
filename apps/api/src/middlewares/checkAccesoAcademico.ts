@@ -29,8 +29,15 @@ export async function checkAccesoAcademico(
     if (!est || est.becado) { next(); return }
     estudianteIds = [est.id]
   } else {
+    // Padre/tutor: si la ruta ya identifica a un hijo concreto (ej. /planilla/hijo/:estudiante_id,
+    // /boletines/:estudiante_id), el bloqueo se evalúa solo para ese hijo — un hijo al día no debe
+    // quedar bloqueado porque otro hijo del mismo padre tenga pensiones vencidas.
+    const estudianteIdParam = req.params['estudiante_id']
     const rels = await prisma.relacionPadreHijo.findMany({
-      where:   { padre_id: auth.usuario_id },
+      where: {
+        padre_id: auth.usuario_id,
+        ...(estudianteIdParam ? { estudiante_id: estudianteIdParam } : {}),
+      },
       include: { estudiante: { select: { id: true, becado: true } } },
     })
     estudianteIds = rels.filter(r => !r.estudiante.becado).map(r => r.estudiante_id)
