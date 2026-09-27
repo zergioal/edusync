@@ -26,6 +26,7 @@ export default function ReporteAsistenciaPage() {
   const [paralelos,  setParalelos]  = useState<Paralelo[]>([])
   const [paraleloId, setParaleloId] = useState('')
   const [filas,      setFilas]      = useState<RowReporte[]>([])
+  const [buscado,    setBuscado]    = useState(false)
   const [loading,    setLoading]    = useState(false)
   const [fechaIni,   setFechaIni]   = useState('')
   const [fechaFin,   setFechaFin]   = useState('')
@@ -51,6 +52,7 @@ export default function ReporteAsistenciaPage() {
         `/asistencia/diaria/reporte?paralelo_id=${paraleloId}&fecha_inicio=${fechaIni}&fecha_fin=${fechaFin}`,
       )
       setFilas(data)
+      setBuscado(true)
     } catch {
       toastRef.current.error('Error al generar reporte')
     } finally {
@@ -130,7 +132,9 @@ export default function ReporteAsistenciaPage() {
           <div className="flex justify-center py-12"><Spinner /></div>
         ) : filas.length === 0 ? (
           <div className="py-12 text-center text-sm text-fg-muted">
-            Selecciona un paralelo y un período para ver el reporte
+            {buscado
+              ? 'No hay registros de asistencia diaria para ese curso en ese período — revisa que el regente haya registrado la asistencia de esos días.'
+              : 'Selecciona un paralelo y un período para ver el reporte'}
           </div>
         ) : (
           <table className="w-full text-sm">
