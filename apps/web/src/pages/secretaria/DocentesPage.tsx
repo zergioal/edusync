@@ -1,8 +1,10 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { api, ApiError, apiDownload } from '../../lib/api'
 import { useToast } from '../../components/ui/Toast'
+import { useAuth } from '../../context/AuthContext'
 import { Modal } from '../../components/ui/Modal'
 import { Icon } from '../../components/ui/Icon'
+import { Rol } from '@edusync/types'
 import { Button, Spinner } from '@edusync/ui'
 import { AsignarHorasModal } from '../../components/AsignarHorasModal'
 
@@ -134,6 +136,8 @@ function DocentePerfilModal({ docenteId, onClose, onSaved }: {
   onSaved:   () => void
 }) {
   const toast = useToast()
+  const { user } = useAuth()
+  const puedeGestionar = user?.rol !== Rol.SECRETARIA
   const [tab,     setTab]     = useState<PerfilTab>('datos')
   const [doc,     setDoc]     = useState<DocenteDetalle | null>(null)
   const [loading, setLoading] = useState(true)
@@ -199,21 +203,23 @@ function DocentePerfilModal({ docenteId, onClose, onSaved }: {
           {loading
             ? <div className="flex justify-center py-10"><Spinner /></div>
             : doc && tab === 'datos'
-              ? <DatosTab doc={doc} onSaved={() => { onSaved(); loadDoc() }} />
-              : doc && <AsignacionesTab doc={doc} onChanged={loadDoc} />
+              ? <DatosTab doc={doc} readOnly={!puedeGestionar} onSaved={() => { onSaved(); loadDoc() }} />
+              : doc && <AsignacionesTab doc={doc} readOnly={!puedeGestionar} onChanged={loadDoc} />
           }
         </div>
 
         {/* Footer: delete */}
-        <div className="border-t border-border px-6 py-3 flex justify-end">
-          <button
-            onClick={handleDelete}
-            disabled={deleting}
-            className="text-sm text-red-500 hover:text-red-700 font-medium disabled:opacity-50 transition-colors"
-          >
-            {deleting ? 'Eliminando…' : 'Eliminar docente'}
-          </button>
-        </div>
+        {puedeGestionar && (
+          <div className="border-t border-border px-6 py-3 flex justify-end">
+            <button
+              onClick={handleDelete}
+              disabled={deleting}
+              className="text-sm text-red-500 hover:text-red-700 font-medium disabled:opacity-50 transition-colors"
+            >
+              {deleting ? 'Eliminando…' : 'Eliminar docente'}
+            </button>
+          </div>
+        )}
       </div>
     </div>
   )
@@ -221,7 +227,7 @@ function DocentePerfilModal({ docenteId, onClose, onSaved }: {
 
 // ─── Sub-tab: Datos personales ────────────────────────────────────────────────
 
-function DatosTab({ doc, onSaved }: { doc: DocenteDetalle; onSaved: () => void }) {
+function DatosTab({ doc, readOnly, onSaved }: { doc: DocenteDetalle; readOnly?: boolean; onSaved: () => void }) {
   const toast = useToast()
   const [form, setForm]   = useState({ nombre: doc.usuario.nombre, apellido: doc.usuario.apellido, email: doc.usuario.email })
   const [saving, setSaving] = useState(false)
@@ -250,31 +256,33 @@ function DatosTab({ doc, onSaved }: { doc: DocenteDetalle; onSaved: () => void }
       <div className="grid grid-cols-2 gap-3">
         <label className="flex flex-col gap-1">
           <span className="text-xs font-medium text-fg-muted uppercase tracking-wide">Apellidos</span>
-          <input required value={form.apellido} onChange={set('apellido')}
-            className="rounded-lg border border-border px-3 py-2 text-sm focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand" />
+          <input required disabled={readOnly} value={form.apellido} onChange={set('apellido')}
+            className="rounded-lg border border-border px-3 py-2 text-sm focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand disabled:opacity-60" />
         </label>
         <label className="flex flex-col gap-1">
           <span className="text-xs font-medium text-fg-muted uppercase tracking-wide">Nombres</span>
-          <input required value={form.nombre} onChange={set('nombre')}
-            className="rounded-lg border border-border px-3 py-2 text-sm focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand" />
+          <input required disabled={readOnly} value={form.nombre} onChange={set('nombre')}
+            className="rounded-lg border border-border px-3 py-2 text-sm focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand disabled:opacity-60" />
         </label>
       </div>
       <label className="flex flex-col gap-1">
         <span className="text-xs font-medium text-fg-muted uppercase tracking-wide">Correo electrónico</span>
-        <input required type="email" value={form.email} onChange={set('email')}
-          className="rounded-lg border border-border px-3 py-2 text-sm focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand" />
+        <input required disabled={readOnly} type="email" value={form.email} onChange={set('email')}
+          className="rounded-lg border border-border px-3 py-2 text-sm focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand disabled:opacity-60" />
         <p className="text-xs text-fg-muted">El correo se actualizará también en la cuenta de acceso.</p>
       </label>
-      <div className="flex justify-end">
-        <Button type="submit" loading={saving}>Guardar cambios</Button>
-      </div>
+      {!readOnly && (
+        <div className="flex justify-end">
+          <Button type="submit" loading={saving}>Guardar cambios</Button>
+        </div>
+      )}
     </form>
   )
 }
 
 // ─── Sub-tab: Asignaciones ────────────────────────────────────────────────────
 
-function AsignacionesTab({ doc, onChanged }: { doc: DocenteDetalle; onChanged: () => void }) {
+function AsignacionesTab({ doc, readOnly, onChanged }: { doc: DocenteDetalle; readOnly?: boolean; onChanged: () => void }) {
   const toast = useToast()
   const [removing, setRemoving] = useState<string | null>(null)
   const [asignarHoras, setAsignarHoras] = useState(false)
@@ -305,7 +313,7 @@ function AsignacionesTab({ doc, onChanged }: { doc: DocenteDetalle; onChanged: (
                   <th className="px-4 py-2.5">Materia</th>
                   <th className="px-4 py-2.5">Paralelo</th>
                   <th className="px-4 py-2.5">Gestión</th>
-                  <th className="px-3 py-2.5"></th>
+                  {!readOnly && <th className="px-3 py-2.5"></th>}
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
@@ -319,15 +327,17 @@ function AsignacionesTab({ doc, onChanged }: { doc: DocenteDetalle; onChanged: (
                       {a.paralelo?.grado?.nivel?.nombre} · {a.paralelo?.grado?.nombre} "{a.paralelo?.letra}"
                     </td>
                     <td className="px-4 py-2.5 text-fg-muted">{a.gestion.anno}</td>
-                    <td className="px-3 py-2.5 text-right">
-                      <button
-                        onClick={() => removeAsig(a.id)}
-                        disabled={removing === a.id}
-                        className="text-red-400 hover:text-red-600 text-xs font-medium disabled:opacity-50"
-                      >
-                        {removing === a.id ? '…' : 'Quitar'}
-                      </button>
-                    </td>
+                    {!readOnly && (
+                      <td className="px-3 py-2.5 text-right">
+                        <button
+                          onClick={() => removeAsig(a.id)}
+                          disabled={removing === a.id}
+                          className="text-red-400 hover:text-red-600 text-xs font-medium disabled:opacity-50"
+                        >
+                          {removing === a.id ? '…' : 'Quitar'}
+                        </button>
+                      </td>
+                    )}
                   </tr>
                 ))}
               </tbody>
@@ -336,9 +346,11 @@ function AsignacionesTab({ doc, onChanged }: { doc: DocenteDetalle; onChanged: (
         )
       }
 
-      <div className="flex justify-end">
-        <Button size="sm" onClick={() => setAsignarHoras(true)}>Asignar horas</Button>
-      </div>
+      {!readOnly && (
+        <div className="flex justify-end">
+          <Button size="sm" onClick={() => setAsignarHoras(true)}>Asignar horas</Button>
+        </div>
+      )}
 
       {asignarHoras && (
         <AsignarHorasModal
@@ -465,6 +477,8 @@ export default function DocentesPage() {
   const toast    = useToast()
   const toastRef = useRef(toast)
   toastRef.current = toast
+  const { user } = useAuth()
+  const puedeGestionar = user?.rol !== Rol.SECRETARIA
 
   const [docentes,    setDocentes]    = useState<DocenteResumen[]>([])
   const [loading,     setLoading]     = useState(true)
@@ -499,7 +513,9 @@ export default function DocentesPage() {
           <Button variant="secondary" onClick={() => setShowExport(true)}>
             <span className="inline-flex items-center gap-1.5"><Icon name="download" className="h-4 w-4" />Exportar</span>
           </Button>
-          <Button onClick={() => setModal('new')}>+ Registrar docente</Button>
+          {puedeGestionar && (
+            <Button onClick={() => setModal('new')}>+ Registrar docente</Button>
+          )}
         </div>
       </div>
 
@@ -617,9 +633,11 @@ export default function DocentesPage() {
                       <Button variant="ghost" size="sm" onClick={() => setModal(doc.id)}>
                         Ver perfil
                       </Button>
-                      <Button variant="ghost" size="sm" onClick={() => setAsignarHorasTarget(doc)}>
-                        Asignar horas
-                      </Button>
+                      {puedeGestionar && (
+                        <Button variant="ghost" size="sm" onClick={() => setAsignarHorasTarget(doc)}>
+                          Asignar horas
+                        </Button>
+                      )}
                     </div>
                   </td>
                 </tr>

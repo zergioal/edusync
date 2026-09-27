@@ -272,6 +272,7 @@ export const NAV_POR_ROL: Record<string, NavItem[]> = {
       label: "Estudiantes",
       icon: "student",
     },
+    { to: "/dashboard/admin/docentes", label: "Docentes", icon: "teacher" },
     { to: "/dashboard/admin/gestiones", label: "Gestión", icon: "calendar" },
     { to: "/dashboard/admin/reportes", label: "Reportes", icon: "chart" },
     {
