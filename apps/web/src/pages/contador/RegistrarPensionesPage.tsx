@@ -5,7 +5,7 @@ import { useGestionActiva } from '../../hooks/useGestionActiva'
 import { SelectParalelo } from '../../components/select/SelectParalelo'
 import { hoyLocalStr } from '../../lib/date'
 import { BackButton } from '../../components/ui/BackButton'
-import { Spinner, Button } from '@edusync/ui'
+import { Spinner } from '@edusync/ui'
 
 interface EstFila {
   estudiante_id: string; nombre: string; apellido: string; becado: boolean; media_beca: boolean; pagado: boolean
@@ -58,10 +58,6 @@ export default function RegistrarPensionesPage() {
   useEffect(() => { cargar() }, [cargar])
 
   function toggle(estudianteId: string) {
-    const est = lista.find(e => e.estudiante_id === estudianteId)
-    if (est?.pagado && !confirm(
-      `¿Marcar como pendiente el pago de ${est.apellido}, ${est.nombre}?\n\nSi la pensión ya está vencida, el estudiante volverá a quedar bloqueado del sistema académico.`
-    )) return
     setLista(prev => {
       const next = prev.map(e => e.estudiante_id === estudianteId ? { ...e, pagado: !e.pagado } : e)
       const k = cacheKey(paraleloId, mes)
@@ -72,12 +68,6 @@ export default function RegistrarPensionesPage() {
   }
 
   function marcarTodos(pagado: boolean) {
-    if (!pagado) {
-      const pagados = lista.filter(e => !e.becado && e.pagado)
-      if (pagados.length > 0 && !confirm(
-        `¿Marcar como pendientes ${pagados.length} pago(s) ya registrados?\n\nLos estudiantes cuya pensión ya esté vencida volverán a quedar bloqueados del sistema académico.`
-      )) return
-    }
     setLista(prev => {
       const next = prev.map(e => e.becado ? e : { ...e, pagado })
       const k = cacheKey(paraleloId, mes)
@@ -139,24 +129,12 @@ export default function RegistrarPensionesPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between flex-wrap gap-3">
-        <div>
-          <BackButton to="/dashboard/admin/finanzas" label="Pensiones" className="mb-2" />
-          <h1 className="text-2xl font-bold text-fg">Registro rápido de pensiones</h1>
-          <p className="text-sm text-fg-muted mt-0.5">
-            Marca quién pagó, por curso — igual que la lista de asistencia. Sin comprobante; para eso usa el registro manual desde el estado de cuenta.
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          {cursosPendientes > 0 && (
-            <span className="rounded-full bg-amber-100 px-2.5 py-1 text-xs font-semibold text-amber-700">
-              {cursosPendientes} curso{cursosPendientes !== 1 ? 's' : ''} con cambios sin guardar
-            </span>
-          )}
-          <Button onClick={guardar} loading={saving} disabled={cursosPendientes === 0}>
-            {cursosPendientes > 1 ? `Guardar todo (${cursosPendientes})` : 'Guardar'}
-          </Button>
-        </div>
+      <div>
+        <BackButton to="/dashboard/admin/finanzas" label="Pensiones" className="mb-2" />
+        <h1 className="text-2xl font-bold text-fg">Registro rápido de pensiones</h1>
+        <p className="text-sm text-fg-muted mt-0.5">
+          Marca quién pagó, por curso — igual que la lista de asistencia. Sin comprobante; para eso usa el registro manual desde el estado de cuenta.
+        </p>
       </div>
 
       {/* Filtros */}
@@ -196,8 +174,25 @@ export default function RegistrarPensionesPage() {
         )}
       </div>
 
+      {/* Barra superior de la tabla: resumen + acción de guardar, justo encima de la columna Estado */}
       {lista.length > 0 && (
-        <p className="text-sm text-fg-muted">{pagadosCount} de {lista.length} pagado(s)</p>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <p className="text-sm text-fg-muted">{pagadosCount} de {lista.length} pagado(s)</p>
+            {cursosPendientes > 0 && (
+              <span className="rounded-full bg-amber-100 px-2.5 py-1 text-xs font-semibold text-amber-700">
+                {cursosPendientes} curso{cursosPendientes !== 1 ? 's' : ''} con cambios sin guardar
+              </span>
+            )}
+          </div>
+          <button
+            onClick={guardar}
+            disabled={saving || cursosPendientes === 0}
+            className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-4 py-1.5 text-sm font-semibold text-white transition-colors hover:bg-emerald-700 disabled:opacity-50"
+          >
+            {saving ? 'Guardando…' : cursosPendientes > 1 ? `Guardar todo (${cursosPendientes})` : 'Guardar'}
+          </button>
+        </div>
       )}
 
       {/* Lista */}
