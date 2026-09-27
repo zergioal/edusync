@@ -4,6 +4,7 @@ import { api } from '../../lib/api'
 import { useAuth } from '../../context/AuthContext'
 import { Rol } from '@edusync/types'
 import { Button, Badge, Spinner } from '@edusync/ui'
+import { BackButton } from '../../components/ui/BackButton'
 import { SelectGestion } from '../../components/select/SelectGestion'
 import { SelectTrimestre } from '../../components/select/SelectTrimestre'
 import { useGestionActiva } from '../../hooks/useGestionActiva'
@@ -1138,12 +1139,7 @@ export default function PerfilEstudiantePage({
     <div className="space-y-5 max-w-4xl">
       {/* Header */}
       <div className="flex items-center gap-4">
-        <Button
-          variant="ghost" size="sm"
-          onClick={() => navigate(`${basePath}/estudiantes${paraleloId ? `?paralelo_id=${paraleloId}` : ''}`)}
-        >
-          ← Volver
-        </Button>
+        <BackButton to={`${basePath}/estudiantes${paraleloId ? `?paralelo_id=${paraleloId}` : ''}`} />
         <div>
           <h1 className="text-2xl font-bold text-fg">
             {est.usuario.apellido}, {est.usuario.nombre}

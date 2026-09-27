@@ -3,6 +3,7 @@ import { useParams, Link } from 'react-router-dom'
 import { api } from '../../lib/api'
 import { useAuth } from '../../context/AuthContext'
 import { RegistrarPagoModal } from '../../components/pensiones/RegistrarPagoModal'
+import { BackButton } from '../../components/ui/BackButton'
 
 interface MesCuenta {
   id:          string
@@ -81,6 +82,8 @@ export default function EstadoCuentaPage() {
 
   return (
     <div className="space-y-6">
+      <BackButton />
+
       {/* Breadcrumb */}
       <div className="flex items-center gap-2 text-sm text-fg-muted">
         <Link to="/dashboard/admin/finanzas" className="hover:text-fg">Pensiones</Link>

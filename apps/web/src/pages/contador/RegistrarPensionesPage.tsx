@@ -4,6 +4,7 @@ import { useToast } from '../../components/ui/Toast'
 import { useGestionActiva } from '../../hooks/useGestionActiva'
 import { SelectParalelo } from '../../components/select/SelectParalelo'
 import { hoyLocalStr } from '../../lib/date'
+import { BackButton } from '../../components/ui/BackButton'
 import { Spinner, Button } from '@edusync/ui'
 
 interface EstFila {
@@ -29,11 +30,20 @@ export default function RegistrarPensionesPage() {
   const [loadingList, setLoadingList] = useState(false)
   const [saving,      setSaving]      = useState(false)
 
+  // Cambios sin guardar por curso+pensión (clave `paraleloId:mes`) — si el usuario cambia de curso
+  // por error antes de guardar, al volver encuentra su registro intacto en vez de tener que rehacerlo.
+  const cacheRef = useRef<Map<string, EstFila[]>>(new Map())
+  const cacheKey = (p: string, m: number | '') => `${p}:${m}`
+
   const cargar = useCallback(async () => {
     if (!paraleloId || !mes || !gestionId) { setLista([]); return }
+    const k = cacheKey(paraleloId, mes)
+    const cached = cacheRef.current.get(k)
+    if (cached) { setLista(cached); return }
     setLoadingList(true)
     try {
       const data = await api.get<EstFila[]>(`/pensiones/grid?paralelo_id=${paraleloId}&gestion_id=${gestionId}&mes=${mes}`)
+      cacheRef.current.set(k, data)
       setLista(data)
     } catch {
       toastRef.current.error('Error al cargar el curso')
@@ -49,7 +59,11 @@ export default function RegistrarPensionesPage() {
     if (est?.pagado && !confirm(
       `¿Marcar como pendiente el pago de ${est.apellido}, ${est.nombre}?\n\nSi la pensión ya está vencida, el estudiante volverá a quedar bloqueado del sistema académico.`
     )) return
-    setLista(prev => prev.map(e => e.estudiante_id === estudianteId ? { ...e, pagado: !e.pagado } : e))
+    setLista(prev => {
+      const next = prev.map(e => e.estudiante_id === estudianteId ? { ...e, pagado: !e.pagado } : e)
+      cacheRef.current.set(cacheKey(paraleloId, mes), next)
+      return next
+    })
   }
 
   function marcarTodos(pagado: boolean) {
@@ -59,7 +73,11 @@ export default function RegistrarPensionesPage() {
         `¿Marcar como pendientes ${pagados.length} pago(s) ya registrados?\n\nLos estudiantes cuya pensión ya esté vencida volverán a quedar bloqueados del sistema académico.`
       )) return
     }
-    setLista(prev => prev.map(e => e.becado ? e : { ...e, pagado }))
+    setLista(prev => {
+      const next = prev.map(e => e.becado ? e : { ...e, pagado })
+      cacheRef.current.set(cacheKey(paraleloId, mes), next)
+      return next
+    })
   }
 
   async function guardar() {
@@ -72,6 +90,7 @@ export default function RegistrarPensionesPage() {
         pagos: lista.filter(e => !e.becado).map(e => ({ estudiante_id: e.estudiante_id, pagado: e.pagado })),
       })
       toast.success(`Guardado: ${data.pagadas} pago(s), ${data.anuladas} anulación(es)`)
+      cacheRef.current.delete(cacheKey(paraleloId, mes))
       cargar()
     } catch (err) {
       toast.error(err instanceof ApiError ? err.message : 'Error al guardar')
@@ -87,6 +106,7 @@ export default function RegistrarPensionesPage() {
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
+          <BackButton to="/dashboard/admin/finanzas" label="Pensiones" className="mb-2" />
           <h1 className="text-2xl font-bold text-fg">Registro rápido de pensiones</h1>
           <p className="text-sm text-fg-muted mt-0.5">
             Marca quién pagó, por curso — igual que la lista de asistencia. Sin comprobante; para eso usa el registro manual desde el estado de cuenta.

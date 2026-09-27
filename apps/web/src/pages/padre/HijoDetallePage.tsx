@@ -1,6 +1,6 @@
-import { useParams, useNavigate, useSearchParams } from 'react-router-dom'
+import { useParams, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
-import { Button } from '@edusync/ui'
+import { BackButton } from '../../components/ui/BackButton'
 import MisCalificacionesPage from '../estudiante/MisCalificacionesPage'
 import MiAsistenciaPage from '../estudiante/MiAsistenciaPage'
 
@@ -8,7 +8,6 @@ type Tab = 'notas' | 'asistencia'
 
 export default function HijoDetallePage() {
   const { id } = useParams<{ id: string }>()
-  const navigate = useNavigate()
   const { estadoFinanciero } = useAuth()
   const [searchParams, setSearchParams] = useSearchParams()
 
@@ -27,7 +26,7 @@ export default function HijoDetallePage() {
   return (
     <div className="space-y-5">
       <div className="flex items-center gap-4">
-        <Button variant="ghost" size="sm" onClick={() => navigate(-1)}>← Volver</Button>
+        <BackButton />
         <h1 className="text-2xl font-bold text-fg">{hijo.apellido}, {hijo.nombre}</h1>
       </div>
 

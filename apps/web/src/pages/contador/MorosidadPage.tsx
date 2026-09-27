@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { Link } from 'react-router-dom'
 import { api } from '../../lib/api'
+import { BackButton } from '../../components/ui/BackButton'
 
 interface MorosoRow {
   estudiante: { id: string; nombre: string; apellido: string; codigo: string }
@@ -75,12 +76,9 @@ export default function MorosidadPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-3">
         <div className="flex items-center gap-3">
-          <Link to="/dashboard/admin/finanzas"
-            className="text-fg-muted hover:text-fg transition-colors">
-            ← Pensiones
-          </Link>
+          <BackButton to="/dashboard/admin/finanzas" label="Pensiones" />
           <h1 className="text-2xl font-bold text-fg">Reporte de Morosidad</h1>
         </div>
         <button onClick={exportCSV}
