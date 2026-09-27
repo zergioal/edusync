@@ -239,6 +239,10 @@ export class EstudiantesService {
       estado?:               EstadoEstudiante
       estado_motivo?:        string
       institucion_destino?:  string
+      telefono1?:            string | null
+      telefono1_relacion?:   string | null
+      telefono2?:            string | null
+      telefono2_relacion?:   string | null
     },
     actorUsuarioId: string,
   ) {
@@ -269,6 +273,10 @@ export class EstudiantesService {
     if (data.fecha_nacimiento !== undefined) {
       estData.fecha_nacimiento = data.fecha_nacimiento ? new Date(data.fecha_nacimiento) : null
     }
+    if (data.telefono1          !== undefined) estData.telefono1          = data.telefono1?.trim() || null
+    if (data.telefono1_relacion !== undefined) estData.telefono1_relacion = data.telefono1_relacion?.trim() || null
+    if (data.telefono2          !== undefined) estData.telefono2          = data.telefono2?.trim() || null
+    if (data.telefono2_relacion !== undefined) estData.telefono2_relacion = data.telefono2_relacion?.trim() || null
 
     // Cambio de estado general — valida la transición y deja rastro en el historial
     let estadoAnterior: EstadoEstudiante | null = null

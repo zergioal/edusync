@@ -202,6 +202,12 @@ model Estudiante {
   estado_motivo     String?          @db.Text
   estado_fecha      DateTime?
   institucion_destino String?        @db.VarChar(255)
+  // Contactos familiares de referencia (no necesariamente el padre/tutor formal vinculado vía
+  // RelacionPadreHijo) — hasta 2, con su relación de parentesco si se conoce (MAMÁ, PAPÁ, TIA, etc.).
+  telefono1           String?        @db.VarChar(30)
+  telefono1_relacion  String?        @db.VarChar(30)
+  telefono2           String?        @db.VarChar(30)
+  telefono2_relacion  String?        @db.VarChar(30)
 
   usuario             Usuario              @relation(fields: [usuario_id], references: [id], onDelete: Cascade)
   nivel               Nivel                @relation(fields: [nivel_id], references: [id])

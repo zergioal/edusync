@@ -5,6 +5,7 @@ import { useAuth } from '../../context/AuthContext'
 import { Rol } from '@edusync/types'
 import { Button, Badge, Spinner } from '@edusync/ui'
 import { BackButton } from '../../components/ui/BackButton'
+import { WhatsAppButton } from '../../components/ui/WhatsAppButton'
 import { SelectGestion } from '../../components/select/SelectGestion'
 import { SelectTrimestre } from '../../components/select/SelectTrimestre'
 import { useGestionActiva } from '../../hooks/useGestionActiva'
@@ -34,6 +35,10 @@ interface Estudiante {
   estado_motivo:        string | null
   estado_fecha:         string | null
   institucion_destino:  string | null
+  telefono1:          string | null
+  telefono1_relacion: string | null
+  telefono2:          string | null
+  telefono2_relacion: string | null
   matriculas:       Matricula[]
   relaciones_padre: { padre: { nombre: string; apellido: string; email: string; telefono: string | null } }[]
 }
@@ -310,6 +315,32 @@ function DatosTab({
                   </div>
                 </div>
               ))}
+            </div>
+        }
+      </div>
+
+      <div className="rounded-xl border border-border bg-surface shadow-sm p-6">
+        <h2 className="text-sm font-semibold uppercase tracking-wide text-fg-muted mb-4">Contactos de referencia</h2>
+        {!est.telefono1 && !est.telefono2
+          ? <p className="text-sm text-fg-muted italic">Sin contactos registrados</p>
+          : <div className="space-y-3">
+              {([
+                { numero: est.telefono1, relacion: est.telefono1_relacion },
+                { numero: est.telefono2, relacion: est.telefono2_relacion },
+              ] as const)
+                .filter(c => c.numero)
+                .map((c, i) => (
+                  <div key={i} className="flex items-center justify-between text-sm">
+                    <div>
+                      <p className="font-medium text-fg">{c.numero}</p>
+                      {c.relacion && <p className="text-xs text-fg-muted">{c.relacion}</p>}
+                    </div>
+                    <WhatsAppButton
+                      numero={c.numero}
+                      mensaje={`Hola, le escribimos de la Unidad Educativa Privada PIO XII sobre ${est.usuario.apellido}, ${est.usuario.nombre}. `}
+                    />
+                  </div>
+                ))}
             </div>
         }
       </div>

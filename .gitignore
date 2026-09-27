@@ -12,3 +12,6 @@ Thumbs.db
 coverage/
 *.tsbuildinfo
 credenciales-*.csv
+roster-*.json
+contactos-*-reporte.json
+apps/api/src/scripts/importar-contactos-2025.ts

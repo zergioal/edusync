@@ -41,6 +41,10 @@ interface Estudiante {
   estado_motivo:        string | null
   estado_fecha:         string | null
   institucion_destino:  string | null
+  telefono1:          string | null
+  telefono1_relacion: string | null
+  telefono2:          string | null
+  telefono2_relacion: string | null
   usuario:          { id: string; nombre: string; apellido: string; email: string; activo: boolean }
   matriculas:       { paralelo: Paralelo }[]
   relaciones_padre: { padre: PadreRef }[]
@@ -224,6 +228,10 @@ function EditarEstudianteModal({ estudiante, onClose, onSaved }: EditModalProps)
     estado:               estudiante.estado,
     estado_motivo:        '',
     institucion_destino:  '',
+    telefono1:          estudiante.telefono1 ?? '',
+    telefono1_relacion: estudiante.telefono1_relacion ?? '',
+    telefono2:          estudiante.telefono2 ?? '',
+    telefono2_relacion: estudiante.telefono2_relacion ?? '',
   })
   const [saving, setSaving] = useState(false)
   const [error,  setError]  = useState<string | null>(null)
@@ -240,7 +248,8 @@ function EditarEstudianteModal({ estudiante, onClose, onSaved }: EditModalProps)
   const [nuevoExisting, setNuevoExisting] = useState<TutorMatch | null>(null)
   const [linkingPadre,  setLinkingPadre]  = useState(false)
 
-  const setField = (k: 'apellidoPaterno' | 'apellidoMaterno' | 'nombre' | 'email' | 'fecha_nacimiento' | 'motivo_beca') =>
+  const setField = (k: 'apellidoPaterno' | 'apellidoMaterno' | 'nombre' | 'email' | 'fecha_nacimiento' | 'motivo_beca'
+    | 'telefono1' | 'telefono1_relacion' | 'telefono2' | 'telefono2_relacion') =>
     (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
       setForm(f => ({ ...f, [k]: e.target.value }))
 
@@ -262,6 +271,10 @@ function EditarEstudianteModal({ estudiante, onClose, onSaved }: EditModalProps)
         media_beca:       form.becaTipo === 'media',
         motivo_beca:      form.becaTipo !== 'ninguna' ? (form.motivo_beca || null) : null,
         sexo:             form.sexo || null,
+        telefono1:          form.telefono1.trim() || null,
+        telefono1_relacion: form.telefono1_relacion.trim() || null,
+        telefono2:          form.telefono2.trim() || null,
+        telefono2_relacion: form.telefono2_relacion.trim() || null,
         ...(estadoCambiado ? {
           estado: form.estado,
           ...(form.estado_motivo.trim() ? { estado_motivo: form.estado_motivo.trim() } : {}),
@@ -358,6 +371,25 @@ function EditarEstudianteModal({ estudiante, onClose, onSaved }: EditModalProps)
                 <option value="F">Femenino</option>
               </select>
             </label>
+          </div>
+
+          <div className="rounded-xl border border-border bg-bg p-3 space-y-2">
+            <span className="text-xs font-semibold text-fg-muted uppercase tracking-wide">Contactos de referencia</span>
+            <div className="grid grid-cols-2 gap-3">
+              <input value={form.telefono1} onChange={setField('telefono1')}
+                placeholder="Teléfono 1" type="tel"
+                className="rounded-lg border border-border px-3 py-2 text-sm focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-200" />
+              <input value={form.telefono1_relacion} onChange={setField('telefono1_relacion')}
+                placeholder="Ej: Mamá, Papá, Tía…"
+                className="rounded-lg border border-border px-3 py-2 text-sm focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-200" />
+              <input value={form.telefono2} onChange={setField('telefono2')}
+                placeholder="Teléfono 2" type="tel"
+                className="rounded-lg border border-border px-3 py-2 text-sm focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-200" />
+              <input value={form.telefono2_relacion} onChange={setField('telefono2_relacion')}
+                placeholder="Ej: Mamá, Papá, Tía…"
+                className="rounded-lg border border-border px-3 py-2 text-sm focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-200" />
+            </div>
+            <p className="text-xs text-fg-muted">Los números que empiezan con 6 u 7 habilitan el botón de WhatsApp en el perfil.</p>
           </div>
 
           <div className="rounded-xl border border-border bg-bg p-3 space-y-2">
