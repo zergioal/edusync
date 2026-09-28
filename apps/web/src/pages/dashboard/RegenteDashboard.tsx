@@ -10,7 +10,7 @@ import { api } from '../../lib/api'
 const AsistenciaDiariaPage        = lazy(() => import('../regente/AsistenciaDiariaPage'))
 const ReporteAsistenciaPage       = lazy(() => import('../regente/ReporteAsistenciaPage'))
 const ComunicadosInasistenciaPage = lazy(() => import('../regente/ComunicadosInasistenciaPage'))
-const RegenteEstudiantesPage      = lazy(() => import('../regente/RegenteEstudiantesPage'))
+const EstudiantesPage             = lazy(() => import('../secretaria/EstudiantesPage'))
 const PerfilEstudiantePage        = lazy(() => import('../secretaria/PerfilEstudiantePage'))
 const AnunciosInternosPage        = lazy(() => import('../shared/AnunciosInternosPage'))
 const MensajesPage                = lazy(() => import('../shared/MensajesPage'))
@@ -94,7 +94,7 @@ export default function RegenteDashboard() {
         <Route path="asistencia"       element={<AsistenciaDiariaPage />} />
         <Route path="reporte"          element={<ReporteAsistenciaPage />} />
         <Route path="inasistencias"    element={<ComunicadosInasistenciaPage />} />
-        <Route path="estudiantes"      element={<RegenteEstudiantesPage />} />
+        <Route path="estudiantes"      element={<EstudiantesPage basePath="/dashboard/regente" />} />
         <Route path="estudiante/:id"   element={<PerfilEstudiantePage visibleTabs={['asistencia', 'pensiones']} basePath="/dashboard/regente" />} />
         <Route path="anuncios"         element={<AnunciosInternosPage />} />
         <Route path="mensajes"         element={<MensajesPage />} />

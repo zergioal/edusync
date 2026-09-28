@@ -16,6 +16,9 @@ const BASE_PATHS_CON_REPORTES = new Set(['/dashboard/coordinador', '/dashboard/d
 
 const CAN_MANAGE_ROLES: string[] = [Rol.ADMIN_SISTEMA, Rol.DIRECTOR, Rol.COORDINADOR, Rol.SECRETARIA]
 const CAN_RESET_PASSWORD_ROLES: string[] = [Rol.ADMIN_SISTEMA, Rol.DIRECTOR, Rol.COORDINADOR, Rol.CONTADOR, Rol.SECRETARIA]
+// El Regente entra al perfil del estudiante con visibleTabs={['asistencia','pensiones']} (sin
+// notas) — no tiene sentido ofrecerle el atajo "Notas" si esa pestaña no está disponible ahí.
+const SIN_ACCESO_NOTAS_ROLES: string[] = [Rol.REGENTE]
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -533,6 +536,7 @@ export default function EstudiantesPage({ basePath = '/dashboard/admin' }: { bas
   const { user }  = useAuth()
   const canManage = user?.rol ? CAN_MANAGE_ROLES.includes(user.rol) : false
   const canResetPassword = user?.rol ? CAN_RESET_PASSWORD_ROLES.includes(user.rol) : false
+  const puedeVerNotas = user?.rol ? !SIN_ACCESO_NOTAS_ROLES.includes(user.rol) : true
   const { id: gestionActivaId, trimestres } = useGestionActiva()
   const puedeVerReportes = BASE_PATHS_CON_REPORTES.has(basePath)
 
@@ -877,11 +881,13 @@ export default function EstudiantesPage({ basePath = '/dashboard/admin' }: { bas
                       onClick={() => navigate(perfilUrl(est.id))}>
                       Perfil
                     </Button>
-                    <Button variant="ghost" size="sm"
-                      className="text-indigo-600 hover:text-indigo-800 hidden sm:inline-flex"
-                      onClick={() => navigate(perfilUrl(est.id, 'calificaciones'))}>
-                      Notas
-                    </Button>
+                    {puedeVerNotas && (
+                      <Button variant="ghost" size="sm"
+                        className="text-indigo-600 hover:text-indigo-800 hidden sm:inline-flex"
+                        onClick={() => navigate(perfilUrl(est.id, 'calificaciones'))}>
+                        Notas
+                      </Button>
+                    )}
                     <Button variant="ghost" size="sm"
                       className="text-teal-600 hover:text-teal-800 hidden sm:inline-flex"
                       onClick={() => navigate(perfilUrl(est.id, 'asistencia'))}>
