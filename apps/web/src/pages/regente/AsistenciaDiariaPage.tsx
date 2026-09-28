@@ -24,10 +24,10 @@ interface Estudiante {
 
 const ESTADOS: Estado[] = ['PRESENTE', 'AUSENTE', 'TARDANZA']
 
-const ESTADO_META: Record<Estado, { label: string; icon: IconName; active: string; ring: string; row: string }> = {
-  PRESENTE: { label: 'Presente', icon: 'user-check', active: 'bg-green-500 border-green-500 text-white', ring: 'border-green-200 text-green-700 hover:bg-green-50 active:bg-green-100', row: 'border-l-4 border-l-green-400' },
-  AUSENTE:  { label: 'Ausente',  icon: 'user-x',      active: 'bg-red-500 border-red-500 text-white',    ring: 'border-red-200 text-red-700 hover:bg-red-50 active:bg-red-100',       row: 'border-l-4 border-l-red-400' },
-  TARDANZA: { label: 'Tardanza', icon: 'clock',       active: 'bg-amber-500 border-amber-500 text-white', ring: 'border-amber-200 text-amber-700 hover:bg-amber-50 active:bg-amber-100', row: 'border-l-4 border-l-amber-400' },
+const ESTADO_META: Record<Estado, { label: string; letra: string; icon: IconName; active: string; ring: string; row: string }> = {
+  PRESENTE: { label: 'Presente', letra: 'P', icon: 'user-check', active: 'bg-green-500 border-green-500 text-white', ring: 'border-green-200 text-green-700 hover:bg-green-50 active:bg-green-100', row: 'border-l-4 border-l-green-400' },
+  AUSENTE:  { label: 'Ausente',  letra: 'F', icon: 'user-x',      active: 'bg-red-500 border-red-500 text-white',    ring: 'border-red-200 text-red-700 hover:bg-red-50 active:bg-red-100',       row: 'border-l-4 border-l-red-400' },
+  TARDANZA: { label: 'Tardanza', letra: 'T', icon: 'clock',       active: 'bg-amber-500 border-amber-500 text-white', ring: 'border-amber-200 text-amber-700 hover:bg-amber-50 active:bg-amber-100', row: 'border-l-4 border-l-amber-400' },
 }
 
 function fmtFechaLarga(fecha: string): string {
@@ -246,11 +246,11 @@ export default function AsistenciaDiariaPage() {
                             onClick={() => toggleEstado(est.estudiante_id, e)}
                             title={ESTADO_META[e].label}
                             aria-label={ESTADO_META[e].label}
-                            className={`w-11 h-11 flex-shrink-0 flex items-center justify-center rounded-full border-2 transition-all active:scale-95 ${
+                            className={`w-11 h-11 flex-shrink-0 flex items-center justify-center rounded-full border-2 text-sm font-bold transition-all active:scale-95 ${
                               est.estado === e ? ESTADO_META[e].active : 'border-border text-fg-muted hover:border-gray-400'
                             }`}
                           >
-                            <Icon name={ESTADO_META[e].icon} className="h-5 w-5" />
+                            {ESTADO_META[e].letra}
                           </button>
                         ))}
                       </div>
@@ -267,8 +267,7 @@ export default function AsistenciaDiariaPage() {
         <div className="flex flex-wrap items-center justify-center gap-4 text-xs text-fg-muted">
           {ESTADOS.map(e => (
             <span key={e} className="flex items-center gap-1.5">
-              <Icon name={ESTADO_META[e].icon} className="h-3.5 w-3.5" />
-              {ESTADO_META[e].label}
+              <strong>{ESTADO_META[e].letra}</strong> = {ESTADO_META[e].label}
             </span>
           ))}
         </div>
