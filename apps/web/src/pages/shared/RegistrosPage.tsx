@@ -1,13 +1,15 @@
 import { useState, useEffect, useCallback, useRef, Fragment } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { api } from '../../lib/api'
+import { api, apiDownload } from '../../lib/api'
 import { useToast } from '../../components/ui/Toast'
 import { useGestionActiva } from '../../hooks/useGestionActiva'
 import { usePlanilla } from '../../hooks/usePlanilla'
 import { getTrimestreActivo, trimestreLabel } from '../../lib/trimestre'
 import { abbreviateGrado, NIVEL_STYLES, NIVEL_FALLBACK } from '../../lib/cursoDisplay'
-import { Spinner } from '@edusync/ui'
+import { Spinner, Badge } from '@edusync/ui'
 import { Icon } from '../../components/ui/Icon'
+import { BackButton } from '../../components/ui/BackButton'
+import { ExportarButton } from '../../components/ui/ExportarButton'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -63,8 +65,13 @@ const ESCALA_COLORS: Record<string, string> = {
 // ─── Planilla de solo lectura ───────────────────────────────────────────────
 
 function PlanillaLectura({ asignacionId, onBack }: { asignacionId: string; onBack: () => void }) {
+  const toast    = useToast()
+  const toastRef = useRef(toast)
+  toastRef.current = toast
+
   const [trimestreId, setTrimestreId] = useState('')
   const [initDone,    setInitDone]    = useState(false)
+  const [dlState,     setDlState]     = useState<'idle' | 'pdf' | 'xlsx'>('idle')
   const { data, loading, error } = usePlanilla(asignacionId, trimestreId || undefined)
 
   // Al primer cargar (sin trimestre_id, para conocer la lista de trimestres de
@@ -78,11 +85,28 @@ function PlanillaLectura({ asignacionId, onBack }: { asignacionId: string; onBac
     }
   }, [data, initDone])
 
+  const trimestreActual = data?.asignacion.gestion.trimestres.find(t => t.id === trimestreId) ?? null
+
+  async function descargarRegistro(tipo: 'pdf' | 'xlsx') {
+    if (!data || !trimestreActual) return
+    setDlState(tipo)
+    try {
+      await apiDownload(
+        `/planilla/${asignacionId}/registro/${tipo === 'pdf' ? 'pdf' : 'excel'}?trimestre_id=${trimestreActual.id}`,
+        `registro_${data.asignacion.materia.nombre}_T${trimestreActual.numero}.${tipo === 'pdf' ? 'pdf' : 'xlsx'}`,
+      )
+    } catch {
+      toastRef.current.error('Error al generar el archivo')
+    } finally {
+      setDlState('idle')
+    }
+  }
+
   if (loading || !initDone) return <div className="flex justify-center py-16"><Spinner /></div>
   if (error || !data) {
     return (
       <div className="space-y-4">
-        <BackLink onClick={onBack} label="Volver a materias" />
+        <BackButton onClick={onBack} label="Volver a materias" />
         <div className="py-12 text-center text-sm text-fg-muted">No se pudo cargar la planilla.</div>
       </div>
     )
@@ -95,34 +119,71 @@ function PlanillaLectura({ asignacionId, onBack }: { asignacionId: string; onBac
 
   return (
     <div className="space-y-4">
-      <BackLink onClick={onBack} label="Volver a materias" />
-
+      {/* Header */}
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <p className="text-xs font-medium uppercase tracking-wide text-fg-muted">
-            {asignacion.paralelo.grado.nombre} "{asignacion.paralelo.letra}"
-          </p>
-          <h1 className="text-2xl font-bold text-fg leading-tight">{asignacion.materia.nombre}</h1>
-          <p className="mt-1 flex items-center gap-1.5 text-sm text-fg-muted">
-            <Icon name="graduation-cap" className="h-4 w-4" />
-            Prof. {asignacion.docente.apellido}, {asignacion.docente.nombre}
-          </p>
+          <BackButton onClick={onBack} label="Volver a materias" className="mb-2" />
+          <h1 className="text-xl font-bold text-fg">{asignacion.materia.nombre}</h1>
+          <div className="mt-1 flex flex-wrap items-center gap-2 text-sm text-fg-muted">
+            <span className="font-medium text-fg">
+              {asignacion.paralelo.grado.nombre} "{asignacion.paralelo.letra}"
+            </span>
+            <span>·</span>
+            <Badge variant="info">Gestión {asignacion.gestion.anno}</Badge>
+            <span>·</span>
+            <span>{asignacion.materia.campo.nombre}</span>
+            <span>·</span>
+            <span className="flex items-center gap-1">
+              <Icon name="graduation-cap" className="h-3.5 w-3.5" />
+              Prof. {asignacion.docente.apellido}, {asignacion.docente.nombre}
+            </span>
+          </div>
         </div>
-        {asignacion.gestion.trimestres.length > 0 && (
-          <select
-            value={trimestreId}
-            onChange={e => setTrimestreId(e.target.value)}
-            className="rounded-lg border border-border px-3 py-2 text-sm focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand"
-          >
-            {asignacion.gestion.trimestres.map(t => (
-              <option key={t.id} value={t.id}>
-                {trimestreLabel(t.numero)}{t.cerrado ? ' (cerrado)' : ''}
-              </option>
-            ))}
-          </select>
-        )}
+
+        {/* Selector de trimestre — mismas pestañas que usa la planilla del docente */}
+        <div className="flex rounded-lg border border-border overflow-hidden flex-shrink-0">
+          {asignacion.gestion.trimestres.map(t => (
+            <button
+              key={t.id}
+              onClick={() => setTrimestreId(t.id)}
+              className={`inline-flex items-center gap-1 px-3 py-1.5 text-xs font-semibold transition-colors ${
+                trimestreId === t.id ? 'bg-brand text-brand-fg' : 'bg-surface text-fg-muted hover:bg-surface-2'
+              } ${t.cerrado ? 'opacity-60' : ''}`}
+              title={t.cerrado ? 'Cerrado' : 'Abierto'}
+            >
+              {trimestreLabel(t.numero)}
+              {t.cerrado && <Icon name="lock" className="h-3 w-3" />}
+            </button>
+          ))}
+        </div>
       </div>
 
+      {/* Banner subárea especial */}
+      {esEspecial && (
+        <div className="rounded-lg bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-200 dark:border-indigo-500/30 px-4 py-3 text-sm text-indigo-800 dark:text-indigo-300">
+          Subárea especial — sus notas se promedian dentro de {asignacion.materia.parent_materia?.nombre ?? 'el área principal'}, no tienen una nota final propia.
+        </div>
+      )}
+
+      {/* Datos: exportar el registro */}
+      <div className="flex flex-wrap items-center gap-2 rounded-lg border border-border bg-surface-2/40 px-3 py-2">
+        <span className="text-xs font-semibold uppercase tracking-wide text-fg-muted mr-1">Datos</span>
+        <ExportarButton disabled={!trimestreActual} dlState={dlState} onExport={descargarRegistro} />
+      </div>
+
+      {/* Barra superior de la tabla: resumen */}
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border bg-surface px-4 py-3 shadow-sm">
+        <p className="text-sm text-fg-muted">
+          {trimestreActual && <span className="font-medium text-fg">{trimestreLabel(trimestreActual.numero)}</span>} ·{' '}
+          {estudiantes.length} estudiante{estudiantes.length !== 1 ? 's' : ''} · {totalIndicCols} indicador{totalIndicCols !== 1 ? 'es' : ''}
+        </p>
+        <span className="flex items-center gap-1.5 text-xs text-fg-muted">
+          <Icon name="lock" className="h-3.5 w-3.5" />
+          Solo lectura
+        </span>
+      </div>
+
+      {/* ── TABLA ─────────────────────────────────────────────────────────── */}
       <div className="overflow-x-auto rounded-xl border border-border shadow-sm">
         <table className="min-w-max text-sm border-collapse">
           <thead>
@@ -150,13 +211,25 @@ function PlanillaLectura({ asignacionId, onBack }: { asignacionId: string; onBac
               {dimensiones.map((dim, idx) => (
                 <Fragment key={dim.id}>
                   {dim.indicadores.map(ind => (
-                    <th key={ind.id} className={`${DIM_CELL_BG[idx] ?? 'bg-bg'} border-r border-border px-2 py-1.5 text-center align-bottom`} style={{ minWidth: '5.5rem' }}>
-                      <div className="text-fg text-xs font-medium leading-tight" title={ind.nombre}>{ind.nombre}</div>
-                      <div className="text-fg-muted leading-tight mt-0.5" style={{ fontSize: '0.65rem' }}>
-                        {ind.instrumento === 'OTRO' && ind.instrumento_otro ? ind.instrumento_otro : (INSTRUMENTO_LABELS[ind.instrumento] ?? ind.instrumento)}
-                      </div>
-                      <div className="text-fg-muted leading-tight" style={{ fontSize: '0.65rem' }}>
-                        {ind.fecha_aplicacion ? ind.fecha_aplicacion.slice(0, 10) : ''}
+                    <th
+                      key={ind.id}
+                      className={`${DIM_CELL_BG[idx] ?? 'bg-bg'} border-r border-border px-1 py-1 text-center align-bottom`}
+                      style={{ minWidth: '3.5rem', maxWidth: '4rem' }}
+                    >
+                      <div className="flex flex-col items-center gap-0.5">
+                        <div
+                          className="text-fg font-medium"
+                          style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)', height: '5rem', fontSize: '0.65rem', lineHeight: 1.2, overflow: 'hidden' }}
+                          title={ind.nombre}
+                        >
+                          {ind.nombre}
+                        </div>
+                        <span className="text-fg-muted block leading-tight" style={{ fontSize: '0.6rem' }}>
+                          {ind.instrumento === 'OTRO' && ind.instrumento_otro ? ind.instrumento_otro : (INSTRUMENTO_LABELS[ind.instrumento] ?? ind.instrumento)}
+                        </span>
+                        <span className="text-fg-muted block leading-tight" style={{ fontSize: '0.6rem' }}>
+                          {ind.fecha_aplicacion ? ind.fecha_aplicacion.slice(0, 10) : ''}
+                        </span>
                       </div>
                     </th>
                   ))}
@@ -178,7 +251,7 @@ function PlanillaLectura({ asignacionId, onBack }: { asignacionId: string; onBac
                 {dimensiones.map((dim, idx) => (
                   <Fragment key={dim.id}>
                     {dim.indicadores.map(ind => (
-                      <td key={ind.id} className={`${DIM_CELL_BG[idx] ?? 'bg-bg'} border-r border-border px-2 py-2 text-center`}>
+                      <td key={ind.id} className={`${DIM_CELL_BG[idx] ?? 'bg-bg'} border-r border-border px-1 py-1.5 text-center`}>
                         {est.notas[ind.id] != null ? est.notas[ind.id] : <span className="text-fg-muted/40">—</span>}
                       </td>
                     ))}
@@ -212,15 +285,6 @@ function PlanillaLectura({ asignacionId, onBack }: { asignacionId: string; onBac
         Vista de solo lectura — el registro y la edición de notas los hace el/la docente desde su panel.
       </p>
     </div>
-  )
-}
-
-function BackLink({ onClick, label }: { onClick: () => void; label: string }) {
-  return (
-    <button onClick={onClick} className="flex items-center gap-1.5 text-sm font-medium text-fg-muted hover:text-fg transition-colors">
-      <Icon name="arrow-left" className="h-4 w-4" />
-      {label}
-    </button>
   )
 }
 
@@ -326,9 +390,12 @@ export default function RegistrosPage() {
 
     return (
       <div className="space-y-8">
-        <div>
-          <h1 className="text-2xl font-bold text-fg">Registros</h1>
-          <p className="text-sm text-fg-muted mt-0.5">Selecciona un curso para ver sus materias y planillas</p>
+        <div className="flex items-center gap-2.5">
+          <Icon name="document-list" className="h-6 w-6 text-fg-muted" />
+          <div>
+            <h1 className="text-2xl font-bold text-fg">Registros</h1>
+            <p className="text-sm text-fg-muted mt-0.5">Selecciona un curso para ver sus materias y planillas</p>
+          </div>
         </div>
 
         {loadingParalelos ? (
@@ -382,7 +449,7 @@ export default function RegistrosPage() {
     const style = NIVEL_STYLES[selectedParalelo?.grado.nivel.nombre ?? ''] ?? NIVEL_FALLBACK
     return (
       <div className="space-y-6">
-        <BackLink onClick={backToCursos} label="Volver a cursos" />
+        <BackButton onClick={backToCursos} label="Volver a cursos" />
 
         <div className="flex items-center gap-3">
           <span className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-bold uppercase tracking-wider ${style.badge}`}>
@@ -408,7 +475,10 @@ export default function RegistrosPage() {
                 onClick={() => selectMateria(a)}
                 className="flex flex-col items-start gap-1 rounded-xl border border-border bg-surface p-5 text-left shadow-sm hover:shadow-md hover:border-brand transition-all"
               >
-                <p className="text-xs font-medium uppercase tracking-wide text-fg-muted">{a.materia.campo.nombre}</p>
+                <div className="flex w-full items-start justify-between gap-2">
+                  <p className="text-xs font-medium uppercase tracking-wide text-fg-muted">{a.materia.campo.nombre}</p>
+                  <Icon name="clipboard-check" className="h-4 w-4 text-fg-muted/60 flex-shrink-0" />
+                </div>
                 <h2 className="text-lg font-bold text-fg leading-tight">{a.materia.nombre}</h2>
                 {a.materia.es_subarea_de_id && (
                   <p className="text-xs text-fg-muted">Subárea de {a.materia.parent_materia?.nombre ?? '—'}</p>
