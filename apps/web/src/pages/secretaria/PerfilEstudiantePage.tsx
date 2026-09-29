@@ -235,7 +235,7 @@ function DatosTab({
           </div>
         </div>
         {matriculaActiva && (
-          <div className="border-t border-border pt-4 grid grid-cols-2 gap-4 text-sm">
+          <div className="border-t border-border pt-4 grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
             <div><span className="text-fg-muted">Nivel:</span>{' '}
               <span className="font-medium">{matriculaActiva.paralelo.grado.nivel.nombre}</span>
             </div>
@@ -349,28 +349,30 @@ function DatosTab({
         <h2 className="text-sm font-semibold uppercase tracking-wide text-fg-muted mb-4">Historial de matrículas</h2>
         {est.matriculas.length === 0
           ? <p className="text-sm text-fg-muted italic">Sin matrículas</p>
-          : <table className="w-full text-sm">
-              <thead>
-                <tr className="text-left text-xs text-fg-muted border-b border-border">
-                  <th className="pb-2">Gestión</th><th className="pb-2">Grado</th>
-                  <th className="pb-2">Paralelo</th><th className="pb-2">Período</th><th className="pb-2">Resultado</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border">
-                {est.matriculas.map(m => (
-                  <tr key={m.id}>
-                    <td className="py-2 font-medium">{m.gestion.anno}</td>
-                    <td className="py-2 text-fg-muted">{m.paralelo.grado.nombre}</td>
-                    <td className="py-2">{m.paralelo.letra}</td>
-                    <td className="py-2">{m.gestion.activa
-                      ? <Badge variant="success">Activa</Badge>
-                      : <Badge variant="default">Finalizada</Badge>}
-                    </td>
-                    <td className="py-2"><Badge variant={RESULTADO_BADGE[m.resultado]}>{RESULTADO_LABEL[m.resultado]}</Badge></td>
+          : <div className="overflow-x-auto">
+              <table className="w-full text-sm min-w-[480px]">
+                <thead>
+                  <tr className="text-left text-xs text-fg-muted border-b border-border">
+                    <th className="pb-2">Gestión</th><th className="pb-2">Grado</th>
+                    <th className="pb-2">Paralelo</th><th className="pb-2">Período</th><th className="pb-2">Resultado</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="divide-y divide-border">
+                  {est.matriculas.map(m => (
+                    <tr key={m.id}>
+                      <td className="py-2 font-medium whitespace-nowrap">{m.gestion.anno}</td>
+                      <td className="py-2 text-fg-muted whitespace-nowrap">{m.paralelo.grado.nombre}</td>
+                      <td className="py-2">{m.paralelo.letra}</td>
+                      <td className="py-2 whitespace-nowrap">{m.gestion.activa
+                        ? <Badge variant="success">Activa</Badge>
+                        : <Badge variant="default">Finalizada</Badge>}
+                      </td>
+                      <td className="py-2 whitespace-nowrap"><Badge variant={RESULTADO_BADGE[m.resultado]}>{RESULTADO_LABEL[m.resultado]}</Badge></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
         }
       </div>
 
@@ -581,8 +583,8 @@ function CalificacionesTab({ estudianteId }: { estudianteId: string }) {
       )}
 
       {boletin && !loading && boletin.tipo === 'INICIAL' && boletin.materias_inicial && (
-        <div className="rounded-xl border border-border bg-surface shadow-sm overflow-hidden">
-          <table className="w-full text-sm">
+        <div className="rounded-xl border border-border bg-surface shadow-sm overflow-x-auto">
+          <table className="w-full text-sm min-w-[480px]">
             <thead>
               <tr className="bg-surface-2 text-left text-xs font-semibold uppercase tracking-wide text-fg-muted border-b border-border">
                 <th className="px-5 py-3">Área</th>
@@ -704,7 +706,7 @@ function AsistenciaTab({ estudianteId }: { estudianteId: string }) {
             {(() => {
               const total = data.diaria.total_asistencias + data.diaria.total_faltas + data.diaria.total_tardanzas
               return (
-                <div className="grid grid-cols-4 gap-4 text-center">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-center">
                   {[
                     { label: 'Presentes',  val: data.diaria.total_asistencias, color: 'text-green-600' },
                     { label: 'Ausentes',   val: data.diaria.total_faltas,       color: 'text-red-600'   },
@@ -727,7 +729,8 @@ function AsistenciaTab({ estudianteId }: { estudianteId: string }) {
               <div className="px-5 py-3 border-b border-border">
                 <span className="text-sm font-semibold text-fg">Asistencia por materia (clases)</span>
               </div>
-              <table className="w-full text-sm">
+              <div className="overflow-x-auto">
+              <table className="w-full text-sm min-w-[480px]">
                 <thead>
                   <tr className="bg-bg text-left text-xs font-semibold uppercase tracking-wide text-fg-muted border-b border-border">
                     <th className="px-5 py-3">Materia</th>
@@ -755,6 +758,7 @@ function AsistenciaTab({ estudianteId }: { estudianteId: string }) {
                   })}
                 </tbody>
               </table>
+              </div>
             </div>
           )}
 
@@ -835,7 +839,8 @@ function PensionesTab({ estudianteId }: { estudianteId: string }) {
         {data.meses.length === 0 ? (
           <p className="px-5 py-8 text-center text-sm text-fg-muted">Sin pensiones generadas para esta gestión.</p>
         ) : (
-          <table className="w-full text-sm">
+          <div className="overflow-x-auto">
+          <table className="w-full text-sm min-w-[520px]">
             <thead>
               <tr className="bg-bg text-left text-xs font-semibold uppercase tracking-wide text-fg-muted border-b border-border">
                 <th className="px-5 py-3">Mes</th>
@@ -865,6 +870,7 @@ function PensionesTab({ estudianteId }: { estudianteId: string }) {
               ))}
             </tbody>
           </table>
+          </div>
         )}
       </div>
     </div>
@@ -1058,7 +1064,8 @@ function CertificadosTab({ estudianteId }: { estudianteId: string }) {
         {certificados.length === 0 ? (
           <p className="px-5 py-10 text-center text-sm text-fg-muted">Sin certificados emitidos.</p>
         ) : (
-          <table className="w-full text-sm">
+          <div className="overflow-x-auto">
+          <table className="w-full text-sm min-w-[560px]">
             <thead>
               <tr className="bg-bg text-left text-xs font-semibold uppercase tracking-wide text-fg-muted border-b border-border">
                 <th className="px-5 py-3">Tipo</th>
@@ -1084,6 +1091,7 @@ function CertificadosTab({ estudianteId }: { estudianteId: string }) {
               ))}
             </tbody>
           </table>
+          </div>
         )}
       </div>
 
@@ -1180,20 +1188,22 @@ export default function PerfilEstudiantePage({
       </div>
 
       {/* Tab bar */}
-      <div className="flex gap-1 rounded-xl bg-surface-2 p-1 w-fit">
-        {TABS.map(t => (
-          <button
-            key={t.key}
-            onClick={() => setTab(t.key as Tab)}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-              tab === t.key
-                ? 'bg-surface text-fg shadow-sm'
-                : 'text-fg-muted hover:text-fg'
-            }`}
-          >
-            {t.label}
-          </button>
-        ))}
+      <div className="overflow-x-auto">
+        <div className="flex gap-1 rounded-xl bg-surface-2 p-1 w-fit">
+          {TABS.map(t => (
+            <button
+              key={t.key}
+              onClick={() => setTab(t.key as Tab)}
+              className={`whitespace-nowrap px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                tab === t.key
+                  ? 'bg-surface text-fg shadow-sm'
+                  : 'text-fg-muted hover:text-fg'
+              }`}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Tab content */}

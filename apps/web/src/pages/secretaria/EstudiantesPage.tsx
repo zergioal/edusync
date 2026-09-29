@@ -166,9 +166,11 @@ interface EditModalProps {
   estudiante: Estudiante
   onClose:    () => void
   onSaved:    () => void
+  onDelete:   (est: Estudiante) => Promise<boolean>
 }
 
-function EditarEstudianteModal({ estudiante, onClose, onSaved }: EditModalProps) {
+function EditarEstudianteModal({ estudiante, onClose, onSaved, onDelete }: EditModalProps) {
+  const [deleting, setDeleting] = useState(false)
   const toast  = useToast()
   const apellidoParts = estudiante.usuario.apellido.trim().split(/\s+/)
   const [form, setForm] = useState({
@@ -278,6 +280,13 @@ function EditarEstudianteModal({ estudiante, onClose, onSaved }: EditModalProps)
     } finally {
       setLinkingPadre(false)
     }
+  }
+
+  async function eliminar() {
+    setDeleting(true)
+    const ok = await onDelete(estudiante)
+    setDeleting(false)
+    if (ok) onClose()
   }
 
   return (
@@ -473,6 +482,21 @@ function EditarEstudianteModal({ estudiante, onClose, onSaved }: EditModalProps)
             </div>
           )}
         </div>
+
+        <div className="border-t border-border pt-4">
+          <button
+            type="button"
+            onClick={eliminar}
+            disabled={deleting}
+            className="flex items-center gap-1.5 text-sm font-medium text-red-500 hover:text-red-700 disabled:opacity-50"
+          >
+            <Icon name="user-x" className="h-4 w-4" />
+            {deleting ? 'Eliminando…' : 'Eliminar estudiante'}
+          </button>
+          <p className="mt-1 text-xs text-fg-muted">
+            Elimina permanentemente al estudiante y todos sus datos: notas, asistencias, matrículas, pensiones y relaciones con tutores.
+          </p>
+        </div>
       </div>
     </div>
   )
@@ -593,17 +617,20 @@ export default function EstudiantesPage({ basePath = '/dashboard/admin' }: { bas
     return `${basePath}/estudiante/${estId}${qs ? `?${qs}` : ''}`
   }
 
-  async function handleDelete(est: Estudiante) {
+  /** @returns true si se eliminó — el modal de edición usa esto para saber si debe cerrarse. */
+  async function handleDelete(est: Estudiante): Promise<boolean> {
     const nombre = `${est.usuario.apellido}, ${est.usuario.nombre}`
     if (!confirm(
       `ELIMINAR ESTUDIANTE\n\n"${nombre}"\n\nEsta acción eliminará permanentemente al estudiante y TODOS sus datos: notas, asistencias, matrículas, pensiones y relaciones con tutores.\n\n¿Confirmar eliminación?`
-    )) return
+    )) return false
     try {
       await api.delete(`/estudiantes/${est.id}`)
       toast.success(`Estudiante "${nombre}" eliminado`)
       load()
+      return true
     } catch (err) {
       toast.error(err instanceof ApiError ? err.message : 'Error al eliminar')
+      return false
     }
   }
 
@@ -820,18 +847,9 @@ export default function EstudiantesPage({ basePath = '/dashboard/admin' }: { bas
                   Pensión
                 </Button>
                 {canManage && (
-                  <>
-                    <Button variant="ghost" size="sm" className="border border-border" onClick={() => setEditTarget(est)}>
-                      Editar
-                    </Button>
-                    <Button variant="ghost" size="sm"
-                      className="border border-border text-red-500 hover:text-red-700"
-                      title="Eliminar estudiante"
-                      aria-label="Eliminar estudiante"
-                      onClick={() => handleDelete(est)}>
-                      <Icon name="user-x" className="h-4 w-4" />
-                    </Button>
-                  </>
+                  <Button variant="ghost" size="sm" className="border border-border" onClick={() => setEditTarget(est)}>
+                    Editar
+                  </Button>
                 )}
                 {canResetPassword && (
                   <Button variant="ghost" size="sm" className="border border-border" onClick={() => setResetPwdTarget(est)}>
@@ -920,18 +938,9 @@ export default function EstudiantesPage({ basePath = '/dashboard/admin' }: { bas
                       Pensión
                     </Button>
                     {canManage && (
-                      <>
-                        <Button variant="ghost" size="sm" onClick={() => setEditTarget(est)}>
-                          Editar
-                        </Button>
-                        <Button variant="ghost" size="sm"
-                          className="text-red-500 hover:text-red-700"
-                          title="Eliminar estudiante"
-                          aria-label="Eliminar estudiante"
-                          onClick={() => handleDelete(est)}>
-                          <Icon name="user-x" className="h-4 w-4" />
-                        </Button>
-                      </>
+                      <Button variant="ghost" size="sm" onClick={() => setEditTarget(est)}>
+                        Editar
+                      </Button>
                     )}
                     {canResetPassword && (
                       <Button variant="ghost" size="sm" onClick={() => setResetPwdTarget(est)}>
@@ -956,6 +965,7 @@ export default function EstudiantesPage({ basePath = '/dashboard/admin' }: { bas
           estudiante={editTarget}
           onClose={() => setEditTarget(null)}
           onSaved={load}
+          onDelete={handleDelete}
         />
       )}
       {resetPwdTarget && (
