@@ -60,6 +60,16 @@ export const NAV_POR_ROL: Record<string, NavItem[]> = {
     },
     { to: "/dashboard/director/docentes", label: "Docentes", icon: "teacher" },
     {
+      to: "/dashboard/director/control-diario",
+      label: "Control Diario",
+      icon: "tasks",
+    },
+    {
+      to: "/dashboard/director/registros",
+      label: "Registros",
+      icon: "chart",
+    },
+    {
       to: "/dashboard/director/personal",
       label: "Personal Administrativo",
       icon: "teacher",
@@ -80,21 +90,11 @@ export const NAV_POR_ROL: Record<string, NavItem[]> = {
       icon: "book",
     },
     {
-      to: "/dashboard/director/control-diario",
-      label: "Control Diario",
-      icon: "tasks",
-    },
-    {
       to: "/dashboard/director/carga-horaria",
       label: "Carga Horaria",
       icon: "clock",
     },
     { to: "/dashboard/director/horarios", label: "Horarios", icon: "clock" },
-    {
-      to: "/dashboard/director/registros",
-      label: "Registros",
-      icon: "chart",
-    },
     {
       to: "/dashboard/director/reportes",
       label: "Reportes Académicos",
@@ -166,6 +166,16 @@ export const NAV_POR_ROL: Record<string, NavItem[]> = {
       icon: "teacher",
     },
     {
+      to: "/dashboard/coordinador/control-diario",
+      label: "Control Diario",
+      icon: "tasks",
+    },
+    {
+      to: "/dashboard/coordinador/registros",
+      label: "Registros",
+      icon: "chart",
+    },
+    {
       to: "/dashboard/coordinador/paralelos",
       label: "Cursos y Paralelos",
       icon: "users",
@@ -180,17 +190,7 @@ export const NAV_POR_ROL: Record<string, NavItem[]> = {
       label: "Áreas y Subáreas",
       icon: "book",
     },
-    {
-      to: "/dashboard/coordinador/control-diario",
-      label: "Control Diario",
-      icon: "tasks",
-    },
     { to: "/dashboard/coordinador/horarios", label: "Horarios", icon: "clock" },
-    {
-      to: "/dashboard/coordinador/registros",
-      label: "Registros",
-      icon: "chart",
-    },
     {
       to: "/dashboard/coordinador/reportes",
       label: "Reportes Académicos",
@@ -231,6 +231,16 @@ export const NAV_POR_ROL: Record<string, NavItem[]> = {
     },
     { to: "/dashboard/admin/padres", label: "Padres / Tutores", icon: "child" },
     { to: "/dashboard/admin/docentes", label: "Docentes", icon: "teacher" },
+    {
+      to: "/dashboard/admin/control-diario",
+      label: "Control Diario",
+      icon: "tasks",
+    },
+    {
+      to: "/dashboard/admin/registros",
+      label: "Registros",
+      icon: "chart",
+    },
     { to: "/dashboard/admin/personal", label: "Personal", icon: "teacher" },
     {
       to: "/dashboard/admin/paralelos",
@@ -243,17 +253,7 @@ export const NAV_POR_ROL: Record<string, NavItem[]> = {
       label: "Áreas y Subáreas",
       icon: "book",
     },
-    {
-      to: "/dashboard/admin/control-diario",
-      label: "Control Diario",
-      icon: "tasks",
-    },
     { to: "/dashboard/admin/horarios", label: "Horarios", icon: "clock" },
-    {
-      to: "/dashboard/admin/registros",
-      label: "Registros",
-      icon: "chart",
-    },
     {
       to: "/dashboard/admin/nota-extracurricular",
       label: "Nota Extracurricular",

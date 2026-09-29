@@ -39,13 +39,13 @@ export function Modal({ isOpen, onClose, title, children, maxWidth = 'md', foote
 
       {/* Panel */}
       <div
-        className={`relative w-full ${widthMap[maxWidth]} rounded-2xl bg-surface shadow-2xl`}
+        className={`relative flex max-h-[90vh] w-full flex-col ${widthMap[maxWidth]} rounded-2xl bg-surface shadow-2xl`}
         role="dialog"
         aria-modal="true"
         aria-labelledby="modal-title"
       >
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-border px-6 py-4">
+        <div className="flex items-center justify-between border-b border-border px-6 py-4 flex-shrink-0">
           <h2 id="modal-title" className="text-base font-semibold text-fg">
             {title}
           </h2>
@@ -58,12 +58,12 @@ export function Modal({ isOpen, onClose, title, children, maxWidth = 'md', foote
           </button>
         </div>
 
-        {/* Body */}
-        <div className="px-6 py-5">{children}</div>
+        {/* Body — scrollea internamente si el formulario no entra en la pantalla */}
+        <div className="overflow-y-auto px-6 py-5">{children}</div>
 
         {/* Footer opcional */}
         {footer && (
-          <div className="border-t border-border px-6 py-4">{footer}</div>
+          <div className="border-t border-border px-6 py-4 flex-shrink-0">{footer}</div>
         )}
       </div>
     </div>

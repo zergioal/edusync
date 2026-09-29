@@ -325,14 +325,14 @@ export function GestionAreasSubareasPage() {
 
       {!loading && padres.map(padre => (
         <div key={padre.id} className="rounded-xl border border-border bg-surface shadow-sm overflow-hidden">
-          <div className="flex items-center justify-between gap-3 border-b border-border bg-bg px-4 py-3">
-            <div className="flex items-center gap-2 min-w-0">
+          <div className="flex flex-col gap-2 border-b border-border bg-bg px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-center gap-2 min-w-0 flex-wrap">
               <span className="font-semibold text-fg truncate">{padre.nombre}</span>
               <span className="text-xs text-fg-muted shrink-0">{padre.campo.nombre}</span>
               {padre.solo_si_bth && <Badge variant="info">BTH</Badge>}
               {!padre.activa && <Badge variant="warning">Inactiva</Badge>}
             </div>
-            <div className="flex items-center gap-2 shrink-0">
+            <div className="flex items-center gap-2 flex-wrap sm:shrink-0">
               <Button size="sm" variant="ghost" onClick={() => openCreateSubarea(padre)}>+ Añadir subárea</Button>
               <Button size="sm" variant="ghost" onClick={() => openEditArea(padre)}>Editar área</Button>
               {padre.activa ? (
@@ -349,8 +349,8 @@ export function GestionAreasSubareasPage() {
           ) : (
             <div className="divide-y divide-border">
               {padre.subareas.map(sub => (
-                <div key={sub.id} className="flex items-center justify-between gap-3 px-4 py-2.5">
-                  <div className="flex items-center gap-2 min-w-0">
+                <div key={sub.id} className="flex flex-col gap-2 px-4 py-2.5 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="flex items-center gap-2 min-w-0 flex-wrap">
                     <span className={`text-sm truncate ${sub.activa ? 'text-fg' : 'text-fg-muted line-through'}`}>
                       {sub.nombre}
                     </span>
@@ -364,7 +364,7 @@ export function GestionAreasSubareasPage() {
                       <span className="text-xs text-fg-muted shrink-0">{sub.horas_semanales} hrs/mes</span>
                     )}
                   </div>
-                  <div className="flex items-center gap-2 shrink-0">
+                  <div className="flex items-center gap-2 flex-wrap sm:shrink-0">
                     <Button size="sm" variant="ghost" onClick={() => openEditSubarea(padre, sub)}>Editar</Button>
                     {sub.activa ? (
                       <Button size="sm" variant="secondary" onClick={() => handleDesactivar(sub)}>Desactivar</Button>
@@ -434,7 +434,7 @@ export function GestionAreasSubareasPage() {
               Solo disponible en unidades educativas BTH
             </label>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="flex flex-col gap-1">
                 <label className="text-sm font-medium text-fg">Desde grado (orden)</label>
                 <input
@@ -594,7 +594,7 @@ export function GestionAreasSubareasPage() {
               </div>
             )}
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="flex flex-col gap-1">
                 <label className="text-sm font-medium text-fg">Desde grado (orden)</label>
                 <input
