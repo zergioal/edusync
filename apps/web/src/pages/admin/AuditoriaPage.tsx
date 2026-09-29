@@ -88,10 +88,40 @@ function relativo(iso: string): string {
   return new Date(iso).toLocaleDateString('es-BO', { day: '2-digit', month: 'short', year: 'numeric' })
 }
 
+type FiltroConexion = '' | 'nunca' | 'hoy' | '7' | '30' | 'mas30' | 'mas90'
+
+const CONEXION_OPCIONES: { value: FiltroConexion; label: string }[] = [
+  { value: '',      label: 'Todas' },
+  { value: 'hoy',   label: 'Conectado hoy' },
+  { value: '7',     label: 'Últimos 7 días' },
+  { value: '30',    label: 'Últimos 30 días' },
+  { value: 'mas30', label: 'Más de 30 días sin conectarse' },
+  { value: 'mas90', label: 'Más de 90 días sin conectarse' },
+  { value: 'nunca', label: 'Nunca se conectó' },
+]
+
+function pasaFiltroConexion(s: StaffItem, filtro: FiltroConexion): boolean {
+  if (!filtro) return true
+  if (filtro === 'nunca') return !s.ultima_conexion
+  if (!s.ultima_conexion) return false
+  const dias = (Date.now() - new Date(s.ultima_conexion).getTime()) / 86_400_000
+  if (filtro === 'hoy')   return dias < 1
+  if (filtro === '7')     return dias <= 7
+  if (filtro === '30')    return dias <= 30
+  if (filtro === 'mas30') return dias > 30
+  if (filtro === 'mas90') return dias > 90
+  return true
+}
+
+// Con un filtro de inactividad, conviene ver primero a quien lleva más tiempo
+// sin conectarse (o nunca lo hizo) en vez del orden alfabético por defecto.
+const FILTROS_INACTIVIDAD: FiltroConexion[] = ['nunca', 'mas30', 'mas90']
+
 function StaffTable() {
-  const [staff,   setStaff]   = useState<StaffItem[]>([])
-  const [rol,     setRol]     = useState('')
-  const [loading, setLoading] = useState(true)
+  const [staff,     setStaff]     = useState<StaffItem[]>([])
+  const [rol,       setRol]       = useState('')
+  const [conexion,  setConexion]  = useState<FiltroConexion>('')
+  const [loading,   setLoading]   = useState(true)
 
   useEffect(() => {
     setLoading(true)
@@ -100,6 +130,15 @@ function StaffTable() {
       .catch(() => {})
       .finally(() => setLoading(false))
   }, [rol])
+
+  let staffFiltrado = staff.filter(s => pasaFiltroConexion(s, conexion))
+  if (FILTROS_INACTIVIDAD.includes(conexion)) {
+    staffFiltrado = [...staffFiltrado].sort((a, b) => {
+      const ta = a.ultima_conexion ? new Date(a.ultima_conexion).getTime() : -Infinity
+      const tb = b.ultima_conexion ? new Date(b.ultima_conexion).getTime() : -Infinity
+      return ta - tb
+    })
+  }
 
   return (
     <div>
@@ -114,12 +153,20 @@ function StaffTable() {
           <option value="TODOS">Todos los usuarios</option>
           {ROL_OPCIONES.map(r => <option key={r} value={r}>{ROL_LABELS[r]}</option>)}
         </select>
-        {!loading && <span className="text-xs text-fg-muted">{staff.length} usuario{staff.length === 1 ? '' : 's'}</span>}
+        <label className="text-xs font-medium text-fg-muted uppercase tracking-wide">Última conexión</label>
+        <select
+          value={conexion}
+          onChange={e => setConexion(e.target.value as FiltroConexion)}
+          className="rounded-lg border border-border px-3 py-2 text-sm focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand"
+        >
+          {CONEXION_OPCIONES.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+        </select>
+        {!loading && <span className="text-xs text-fg-muted">{staffFiltrado.length} usuario{staffFiltrado.length === 1 ? '' : 's'}</span>}
       </div>
 
       {loading ? (
         <div className="flex justify-center py-12"><Spinner /></div>
-      ) : staff.length === 0 ? (
+      ) : staffFiltrado.length === 0 ? (
         <div className="py-12 text-center text-sm text-fg-muted">Sin usuarios registrados para este filtro</div>
       ) : (
         <table className="w-full text-sm">
@@ -132,7 +179,7 @@ function StaffTable() {
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
-            {staff.map(s => (
+            {staffFiltrado.map(s => (
               <tr key={s.id} className="hover:bg-surface-2 transition-colors">
                 <td className="px-5 py-3 font-medium text-fg">
                   {s.apellido}, {s.nombre}
