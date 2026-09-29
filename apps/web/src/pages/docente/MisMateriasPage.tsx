@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { api, ApiError } from '../../lib/api'
 import { useToast } from '../../components/ui/Toast'
 import { Icon } from '../../components/ui/Icon'
-import { Spinner, Badge } from '@edusync/ui'
+import { Spinner } from '@edusync/ui'
 
 interface AsignacionCard {
   id:           string
@@ -19,16 +19,20 @@ interface AsignacionCard {
   n_estudiantes: number
 }
 
-const NIVEL_VARIANT: Record<string, 'warning' | 'info' | 'success'> = {
-  INICIAL: 'warning',
-  PRIMARIA: 'info',
-  SECUNDARIA: 'success',
-}
-
 const NIVEL_COLOR: Record<string, string> = {
   INICIAL:    'bg-amber-600',
   PRIMARIA:   'bg-blue-600',
   SECUNDARIA: 'bg-emerald-600',
+}
+
+// "2° de Secundaria" + letra "A" → 'Curso 2° "A" Secundaria': el nombre del
+// curso va primero y grande (lo que el docente busca de un vistazo), la
+// gestión queda como dato secundario chico.
+function tituloCurso(a: AsignacionCard): string {
+  const nivelNombre = a.paralelo.grado.nivel.nombre
+  const nivelCap     = nivelNombre.charAt(0) + nivelNombre.slice(1).toLowerCase()
+  const base = a.paralelo.grado.nombre.replace(new RegExp(`\\s+de\\s+${nivelCap}$`, 'i'), '').trim()
+  return `${base} "${a.paralelo.letra}" ${nivelCap}`
 }
 
 export default function MisMateriasPage() {
@@ -54,7 +58,7 @@ export default function MisMateriasPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-fg">Mis Materias</h1>
+        <h1 className="text-2xl font-bold text-fg">Mis cursos</h1>
         <p className="mt-0.5 text-sm text-fg-muted">
           {asignaciones.length} asignación{asignaciones.length !== 1 ? 'es' : ''} activa{asignaciones.length !== 1 ? 's' : ''}
         </p>
@@ -79,13 +83,11 @@ export default function MisMateriasPage() {
               className="flex flex-col rounded-xl border border-border bg-surface shadow-sm overflow-hidden hover:shadow-md transition-shadow"
             >
               {/* Franja superior con color del nivel */}
-              <div className={`${bgColor} px-5 py-3 flex items-center justify-between`}>
-                <span className="text-sm font-semibold text-white">
-                  {nivel} · Gestión {a.gestion.anno}
-                </span>
-                <Badge variant={NIVEL_VARIANT[nivel] ?? 'info'}>
-                  {a.paralelo.grado.nombre} "{a.paralelo.letra}"
-                </Badge>
+              <div className={`${bgColor} px-5 py-3`}>
+                <p className="text-lg font-bold text-white leading-tight">
+                  {tituloCurso(a)}
+                </p>
+                <p className="text-xs text-white/80">Gestión {a.gestion.anno}</p>
               </div>
 
               {/* Contenido */}
