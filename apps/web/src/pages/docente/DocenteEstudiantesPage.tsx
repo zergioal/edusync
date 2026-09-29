@@ -1,7 +1,10 @@
 import { useState, useEffect, useCallback } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { api } from '../../lib/api'
 import { Spinner, Button } from '@edusync/ui'
+import { Icon } from '../../components/ui/Icon'
+import { BackButton } from '../../components/ui/BackButton'
+import { abbreviateGrado, NIVEL_STYLES, NIVEL_FALLBACK } from '../../lib/cursoDisplay'
 
 // ─── Tipos ──────────────────────────────────────────────────────────────────
 
@@ -9,44 +12,9 @@ interface ParaleloCard { id: string; letra: string; grado: { nombre: string; niv
 interface Asignacion { id: string; materia: { nombre: string }; paralelo: { id: string; letra: string; grado: { nombre: string; nivel: { nombre: string } } }; gestion: { anno: number } }
 interface Estudiante { id: string; codigo: string; usuario: { nombre: string; apellido: string } }
 
-// ─── Helpers (mismos que EstudiantesPage.tsx de Director/Coordinador) ────────
-
-const ORDINAL_MAP: Record<string, string> = {
-  primer: '1°', primero: '1°',
-  segundo: '2°', segunda: '2°',
-  tercer: '3°', tercero: '3°',
-  cuarto: '4°', cuarta: '4°',
-}
-
-function abbreviateGrado(gradoNombre: string, letra: string): string {
-  const numMatch = gradoNombre.match(/^(\d+°)/)
-  if (numMatch) return `${numMatch[1]} ${letra}`
-  const first = gradoNombre.toLowerCase().split(' ')[0] ?? ''
-  const num = ORDINAL_MAP[first]
-  if (num) return `${num} ${letra}`
-  return `${gradoNombre.slice(0, 4)} ${letra}`
-}
-
-const NIVEL_STYLES: Record<string, { bg: string; border: string; hover: string; badge: string; num: string; label: string }> = {
-  INICIAL: {
-    bg: 'bg-emerald-50 dark:bg-emerald-950/40', border: 'border-emerald-200 dark:border-emerald-800/60',
-    hover: 'hover:bg-emerald-100 dark:hover:bg-emerald-900/50 hover:border-emerald-400 dark:hover:border-emerald-600 hover:shadow-emerald-100 dark:hover:shadow-none',
-    badge: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-400', num: 'text-emerald-700 dark:text-emerald-400', label: 'Inicial',
-  },
-  PRIMARIA: {
-    bg: 'bg-sky-50 dark:bg-sky-950/40', border: 'border-sky-200 dark:border-sky-800/60',
-    hover: 'hover:bg-sky-100 dark:hover:bg-sky-900/50 hover:border-sky-400 dark:hover:border-sky-600 hover:shadow-sky-100 dark:hover:shadow-none',
-    badge: 'bg-sky-100 text-sky-700 dark:bg-sky-950/50 dark:text-sky-400', num: 'text-sky-700 dark:text-sky-400', label: 'Primaria',
-  },
-  SECUNDARIA: {
-    bg: 'bg-violet-50 dark:bg-violet-950/40', border: 'border-violet-200 dark:border-violet-800/60',
-    hover: 'hover:bg-violet-100 dark:hover:bg-violet-900/50 hover:border-violet-400 dark:hover:border-violet-600 hover:shadow-violet-100 dark:hover:shadow-none',
-    badge: 'bg-violet-100 text-violet-700 dark:bg-violet-950/50 dark:text-violet-400', num: 'text-violet-800 dark:text-violet-300', label: 'Secundaria',
-  },
-}
-
 export default function DocenteEstudiantesPage() {
   const navigate = useNavigate()
+  const [searchParams, setSearchParams] = useSearchParams()
 
   const [paralelos,     setParalelos]     = useState<ParaleloCard[]>([])
   const [asignaciones,  setAsignaciones]  = useState<Asignacion[]>([])
@@ -73,16 +41,44 @@ export default function DocenteEstudiantesPage() {
 
   const misParaleloIds = new Set(asignaciones.map(a => a.paralelo.id))
 
-  async function seleccionar(p: ParaleloCard) {
-    setSeleccionado(p)
+  const cargarLista = useCallback(async (paraleloId: string) => {
     setLoadingLista(true)
     try {
-      setEstudiantes(await api.get<Estudiante[]>(`/estudiantes?paralelo_id=${p.id}`))
+      setEstudiantes(await api.get<Estudiante[]>(`/estudiantes?paralelo_id=${paraleloId}`))
     } catch {
       setEstudiantes([])
     } finally {
       setLoadingLista(false)
     }
+  }, [])
+
+  function seleccionar(p: ParaleloCard) {
+    setSeleccionado(p)
+    setSearchParams({ paralelo_id: p.id }, { replace: true })
+    cargarLista(p.id)
+  }
+
+  function volverACursos() {
+    setSeleccionado(null)
+    setEstudiantes([])
+    setSearchParams({}, { replace: true })
+  }
+
+  // Deep-link / "volver" desde el perfil de un estudiante: restaura el curso
+  // seleccionado a partir de ?paralelo_id= en vez de caer siempre a la grilla.
+  useEffect(() => {
+    if (paralelos.length === 0 || seleccionado) return
+    const paraleloId = searchParams.get('paralelo_id')
+    if (!paraleloId) return
+    const match = paralelos.find(p => p.id === paraleloId)
+    if (match) { setSeleccionado(match); cargarLista(match.id) }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [paralelos])
+
+  function perfilUrl(estId: string, tab: string): string {
+    const params = new URLSearchParams({ tab })
+    if (seleccionado) params.set('paralelo_id', seleccionado.id)
+    return `/dashboard/docente/estudiante/${estId}?${params}`
   }
 
   // ── Vista: lista de estudiantes de un curso propio ──────────────────────────
@@ -92,20 +88,46 @@ export default function DocenteEstudiantesPage() {
     return (
       <div className="space-y-4">
         <div>
-          <button
-            onClick={() => setSeleccionado(null)}
-            className="mb-1 flex items-center gap-1 text-xs text-indigo-500 hover:text-indigo-700 font-medium transition-colors"
-          >
-            ← Volver a mis cursos
-          </button>
+          <BackButton onClick={volverACursos} label="Volver a mis cursos" className="mb-2" />
           <h1 className="text-xl font-bold text-fg">
             {seleccionado.grado.nombre} "{seleccionado.letra}"
           </h1>
           <p className="text-sm text-fg-muted mt-0.5">{materiasDelCurso.join(', ')}</p>
         </div>
 
-        <div className="rounded-xl border border-border bg-surface shadow-sm overflow-hidden">
-          <table className="w-full text-sm">
+        {/* Vista de tarjetas en pantallas chicas — la tabla completa se reserva para pantallas anchas */}
+        <div className="sm:hidden space-y-2">
+          {loadingLista ? (
+            <div className="flex justify-center py-12"><Spinner /></div>
+          ) : estudiantes.length === 0 ? (
+            <div className="rounded-xl border border-border bg-surface p-8 text-center text-sm text-fg-muted">
+              No hay estudiantes matriculados en este paralelo.
+            </div>
+          ) : (
+            estudiantes.map(est => (
+              <div key={est.id} className="rounded-xl border border-border bg-surface p-4 shadow-sm">
+                <div className="flex items-center justify-between gap-2">
+                  <p className="font-medium text-fg">{est.usuario.apellido}, {est.usuario.nombre}</p>
+                  <span className="font-mono text-xs bg-surface-2 px-2 py-1 rounded text-fg-muted flex-shrink-0">{est.codigo}</span>
+                </div>
+                <div className="mt-3 flex gap-2">
+                  <Button variant="ghost" size="sm" className="flex-1 text-fg-muted hover:text-fg border border-border"
+                    onClick={() => navigate(perfilUrl(est.id, 'datos'))}>
+                    Ver datos
+                  </Button>
+                  <Button variant="ghost" size="sm" className="flex-1 text-indigo-600 hover:text-indigo-800 border border-border"
+                    onClick={() => navigate(perfilUrl(est.id, 'calificaciones'))}>
+                    Calificaciones
+                  </Button>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+
+        {/* Tabla — desde sm hacia arriba */}
+        <div className="hidden sm:block rounded-xl border border-border bg-surface shadow-sm overflow-x-auto">
+          <table className="w-full min-w-[520px] text-sm">
             <thead>
               <tr className="border-b border-border bg-bg text-left text-xs font-semibold uppercase tracking-wide text-fg-muted">
                 <th className="px-5 py-3">Código</th>
@@ -132,11 +154,11 @@ export default function DocenteEstudiantesPage() {
                   <td className="px-5 py-3 font-medium text-fg">{est.usuario.apellido}, {est.usuario.nombre}</td>
                   <td className="px-5 py-3 text-right space-x-2">
                     <Button variant="ghost" size="sm" className="text-fg-muted hover:text-fg"
-                      onClick={() => navigate(`/dashboard/docente/estudiante/${est.id}?tab=datos`)}>
+                      onClick={() => navigate(perfilUrl(est.id, 'datos'))}>
                       Ver datos
                     </Button>
                     <Button variant="ghost" size="sm" className="text-indigo-600 hover:text-indigo-800"
-                      onClick={() => navigate(`/dashboard/docente/estudiante/${est.id}?tab=calificaciones`)}>
+                      onClick={() => navigate(perfilUrl(est.id, 'calificaciones'))}>
                       Calificaciones
                     </Button>
                   </td>
@@ -162,9 +184,12 @@ export default function DocenteEstudiantesPage() {
 
   return (
     <div className="space-y-8">
-      <div>
-        <h1 className="text-2xl font-bold text-fg">Mis Estudiantes</h1>
-        <p className="text-sm text-fg-muted mt-0.5">Selecciona uno de tus cursos para ver su lista — los demás aparecen vacíos.</p>
+      <div className="flex items-center gap-2.5">
+        <Icon name="users" className="h-6 w-6 text-fg-muted" />
+        <div>
+          <h1 className="text-2xl font-bold text-fg">Mis Estudiantes</h1>
+          <p className="text-sm text-fg-muted mt-0.5">Selecciona uno de tus cursos para ver su lista — los demás aparecen vacíos.</p>
+        </div>
       </div>
 
       {loadingGrid ? (
@@ -172,7 +197,7 @@ export default function DocenteEstudiantesPage() {
       ) : (
         <div className="space-y-8">
           {niveles.map(nivelNombre => {
-            const style = NIVEL_STYLES[nivelNombre]
+            const style = NIVEL_STYLES[nivelNombre] ?? NIVEL_FALLBACK
             const cards = byNivel[nivelNombre]!.sort((a, b) => {
               const numA = parseInt(a.grado?.nombre?.match(/\d+/)?.[0] ?? '0')
               const numB = parseInt(b.grado?.nombre?.match(/\d+/)?.[0] ?? '0')
@@ -181,8 +206,8 @@ export default function DocenteEstudiantesPage() {
             return (
               <div key={nivelNombre}>
                 <div className="flex items-center gap-3 mb-4">
-                  <span className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-bold uppercase tracking-wider ${style?.badge ?? 'bg-surface-2 text-fg-muted'}`}>
-                    {style?.label ?? nivelNombre}
+                  <span className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-bold uppercase tracking-wider ${style.badge}`}>
+                    {style.label || nivelNombre}
                   </span>
                   <div className="h-px flex-1 bg-surface-2" />
                 </div>
@@ -202,13 +227,13 @@ export default function DocenteEstudiantesPage() {
                       <button
                         key={p.id}
                         onClick={() => seleccionar(p)}
-                        className={`flex flex-col items-center justify-center rounded-xl border-2 h-20 text-center transition-all duration-150 hover:-translate-y-0.5 hover:shadow-md ${style?.bg ?? ''} ${style?.border ?? ''} ${style?.hover ?? ''}`}
+                        className={`flex flex-col items-center justify-center rounded-xl border-2 h-20 text-center transition-all duration-150 hover:-translate-y-0.5 hover:shadow-md ${style.bg} ${style.border} ${style.hover}`}
                       >
-                        <p className={`text-base font-extrabold leading-tight px-1 ${style?.num ?? 'text-fg'}`}>
+                        <p className={`text-base font-extrabold leading-tight px-1 ${style.num}`}>
                           {abbreviateGrado(p.grado?.nombre ?? '', p.letra)}
                         </p>
                         <p className="mt-1 text-[10px] font-medium text-fg-muted uppercase tracking-wide">
-                          {style?.label ?? nivelNombre}
+                          {style.label || nivelNombre}
                         </p>
                       </button>
                     )

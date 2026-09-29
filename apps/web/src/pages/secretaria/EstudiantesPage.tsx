@@ -12,6 +12,8 @@ import { ResetPasswordModal } from '../../components/ResetPasswordModal'
 import { ExportarButton } from '../../components/ui/ExportarButton'
 import { Rol } from '@edusync/types'
 import { abbreviateGrado, NIVEL_STYLES, NIVEL_FALLBACK } from '../../lib/cursoDisplay'
+import { Icon } from '../../components/ui/Icon'
+import { BackButton } from '../../components/ui/BackButton'
 
 const BASE_PATHS_CON_REPORTES = new Set(['/dashboard/coordinador', '/dashboard/director'])
 
@@ -698,16 +700,8 @@ export default function EstudiantesPage({ basePath = '/dashboard/admin' }: { bas
     <div className="space-y-5">
       {/* Breadcrumb + header */}
       <div>
-        <button
-          onClick={backToCursos}
-          className="flex items-center gap-1.5 text-sm text-fg-muted hover:text-indigo-600 transition-colors mb-3"
-        >
-          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-          </svg>
-          Todos los cursos
-        </button>
-        <div className="flex items-center justify-between">
+        <BackButton onClick={backToCursos} label="Todos los cursos" className="mb-3" />
+        <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <span className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-bold uppercase tracking-wide ${style.badge}`}>
               {style.label || selectedParalelo?.grado.nivel.nombre}
@@ -776,8 +770,82 @@ export default function EstudiantesPage({ basePath = '/dashboard/admin' }: { bas
         </p>
       </div>
 
-      {/* Tabla */}
-      <div className="rounded-2xl border border-border bg-surface shadow-sm overflow-x-auto">
+      {/* Tarjetas — pantallas chicas */}
+      <div className="sm:hidden space-y-2">
+        {loading ? (
+          <div className="flex justify-center py-12"><Spinner /></div>
+        ) : estudiantes.length === 0 ? (
+          <div className="rounded-xl border border-border bg-surface p-8 text-center text-sm text-fg-muted">
+            No hay estudiantes {estadoFiltro === 'TODOS' ? '' : `en estado "${ESTADO_LABEL[estadoFiltro as EstadoEstudiante] ?? 'Activo'}" `}en este curso.
+          </div>
+        ) : (
+          estudiantes.map(est => (
+            <div key={est.id} className="rounded-xl border border-border bg-surface p-4 shadow-sm">
+              <div className="flex items-start justify-between gap-2">
+                <div className="min-w-0">
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <p className="font-medium text-fg">{est.usuario.apellido}, {est.usuario.nombre}</p>
+                    {est.becado && (
+                      <span className="inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-700">BECA</span>
+                    )}
+                    {est.media_beca && (
+                      <span className="inline-flex items-center rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-bold text-amber-600 border border-amber-200">MEDIA BECA</span>
+                    )}
+                  </div>
+                  <div className="mt-1 flex items-center gap-2 flex-wrap">
+                    <span className="font-mono text-xs bg-surface-2 px-2 py-0.5 rounded text-fg-muted">{est.codigo}</span>
+                    <Badge variant={ESTADO_BADGE_VARIANT[est.estado]}>{ESTADO_LABEL[est.estado]}</Badge>
+                  </div>
+                  <p className="mt-1 text-xs text-fg-muted truncate">{est.usuario.email}</p>
+                  <p className="mt-0.5 text-xs text-fg-muted">Tutor: {getTutor(est)}</p>
+                </div>
+              </div>
+              <div className="mt-3 flex flex-wrap gap-1.5 border-t border-border pt-3">
+                <Button variant="ghost" size="sm" className="border border-border"
+                  onClick={() => navigate(perfilUrl(est.id))}>
+                  Perfil
+                </Button>
+                {puedeVerNotas && (
+                  <Button variant="ghost" size="sm" className="border border-border text-indigo-600 hover:text-indigo-800"
+                    onClick={() => navigate(perfilUrl(est.id, 'calificaciones'))}>
+                    Notas
+                  </Button>
+                )}
+                <Button variant="ghost" size="sm" className="border border-border text-teal-600 hover:text-teal-800"
+                  onClick={() => navigate(perfilUrl(est.id, 'asistencia'))}>
+                  Asist.
+                </Button>
+                <Button variant="ghost" size="sm" className="border border-border text-amber-600 hover:text-amber-800"
+                  onClick={() => navigate(perfilUrl(est.id, 'pensiones'))}>
+                  Pensión
+                </Button>
+                {canManage && (
+                  <>
+                    <Button variant="ghost" size="sm" className="border border-border" onClick={() => setEditTarget(est)}>
+                      Editar
+                    </Button>
+                    <Button variant="ghost" size="sm"
+                      className="border border-border text-red-500 hover:text-red-700"
+                      title="Eliminar estudiante"
+                      aria-label="Eliminar estudiante"
+                      onClick={() => handleDelete(est)}>
+                      <Icon name="user-x" className="h-4 w-4" />
+                    </Button>
+                  </>
+                )}
+                {canResetPassword && (
+                  <Button variant="ghost" size="sm" className="border border-border" onClick={() => setResetPwdTarget(est)}>
+                    Restablecer contraseña
+                  </Button>
+                )}
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+
+      {/* Tabla — desde sm hacia arriba */}
+      <div className="hidden sm:block rounded-2xl border border-border bg-surface shadow-sm overflow-x-auto">
         <table className="w-full min-w-[640px] text-sm">
           <thead>
             <tr className="border-b border-border bg-bg text-left text-xs font-semibold uppercase tracking-wide text-fg-muted">
@@ -858,8 +926,10 @@ export default function EstudiantesPage({ basePath = '/dashboard/admin' }: { bas
                         </Button>
                         <Button variant="ghost" size="sm"
                           className="text-red-500 hover:text-red-700"
+                          title="Eliminar estudiante"
+                          aria-label="Eliminar estudiante"
                           onClick={() => handleDelete(est)}>
-                          ×
+                          <Icon name="user-x" className="h-4 w-4" />
                         </Button>
                       </>
                     )}

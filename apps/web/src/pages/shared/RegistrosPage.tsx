@@ -141,12 +141,12 @@ function PlanillaLectura({ asignacionId, onBack }: { asignacionId: string; onBac
         </div>
 
         {/* Selector de trimestre — mismas pestañas que usa la planilla del docente */}
-        <div className="flex rounded-lg border border-border overflow-hidden flex-shrink-0">
+        <div className="flex rounded-lg border border-border overflow-x-auto max-w-full flex-shrink-0">
           {asignacion.gestion.trimestres.map(t => (
             <button
               key={t.id}
               onClick={() => setTrimestreId(t.id)}
-              className={`inline-flex items-center gap-1 px-3 py-1.5 text-xs font-semibold transition-colors ${
+              className={`inline-flex items-center gap-1 whitespace-nowrap px-3 py-1.5 text-xs font-semibold transition-colors ${
                 trimestreId === t.id ? 'bg-brand text-brand-fg' : 'bg-surface text-fg-muted hover:bg-surface-2'
               } ${t.cerrado ? 'opacity-60' : ''}`}
               title={t.cerrado ? 'Cerrado' : 'Abierto'}
@@ -183,8 +183,50 @@ function PlanillaLectura({ asignacionId, onBack }: { asignacionId: string; onBac
         </span>
       </div>
 
-      {/* ── TABLA ─────────────────────────────────────────────────────────── */}
-      <div className="overflow-x-auto rounded-xl border border-border shadow-sm">
+      {/* ── TARJETAS — pantallas chicas: la matriz completa no entra ni con scroll ── */}
+      <div className="sm:hidden space-y-2">
+        {estudiantes.length === 0 && (
+          <div className="rounded-xl border border-border bg-surface p-8 text-center text-sm text-fg-muted">
+            No hay estudiantes matriculados en este paralelo.
+          </div>
+        )}
+        {estudiantes.map(est => (
+          <div key={est.id} className="rounded-xl border border-border bg-surface p-4 shadow-sm">
+            <div className="flex items-start justify-between gap-2">
+              <p className="font-medium text-fg">{est.apellido}, {est.nombre}</p>
+              {!esEspecial && est.escala && (
+                <span className={`flex-shrink-0 inline-block rounded px-2 py-0.5 text-xs font-bold ${ESCALA_COLORS[est.escala] ?? ''}`}>{est.escala}</span>
+              )}
+            </div>
+            <div className="mt-2 grid grid-cols-2 gap-1.5">
+              {dimensiones.map((dim, idx) => (
+                <div key={dim.id} className={`${DIM_CELL_BG[idx] ?? 'bg-bg'} rounded-lg px-2 py-1.5`}>
+                  <p className="text-[10px] font-semibold uppercase tracking-wide text-fg-muted truncate">{dim.nombre}</p>
+                  <p className={`text-sm font-bold ${DIM_PROM_TEXT[idx] ?? 'text-fg'}`}>
+                    {est.promedios[dim.id] != null ? est.promedios[dim.id] : <span className="text-fg-muted/50 font-normal">—</span>}
+                  </p>
+                </div>
+              ))}
+            </div>
+            {!esEspecial && (
+              <div className="mt-2 flex items-center justify-between gap-2 border-t border-border pt-2 text-sm">
+                <span className="text-fg-muted">
+                  Extracurricular: {est.notaExtracurricular != null ? est.notaExtracurricular : '—'}
+                </span>
+                <span className={`font-bold ${est.total != null && est.total < 51 ? 'text-red-600 dark:text-red-400' : 'text-fg'}`}>
+                  TOTAL: {est.total != null ? est.total : '—'}
+                </span>
+              </div>
+            )}
+          </div>
+        ))}
+        <p className="text-xs text-fg-muted text-center pt-1">
+          Vista resumida — gira el celular o usa una pantalla más grande para ver el detalle por indicador.
+        </p>
+      </div>
+
+      {/* ── TABLA — desde sm hacia arriba, con el detalle completo por indicador ── */}
+      <div className="hidden sm:block overflow-x-auto rounded-xl border border-border shadow-sm">
         <table className="min-w-max text-sm border-collapse">
           <thead>
             <tr>
