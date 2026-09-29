@@ -23,6 +23,7 @@ const ProyectosBTHPage     = lazy(() => import('../coordinador/ProyectosBTHPage'
 const AreasSubareasPage    = lazy(() => import('../coordinador/AreasSubareasPage'))
 const NotaExtracurricularPage = lazy(() => import('../coordinador/NotaExtracurricularPage'))
 const ControlDiarioBusquedaPage = lazy(() => import('../secretaria/ControlDiarioBusquedaPage'))
+const RegistrosPage        = lazy(() => import('../shared/RegistrosPage'))
 
 // ─── Panel principal ──────────────────────────────────────────────────────────
 
@@ -111,6 +112,7 @@ export default function CoordinadorDashboard() {
         <Route path="paralelos"        element={<ParalelosPage />} />
         <Route path="horarios"         element={<HorariosPage />} />
         <Route path="reportes/*"       element={<ReportesPage />} />
+        <Route path="registros"        element={<RegistrosPage />} />
         <Route path="proyectos-bth"    element={<ProyectosBTHPage />} />
         <Route path="areas-subareas"   element={<AreasSubareasPage />} />
         <Route path="nota-extracurricular" element={<NotaExtracurricularPage />} />

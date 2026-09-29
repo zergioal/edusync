@@ -91,6 +91,11 @@ export const NAV_POR_ROL: Record<string, NavItem[]> = {
     },
     { to: "/dashboard/director/horarios", label: "Horarios", icon: "clock" },
     {
+      to: "/dashboard/director/registros",
+      label: "Registros",
+      icon: "chart",
+    },
+    {
       to: "/dashboard/director/reportes",
       label: "Reportes Académicos",
       icon: "chart",
@@ -182,6 +187,11 @@ export const NAV_POR_ROL: Record<string, NavItem[]> = {
     },
     { to: "/dashboard/coordinador/horarios", label: "Horarios", icon: "clock" },
     {
+      to: "/dashboard/coordinador/registros",
+      label: "Registros",
+      icon: "chart",
+    },
+    {
       to: "/dashboard/coordinador/reportes",
       label: "Reportes Académicos",
       icon: "chart",
@@ -240,8 +250,8 @@ export const NAV_POR_ROL: Record<string, NavItem[]> = {
     },
     { to: "/dashboard/admin/horarios", label: "Horarios", icon: "clock" },
     {
-      to: "/dashboard/admin/calificaciones",
-      label: "Calificaciones",
+      to: "/dashboard/admin/registros",
+      label: "Registros",
       icon: "chart",
     },
     {

@@ -31,6 +31,7 @@ const ReportesPage         = lazy(() => import('../secretaria/reportes/ReportesP
 const AreasSubareasPage    = lazy(() => import('../admin/AreasSubareasPage'))
 const NotaExtracurricularPage = lazy(() => import('../admin/NotaExtracurricularPage'))
 const ControlDiarioBusquedaPage = lazy(() => import('../secretaria/ControlDiarioBusquedaPage'))
+const RegistrosPage        = lazy(() => import('../shared/RegistrosPage'))
 
 // ─── Panel principal ──────────────────────────────────────────────────────────
 
@@ -189,7 +190,7 @@ export default function AdminDashboard() {
 
         {/* Académico (compartido con coordinador) */}
         <Route path="paralelos"      element={<ParalelosPage />} />
-        <Route path="calificaciones" element={<SectionPlaceholder title="Calificaciones" />} />
+        <Route path="registros"      element={<RegistrosPage />} />
         <Route path="asistencia"    element={<SectionPlaceholder title="Asistencia" />} />
         <Route path="horarios"      element={<SectionPlaceholder title="Horarios" />} />
         <Route path="instituciones" element={<InstitucionesPage />} />
