@@ -1,15 +1,6 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { galeriaEstatica, type MediaItem } from '../../lib/mediaEstatico'
-
-function isYouTube(url: string) {
-  return url.includes('youtube.com') || url.includes('youtu.be')
-}
-
-function youtubeId(url: string) {
-  const m = url.match(/(?:v=|youtu\.be\/)([^&?/]+)/)
-  return m?.[1] ?? ''
-}
+import { galeriaEstatica, isYouTube, youtubeId, type MediaItem } from '../../lib/mediaEstatico'
 
 export default function GaleriaPage() {
   const items = galeriaEstatica
@@ -61,7 +52,7 @@ export default function GaleriaPage() {
               <button key={item.id} onClick={() => setLightbox(item)}
                 className="group aspect-square bg-surface-2 rounded-xl overflow-hidden relative text-left focus:outline-none focus:ring-2 focus:ring-[#C9A84C]">
                 {item.tipo === 'FOTO' ? (
-                  <img src={item.url} alt={item.descripcion ?? ''} loading="lazy"
+                  <img src={item.url} alt={item.descripcion ?? 'Foto de la galería institucional'} loading="lazy"
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                   />
                 ) : (
@@ -80,11 +71,6 @@ export default function GaleriaPage() {
                         <path d="M8 5v14l11-7z"/>
                       </svg>
                     </div>
-                  </div>
-                )}
-                {item.descripcion && (
-                  <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 p-3 translate-y-full group-hover:translate-y-0 transition-transform duration-200">
-                    <p className="text-white text-xs line-clamp-2">{item.descripcion}</p>
                   </div>
                 )}
               </button>
@@ -107,7 +93,7 @@ export default function GaleriaPage() {
           </button>
           <div className="max-w-4xl w-full" onClick={e => e.stopPropagation()}>
             {lightbox.tipo === 'FOTO' ? (
-              <img src={lightbox.url} alt={lightbox.descripcion ?? ''}
+              <img src={lightbox.url} alt={lightbox.descripcion ?? 'Foto de la galería institucional'}
                 className="max-h-[80vh] mx-auto rounded-xl object-contain"
               />
             ) : isYouTube(lightbox.url) ? (
@@ -116,13 +102,11 @@ export default function GaleriaPage() {
                   src={`https://www.youtube.com/embed/${youtubeId(lightbox.url)}?autoplay=1`}
                   className="w-full h-full" allowFullScreen
                   allow="autoplay; encrypted-media"
+                  title="Video"
                 />
               </div>
             ) : (
               <video src={lightbox.url} controls autoPlay className="max-h-[80vh] mx-auto rounded-xl" />
-            )}
-            {lightbox.descripcion && (
-              <p className="text-center text-white/80 text-sm mt-3">{lightbox.descripcion}</p>
             )}
           </div>
         </div>

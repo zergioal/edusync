@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { getTenantHeaders } from '../../config/tenant'
 import logoLocal from '../../assets/logo-pio-xii.png'
-import { galeriaEstatica, portadaVideo } from '../../lib/mediaEstatico'
+import { galeriaEstatica, portadaVideo, isYouTube, youtubeId, type MediaItem } from '../../lib/mediaEstatico'
 
 interface InstConfig {
   nombre:   string
@@ -51,6 +51,7 @@ const galeriaPreview = galeriaEstatica.slice(0, 6)
 export default function HomePage() {
   const [config,   setConfig]  = useState<InstConfig | null>(null)
   const [anuncios, setAnuncios] = useState<Anuncio[]>([])
+  const [lightbox, setLightbox] = useState<MediaItem | null>(null)
 
   useEffect(() => {
     fetchPublic<InstConfig>('config').then(setConfig).catch(() => {})
@@ -96,8 +97,9 @@ export default function HomePage() {
             {portadaVideo ? (
               <video
                 src={portadaVideo}
-                className="w-full h-full object-cover"
-                autoPlay muted loop playsInline controls
+                className="w-full h-full object-cover pointer-events-none"
+                autoPlay muted loop playsInline
+                aria-hidden="true"
               />
             ) : (
               <div className="absolute inset-0 flex items-center justify-center text-center text-blue-200 text-sm px-6">
@@ -128,9 +130,13 @@ export default function HomePage() {
           ) : (
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
               {galeriaPreview.map(item => (
-                <div key={item.id} className="group aspect-square bg-surface-2 rounded-xl overflow-hidden relative">
+                <button
+                  key={item.id}
+                  onClick={() => setLightbox(item)}
+                  className="group aspect-square bg-surface-2 rounded-xl overflow-hidden relative focus:outline-none focus:ring-2 focus:ring-[#C9A84C]"
+                >
                   {item.tipo === 'FOTO' ? (
-                    <img src={item.url} alt={item.descripcion ?? ''} loading="lazy"
+                    <img src={item.url} alt={item.descripcion ?? `Foto de ${nombre}`} loading="lazy"
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                     />
                   ) : (
@@ -146,12 +152,7 @@ export default function HomePage() {
                       </div>
                     </div>
                   )}
-                  {item.descripcion && (
-                    <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 p-3 translate-y-full group-hover:translate-y-0 transition-transform duration-200">
-                      <p className="text-white text-xs">{item.descripcion}</p>
-                    </div>
-                  )}
-                </div>
+                </button>
               ))}
             </div>
           )}
@@ -254,8 +255,8 @@ export default function HomePage() {
               {REDES_SOCIALES.map(red => (
                 <a key={red.nombre} href={red.href} target="_blank" rel="noopener noreferrer"
                   aria-label={red.nombre}
-                  className="w-10 h-10 rounded-full bg-white/10 hover:bg-[#C9A84C] flex items-center justify-center text-white hover:text-[#1F3864] transition-colors">
-                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                  className="w-14 h-14 rounded-full bg-white/10 hover:bg-[#C9A84C] flex items-center justify-center text-white hover:text-[#1F3864] transition-colors">
+                  <svg className="w-7 h-7" fill="currentColor" viewBox="0 0 24 24">
                     <path d={red.icon}/>
                   </svg>
                 </a>
@@ -267,6 +268,40 @@ export default function HomePage() {
           </div>
         </div>
       </footer>
+
+      {/* Lightbox de la galería */}
+      {lightbox && (
+        <div
+          className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4"
+          onClick={() => setLightbox(null)}
+        >
+          <button
+            className="absolute top-4 right-4 text-white/70 hover:text-white text-3xl font-light"
+            onClick={() => setLightbox(null)}
+            aria-label="Cerrar"
+          >
+            ×
+          </button>
+          <div className="max-w-4xl w-full" onClick={e => e.stopPropagation()}>
+            {lightbox.tipo === 'FOTO' ? (
+              <img src={lightbox.url} alt={lightbox.descripcion ?? `Foto de ${nombre}`}
+                className="max-h-[80vh] mx-auto rounded-xl object-contain"
+              />
+            ) : isYouTube(lightbox.url) ? (
+              <div className="aspect-video rounded-xl overflow-hidden">
+                <iframe
+                  src={`https://www.youtube.com/embed/${youtubeId(lightbox.url)}?autoplay=1`}
+                  className="w-full h-full" allowFullScreen
+                  allow="autoplay; encrypted-media"
+                  title="Video"
+                />
+              </div>
+            ) : (
+              <video src={lightbox.url} controls autoPlay className="max-h-[80vh] mx-auto rounded-xl" />
+            )}
+          </div>
+        </div>
+      )}
     </div>
   )
 }

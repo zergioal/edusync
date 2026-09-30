@@ -12,6 +12,15 @@ export interface MediaItem {
   descripcion: string | null
 }
 
+export function isYouTube(url: string): boolean {
+  return url.includes('youtube.com') || url.includes('youtu.be')
+}
+
+export function youtubeId(url: string): string {
+  const m = url.match(/(?:v=|youtu\.be\/)([^&?/]+)/)
+  return m?.[1] ?? ''
+}
+
 const EXT_VIDEO = /\.(mp4|webm|mov)$/i
 
 function nombreLegible(archivo: string): string | null {

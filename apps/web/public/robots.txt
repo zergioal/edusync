@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+Allow: /galeria
+Allow: /anuncios
+Disallow: /login
+Disallow: /dashboard
+
+Sitemap: https://pioxii.edusync.com.bo/sitemap.xml
