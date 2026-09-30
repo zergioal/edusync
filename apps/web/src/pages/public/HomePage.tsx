@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { getTenantHeaders } from '../../config/tenant'
 import logoLocal from '../../assets/logo-pio-xii.png'
 import { galeriaEstatica, portadaVideo, isYouTube, youtubeId, type MediaItem } from '../../lib/mediaEstatico'
+import { useLightbox } from '../../hooks/useLightbox'
 
 interface InstConfig {
   nombre:   string
@@ -51,7 +52,7 @@ const galeriaPreview = galeriaEstatica.slice(0, 6)
 export default function HomePage() {
   const [config,   setConfig]  = useState<InstConfig | null>(null)
   const [anuncios, setAnuncios] = useState<Anuncio[]>([])
-  const [lightbox, setLightbox] = useState<MediaItem | null>(null)
+  const { item: lightbox, abrir: setLightbox, cerrar: cerrarLightbox } = useLightbox<MediaItem>()
 
   useEffect(() => {
     fetchPublic<InstConfig>('config').then(setConfig).catch(() => {})
@@ -273,11 +274,11 @@ export default function HomePage() {
       {lightbox && (
         <div
           className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4"
-          onClick={() => setLightbox(null)}
+          onClick={cerrarLightbox}
         >
           <button
             className="absolute top-4 right-4 text-white/70 hover:text-white text-3xl font-light"
-            onClick={() => setLightbox(null)}
+            onClick={cerrarLightbox}
             aria-label="Cerrar"
           >
             ×

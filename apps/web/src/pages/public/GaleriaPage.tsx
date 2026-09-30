@@ -1,11 +1,12 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { galeriaEstatica, isYouTube, youtubeId, type MediaItem } from '../../lib/mediaEstatico'
+import { useLightbox } from '../../hooks/useLightbox'
 
 export default function GaleriaPage() {
   const items = galeriaEstatica
-  const [filtro,    setFiltro]    = useState<'TODOS' | 'FOTO' | 'VIDEO'>('TODOS')
-  const [lightbox,  setLightbox]  = useState<MediaItem | null>(null)
+  const [filtro, setFiltro] = useState<'TODOS' | 'FOTO' | 'VIDEO'>('TODOS')
+  const { item: lightbox, abrir: setLightbox, cerrar: cerrarLightbox } = useLightbox<MediaItem>()
 
   const visibles = filtro === 'TODOS' ? items : items.filter(i => i.tipo === filtro)
 
@@ -83,11 +84,12 @@ export default function GaleriaPage() {
       {lightbox && (
         <div
           className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4"
-          onClick={() => setLightbox(null)}
+          onClick={cerrarLightbox}
         >
           <button
             className="absolute top-4 right-4 text-white/70 hover:text-white text-3xl font-light"
-            onClick={() => setLightbox(null)}
+            onClick={cerrarLightbox}
+            aria-label="Cerrar"
           >
             ×
           </button>
