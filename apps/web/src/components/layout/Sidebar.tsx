@@ -47,7 +47,7 @@ export function Sidebar({ navItems, onClose, collapsible }: SidebarProps) {
     <aside
       onMouseEnter={() => collapsible && setHovered(true)}
       onMouseLeave={() => collapsible && setHovered(false)}
-      className={`relative flex h-screen flex-col bg-[#0f172a] text-white select-none overflow-hidden transition-[width] duration-300 ease-in-out ${
+      className={`relative flex h-dvh flex-col bg-[#0f172a] text-white select-none overflow-hidden transition-[width] duration-300 ease-in-out ${
         expanded ? 'w-64' : 'w-20'
       }`}
     >

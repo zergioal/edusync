@@ -134,6 +134,17 @@ export default function AsistenciaClasePage() {
     setDirtyDays(prev => new Set(prev).add(fecha))
   }
 
+  /** Deja el día en blanco para todos — útil para corregir un registro por error. Requiere "Guardar" para persistir el borrado. */
+  function limpiarColumna(fecha: string) {
+    if (!confirm('¿Borrar todas las marcas de este día? Deberás guardar para confirmar.')) return
+    setRecords(prev => {
+      const dayRec: Record<string, Estado | null> = {}
+      for (const est of estudiantes) dayRec[est.estudiante_id] = null
+      return { ...prev, [fecha]: dayRec }
+    })
+    setDirtyDays(prev => new Set(prev).add(fecha))
+  }
+
   // ── Save ──────────────────────────────────────────────────────────────────
 
   async function guardarDia(fecha: string) {
@@ -336,6 +347,11 @@ export default function AsistenciaClasePage() {
                                   className={`w-7 h-3 rounded-sm transition-opacity hover:opacity-80 active:opacity-100 ${ESTADO_CFG[e].bg}`}
                                 />
                               ))}
+                              <button
+                                onClick={() => limpiarColumna(fecha)}
+                                title="Limpiar día (borra las marcas, hay que guardar después)"
+                                className="w-7 h-3 rounded-sm border border-dashed border-fg-muted/60 bg-transparent transition-colors hover:border-fg-muted hover:bg-surface-2"
+                              />
                             </div>
                           )}
                         </td>

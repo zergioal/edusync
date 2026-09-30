@@ -14,6 +14,10 @@ observacionesDiariasRouter.get('/paralelo/:paralelo_id', isDocente, ctrl.roster)
 observacionesDiariasRouter.post('/',                     isDocente, ctrl.crear)
 observacionesDiariasRouter.delete('/:id',                isDocente, ctrl.eliminar)
 
+// Reporte de control diario para el propio docente — ?alcance=propio (default) | todos
+observacionesDiariasRouter.get('/mi-reporte',     isDocente, ctrl.reporteDocente)
+observacionesDiariasRouter.get('/mi-reporte/pdf', isDocente, ctrl.reporteDocentePdf)
+
 observacionesDiariasRouter.get('/mia',                   requireRol(Rol.ESTUDIANTE),  ctrl.getMia)
 observacionesDiariasRouter.get('/hijo/:estudiante_id',    requireRol(Rol.PADRE_TUTOR), ctrl.getHijo)
 

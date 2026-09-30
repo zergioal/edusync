@@ -60,7 +60,7 @@ export function AppShell({ children }: AppShellProps) {
   const isHome   = location.pathname === homePath
 
   return (
-    <div className="flex h-screen overflow-hidden bg-bg">
+    <div className="flex h-dvh overflow-hidden bg-bg">
 
       {/* ── Sidebar desktop ─────────────────────────────── */}
       <div className="hidden md:flex md:flex-shrink-0">

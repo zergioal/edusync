@@ -20,6 +20,7 @@ const ObservacionesInicialPage = lazy(() => import('../docente/ObservacionesInic
 const AsistenciaClasePage      = lazy(() => import('../docente/AsistenciaClasePage'))
 const DocenteAsistenciaPage    = lazy(() => import('../docente/DocenteAsistenciaPage'))
 const ControlDiarioParaleloPage = lazy(() => import('../docente/ControlDiarioParaleloPage'))
+const ControlDiarioReportePage  = lazy(() => import('../docente/ControlDiarioReportePage'))
 const DocenteEstudiantesPage   = lazy(() => import('../docente/DocenteEstudiantesPage'))
 const TareasPage               = lazy(() => import('../docente/TareasPage'))
 const MiHorarioPage            = lazy(() => import('../docente/MiHorarioPage'))
@@ -227,6 +228,7 @@ export default function DocenteDashboard() {
         <Route path="calificaciones"            element={<MisMateriasPage />} />
         <Route path="asistencia"                element={<DocenteAsistenciaPage />} />
         <Route path="control-diario/:paralelo_id" element={<ControlDiarioParaleloPage />} />
+        <Route path="control-diario/:paralelo_id/reporte" element={<ControlDiarioReportePage />} />
         <Route path="horario"                   element={<MiHorarioPage />} />
         <Route path="anuncios"                  element={<AnunciosInternosPage />} />
         <Route path="mensajes"                  element={<MensajesPage />} />

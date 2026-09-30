@@ -63,7 +63,10 @@ export class ObservacionesDiariasService {
         orderBy: { estudiante: { usuario: { apellido: 'asc' } } },
       }),
       prisma.observacionDiaria.findMany({
-        where:  { paralelo_id, fecha: { gte: inicioDia(hoyStr()), lte: finDia(hoyStr()) } },
+        // Solo las propias — antes traía las de TODOS los docentes del paralelo, exponiendo
+        // sus anotaciones y dejando "Deshacer" apuntando a observaciones ajenas (el backend
+        // ya lo rechazaba en eliminar(), pero el bug real era mostrarlas en primer lugar).
+        where:  { paralelo_id, docente_id: docente.id, fecha: { gte: inicioDia(hoyStr()), lte: finDia(hoyStr()) } },
         select: { id: true, estudiante_id: true, categoria: true, detalle: true, fecha: true, creada_en: true },
       }),
     ])
@@ -200,13 +203,14 @@ export class ObservacionesDiariasService {
     return this.listar(estudiante_id)
   }
 
-  /** Registro de observaciones de un curso en un período (mes / trimestre / gestión completa), para Director/Coordinador. */
+  /** Registro de observaciones de un curso en un período (mes / trimestre / gestión completa), para Director/Coordinador,
+   *  y también para el propio docente (ver reporteDocente) — ahí sí filtrado, opcionalmente, a sus propias observaciones. */
   async reporte(paralelo_id: string, institucion_id: string, filtro: {
     modo:          'mes' | 'trimestre' | 'anno'
     mes?:          string | undefined
     trimestre_id?: string | undefined
     gestion_id?:   string | undefined
-  }) {
+  }, docente_id?: string) {
     const paralelo = await prisma.paralelo.findFirst({
       where:  { id: paralelo_id, grado: { nivel: { institucion_id } } },
       select: { letra: true, grado: { select: { nombre: true, nivel: { select: { nombre: true } } } } },
@@ -239,7 +243,7 @@ export class ObservacionesDiariasService {
     }
 
     const observaciones = await prisma.observacionDiaria.findMany({
-      where:   { paralelo_id, fecha: { gte: desde, lte: hasta } },
+      where:   { paralelo_id, fecha: { gte: desde, lte: hasta }, ...(docente_id ? { docente_id } : {}) },
       include: {
         estudiante: { include: { usuario: { select: { nombre: true, apellido: true } } } },
         docente:    { include: { usuario: { select: { nombre: true, apellido: true } } } },
@@ -260,6 +264,19 @@ export class ObservacionesDiariasService {
         docente:    `${o.docente.usuario.nombre} ${o.docente.usuario.apellido}`,
       })),
     }
+  }
+
+  /** Mismo reporte que arriba, pero para el propio docente: valida que tenga acceso al curso
+   *  y permite acotarlo a sus propias observaciones ("mi materia") o verlo completo ("todos"). */
+  async reporteDocente(docente_usuario_id: string, paralelo_id: string, institucion_id: string, soloPropio: boolean, filtro: {
+    modo:          'mes' | 'trimestre' | 'anno'
+    mes?:          string | undefined
+    trimestre_id?: string | undefined
+    gestion_id?:   string | undefined
+  }) {
+    const docente = await this.getDocente(docente_usuario_id)
+    await this.verificarAcceso(docente.id, paralelo_id)
+    return this.reporte(paralelo_id, institucion_id, filtro, soloPropio ? docente.id : undefined)
   }
 
   /** Reporte de control diario de UN estudiante (mensual / por trimestre / total), para Admin/Director/Coordinador. */

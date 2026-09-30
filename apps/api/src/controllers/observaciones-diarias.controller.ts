@@ -131,4 +131,42 @@ export class ObservacionesDiariasController {
       res.send(pdf)
     } catch (e) { next(e) }
   }
+
+  reporteDocente = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const { paralelo_id, filtro } = this.parseFiltro(req)
+      const soloPropio = req.query['alcance'] !== 'todos'
+      const data = await this.service.reporteDocente(
+        req.auth!.usuario_id, paralelo_id, req.auth!.institucion_id, soloPropio, filtro,
+      )
+      res.json({ data })
+    } catch (e) { next(e) }
+  }
+
+  reporteDocentePdf = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const { paralelo_id, filtro } = this.parseFiltro(req)
+      const soloPropio = req.query['alcance'] !== 'todos'
+      const data = await this.service.reporteDocente(
+        req.auth!.usuario_id, paralelo_id, req.auth!.institucion_id, soloPropio, filtro,
+      )
+      const html = generarHTMLTablaSimple({
+        titulo:    `Control Diario — ${data.curso}`,
+        subtitulo: `${data.periodo}${soloPropio ? ' — Mi materia' : ' — Todos los docentes'}`,
+        columnas: [
+          { header: 'Fecha',       key: 'fecha' },
+          { header: 'Estudiante',  key: 'estudiante' },
+          { header: 'Materia',     key: 'materia' },
+          { header: 'Observación', key: 'categoria' },
+          { header: 'Detalle',     key: 'detalle' },
+          { header: 'Docente',     key: 'docente' },
+        ],
+        filas: data.observaciones,
+      })
+      const pdf = await generatePDFLandscape(html)
+      res.setHeader('Content-Type', 'application/pdf')
+      res.setHeader('Content-Disposition', 'attachment; filename="control_diario.pdf"')
+      res.send(pdf)
+    } catch (e) { next(e) }
+  }
 }
