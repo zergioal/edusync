@@ -1125,6 +1125,9 @@ export default function PerfilEstudiantePage({
   const navigate  = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
   const paraleloId = searchParams.get('paralelo_id')
+  // Cuando se entra desde un lugar que no es la lista de estudiantes (p.ej. la
+  // planilla de un docente), "volver" trae la URL exacta a la que regresar.
+  const volverA = searchParams.get('volver')
 
   const { user } = useAuth()
   const canManageTecnica = user?.rol ? CAN_MANAGE_TECNICA.includes(user.rol) : false
@@ -1178,7 +1181,7 @@ export default function PerfilEstudiantePage({
     <div className="space-y-5 max-w-4xl">
       {/* Header */}
       <div className="flex items-center gap-4">
-        <BackButton to={`${basePath}/estudiantes${paraleloId ? `?paralelo_id=${paraleloId}` : ''}`} />
+        <BackButton to={volverA ?? `${basePath}/estudiantes${paraleloId ? `?paralelo_id=${paraleloId}` : ''}`} />
         <div>
           <h1 className="text-2xl font-bold text-fg">
             {est.usuario.apellido}, {est.usuario.nombre}

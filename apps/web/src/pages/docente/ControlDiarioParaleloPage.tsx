@@ -14,6 +14,7 @@ interface Estudiante { estudiante_id: string; nombre: string; apellido: string }
 interface Hoy { id: string; estudiante_id: string; categoria: Categoria; detalle: string | null; fecha: string; creada_en: string }
 interface RosterData { estudiantes: Estudiante[]; hoy: Hoy[] }
 interface AsignacionOpcion { id: string; materia: { nombre: string }; paralelo: { id: string } }
+interface ParaleloInfo { letra: string; grado: { nombre: string } }
 
 const CATEGORIAS: { value: Categoria; label: string; icon: IconName; chip: string }[] = [
   { value: 'NO_ENTREGO_TAREA',     label: 'No entregó tarea',      icon: 'document-x',    chip: 'bg-amber-600 text-white hover:bg-amber-700' },
@@ -49,6 +50,7 @@ export default function ControlDiarioParaleloPage() {
 
   const [estudiantes, setEstudiantes] = useState<Estudiante[]>([])
   const [hoy,          setHoy]         = useState<Hoy[]>([])
+  const [paralelo,     setParalelo]    = useState<ParaleloInfo | null>(null)
   const [asignaciones, setAsignaciones] = useState<AsignacionOpcion[]>([])
   const [asignacionId, setAsignacionId] = useState('')
   const [loading,      setLoading]     = useState(true)
@@ -62,12 +64,14 @@ export default function ControlDiarioParaleloPage() {
     if (!paralelo_id) return
     setLoading(true)
     try {
-      const [roster, mias] = await Promise.all([
+      const [roster, mias, paraleloInfo] = await Promise.all([
         api.get<RosterData>(`/observaciones-diarias/paralelo/${paralelo_id}`),
         api.get<AsignacionOpcion[]>('/asignaciones/mias'),
+        api.get<ParaleloInfo>(`/paralelos/${paralelo_id}`),
       ])
       setEstudiantes(roster.estudiantes)
       setHoy(roster.hoy)
+      setParalelo(paraleloInfo)
       const propias = mias.filter(a => a.paralelo.id === paralelo_id)
       setAsignaciones(propias)
       setAsignacionId(prev => prev || propias[0]?.id || '')
@@ -118,7 +122,9 @@ export default function ControlDiarioParaleloPage() {
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <BackButton className="mb-2" />
-          <h1 className="text-xl font-bold text-fg">Control diario</h1>
+          <h1 className="text-xl font-bold text-fg">
+            Control diario{paralelo && <> — {paralelo.grado.nombre} "{paralelo.letra}"</>}
+          </h1>
           <p className="text-sm text-fg-muted mt-0.5">Clic en una categoría para anotar al toque — igual que el cuaderno.</p>
         </div>
 
@@ -159,7 +165,7 @@ export default function ControlDiarioParaleloPage() {
             <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform duration-150 ${modoManual ? 'translate-x-5' : 'translate-x-0.5'}`} />
           </button>
           <span className="text-sm font-medium text-fg">
-            {modoManual ? 'Manual' : 'Automático'}
+            {modoManual ? 'Manual' : 'Fecha y hora automática'}
           </span>
         </div>
         {modoManual ? (

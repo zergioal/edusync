@@ -1015,10 +1015,19 @@ export default function PlanillaPage() {
                     {rowIdx + 1}
                   </td>
 
-                  {/* Nombre */}
+                  {/* Nombre — lleva al perfil del estudiante; "volver" regresa aquí mismo */}
                   <td className="sticky left-10 z-10 bg-surface w-52 px-4 py-2 border-r border-border whitespace-nowrap">
-                    <span className="font-medium text-fg">{est.apellido},</span>{' '}
-                    <span className="text-fg-muted">{est.nombre}</span>
+                    <button
+                      type="button"
+                      onClick={() => navigate(
+                        `/dashboard/docente/estudiante/${est.id}?tab=datos&volver=${encodeURIComponent(`/dashboard/docente/planilla/${asignacion_id}`)}`
+                      )}
+                      className="text-left hover:underline"
+                      title="Ver perfil del estudiante"
+                    >
+                      <span className="font-medium text-fg">{est.apellido},</span>{' '}
+                      <span className="text-fg-muted">{est.nombre}</span>
+                    </button>
                   </td>
 
                   {/* Celdas por dimensión */}
