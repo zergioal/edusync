@@ -37,7 +37,7 @@ export default function ControlDiarioPage() {
   const [loadingEst,     setLoadingEst]     = useState(false)
   const [buscar,         setBuscar]         = useState('')
   const [estudianteId,   setEstudianteId]   = useState('')
-  const [modoEst,        setModoEst]        = useState<ModoEstudiante>('mes')
+  const [modoEst,        setModoEst]        = useState<ModoEstudiante>('total')
   const [mesEst,         setMesEst]         = useState(mesActual())
   const [gestionEstId,   setGestionEstId]   = useState('')
   const [trimestreEstId, setTrimestreEstId] = useState('')
@@ -64,6 +64,14 @@ export default function ControlDiarioPage() {
       .finally(() => setLoadingEst(false))
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [paraleloId])
+
+  // Al elegir un estudiante, genera el reporte de una vez con el período por
+  // defecto (Total) en vez de esperar un segundo clic en "Generar reporte".
+  useEffect(() => {
+    if (!estudianteId) return
+    generarEst()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [estudianteId])
 
   const estudiantesFiltrados = buscar.trim()
     ? estudiantes.filter(e => `${e.usuario.apellido} ${e.usuario.nombre}`.toLowerCase().includes(buscar.trim().toLowerCase()))
