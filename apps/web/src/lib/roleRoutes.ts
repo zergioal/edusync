@@ -331,6 +331,11 @@ export const NAV_POR_ROL: Record<string, NavItem[]> = {
       label: "Registro",
       icon: "chart",
     },
+    {
+      to: "/dashboard/docente/reportes",
+      label: "Reportes",
+      icon: "tasks",
+    },
     { to: "/dashboard/docente/tareas", label: "Tareas", icon: "folder" },
     { to: "/dashboard/docente/anuncios", label: "Comunicados", icon: "bell" },
     { to: "/dashboard/docente/horario", label: "Mi Horario", icon: "clock" },

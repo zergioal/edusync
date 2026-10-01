@@ -18,6 +18,12 @@ observacionesDiariasRouter.delete('/:id',                isDocente, ctrl.elimina
 observacionesDiariasRouter.get('/mi-reporte',     isDocente, ctrl.reporteDocente)
 observacionesDiariasRouter.get('/mi-reporte/pdf', isDocente, ctrl.reporteDocentePdf)
 
+// Reporte de control diario de UN estudiante, para el propio docente — solo si
+// el estudiante está en uno de sus cursos (verificarAccesoEstudiante).
+observacionesDiariasRouter.get('/mi-estudiante/:estudiante_id',            isDocente, ctrl.miGetParaEstudiante)
+observacionesDiariasRouter.get('/mi-estudiante/:estudiante_id/reporte',     isDocente, ctrl.miReportePorEstudiante)
+observacionesDiariasRouter.get('/mi-estudiante/:estudiante_id/reporte/pdf', isDocente, ctrl.miReportePorEstudiantePdf)
+
 observacionesDiariasRouter.get('/mia',                   requireRol(Rol.ESTUDIANTE),  ctrl.getMia)
 observacionesDiariasRouter.get('/hijo/:estudiante_id',    requireRol(Rol.PADRE_TUTOR), ctrl.getHijo)
 

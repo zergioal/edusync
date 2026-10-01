@@ -10,6 +10,7 @@ import { generarHTMLFichaEstudiante } from '../templates/ficha-estudiante.templa
 import { generatePDF, generatePDFLandscape } from '../utils/pdf.generator'
 import { generateCentralizadorExcel, generateTablaSimpleExcel } from '../utils/excel.generator'
 import { getInstitucionInfo } from '../utils/institucion.util'
+import { DocenteAlcanceService } from '../services/docenteAlcance.service'
 
 const NIVEL_ORDEN: Record<string, number> = { INICIAL: 0, PRIMARIA: 1, SECUNDARIA: 2 }
 
@@ -23,6 +24,16 @@ function abreviarCurso(gradoNombre: string, letra: string): string {
 export class ReportesController {
   private service         = new ReportesService()
   private docentesService = new DocentesService()
+  private alcanceService  = new DocenteAlcanceService()
+
+  /** Valida que `paralelo_id` (query) sea un curso del docente autenticado y lo devuelve. */
+  private async validarParaleloDocente(req: Request): Promise<string> {
+    const paralelo_id = req.query['paralelo_id'] as string
+    if (!paralelo_id) throw new AppError(400, 'paralelo_id es requerido', 'MISSING_PARAM')
+    const docente = await this.alcanceService.getDocente(req.auth!.usuario_id)
+    await this.alcanceService.verificarAccesoParalelo(docente.id, paralelo_id)
+    return paralelo_id
+  }
 
   cuadroHonor = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
@@ -162,6 +173,48 @@ export class ReportesController {
   }
   nominaExcel = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try { this.sendExcel(res, await this.nominaTabla(req), 'nomina_estudiantes') } catch (e) { next(e) }
+  }
+
+  // Nómina — versión para el propio docente, acotada a uno de sus cursos --------
+
+  private async miNominaTabla(req: Request): Promise<DatosTablaSimple> {
+    const paralelo_id = await this.validarParaleloDocente(req)
+    const gestion_id  = req.query['gestion_id'] as string
+    if (!gestion_id) throw new AppError(400, 'gestion_id es requerido', 'MISSING_PARAM')
+    const [data, institucion] = await Promise.all([
+      this.service.getNomina(req.auth!.institucion_id, gestion_id, undefined, undefined, paralelo_id),
+      getInstitucionInfo(req.auth!.institucion_id),
+    ])
+    return {
+      institucion,
+      titulo:    'Nómina de Estudiantes Inscritos',
+      subtitulo: `Gestión ${data.anno} — ${data.estudiantes.length} estudiante(s)`,
+      columnas: [
+        { header: 'Código',   key: 'codigo' },
+        { header: 'Apellido', key: 'apellido' },
+        { header: 'Nombre',   key: 'nombre' },
+        { header: 'Nivel',    key: 'nivel' },
+        { header: 'Grado',    key: 'grado' },
+        { header: 'Paralelo', key: 'paralelo', align: 'center' },
+        { header: 'Estado',   key: 'estado', align: 'center' },
+      ],
+      filas: data.estudiantes,
+    }
+  }
+
+  miNomina = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const paralelo_id = await this.validarParaleloDocente(req)
+      const gestion_id  = req.query['gestion_id'] as string
+      if (!gestion_id) throw new AppError(400, 'gestion_id es requerido', 'MISSING_PARAM')
+      res.json({ data: await this.service.getNomina(req.auth!.institucion_id, gestion_id, undefined, undefined, paralelo_id) })
+    } catch (e) { next(e) }
+  }
+  miNominaPdf = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try { await this.sendPdf(res, await this.miNominaTabla(req), 'nomina_estudiantes') } catch (e) { next(e) }
+  }
+  miNominaExcel = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try { this.sendExcel(res, await this.miNominaTabla(req), 'nomina_estudiantes') } catch (e) { next(e) }
   }
 
   // Listado de docentes ---------------------------------------------------------
@@ -453,5 +506,48 @@ export class ReportesController {
   }
   padresTutoresExcel = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try { this.sendExcel(res, await this.padresTutoresTabla(req), 'padres_tutores') } catch (e) { next(e) }
+  }
+
+  // Padres / tutores — versión para el propio docente, acotada a uno de sus cursos -
+
+  private async miPadresTutoresTabla(req: Request): Promise<DatosTablaSimple> {
+    const paralelo_id = await this.validarParaleloDocente(req)
+    const gestion_id  = req.query['gestion_id'] as string
+    if (!gestion_id) throw new AppError(400, 'gestion_id es requerido', 'MISSING_PARAM')
+    const [filas, institucion] = await Promise.all([
+      this.service.getPadresTutores(req.auth!.institucion_id, gestion_id, paralelo_id),
+      getInstitucionInfo(req.auth!.institucion_id),
+    ])
+    return {
+      institucion,
+      titulo:   'Padres, Madres y Tutores',
+      subtitulo: `${filas.length} registro(s)`,
+      columnas: [
+        { header: 'Estudiante', key: 'estudiante' },
+        { header: 'Código',     key: 'codigo' },
+        { header: 'Nivel',      key: 'nivel' },
+        { header: 'Grado',      key: 'grado' },
+        { header: 'Paralelo',   key: 'paralelo', align: 'center' },
+        { header: 'Tutor',      key: 'tutor' },
+        { header: 'Correo',     key: 'email' },
+        { header: 'Teléfono',   key: 'telefono' },
+      ],
+      filas,
+    }
+  }
+
+  miPadresTutores = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const paralelo_id = await this.validarParaleloDocente(req)
+      const gestion_id  = req.query['gestion_id'] as string
+      if (!gestion_id) throw new AppError(400, 'gestion_id es requerido', 'MISSING_PARAM')
+      res.json({ data: await this.service.getPadresTutores(req.auth!.institucion_id, gestion_id, paralelo_id) })
+    } catch (e) { next(e) }
+  }
+  miPadresTutoresPdf = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try { await this.sendPdf(res, await this.miPadresTutoresTabla(req), 'padres_tutores') } catch (e) { next(e) }
+  }
+  miPadresTutoresExcel = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try { this.sendExcel(res, await this.miPadresTutoresTabla(req), 'padres_tutores') } catch (e) { next(e) }
   }
 }

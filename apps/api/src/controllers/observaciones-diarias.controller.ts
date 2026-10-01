@@ -1,6 +1,7 @@
 import type { Request, Response, NextFunction } from 'express'
 import type { CategoriaObservacion } from '@edusync/database'
 import { ObservacionesDiariasService } from '../services/observaciones-diarias.service'
+import { DocenteAlcanceService } from '../services/docenteAlcance.service'
 import { AppError } from '../middlewares/errorHandler'
 import { generarHTMLTablaSimple } from '../templates/reporte-tabla.template'
 import { generatePDFLandscape } from '../utils/pdf.generator'
@@ -9,6 +10,7 @@ type ModoReporte = 'mes' | 'trimestre' | 'anno'
 
 export class ObservacionesDiariasController {
   private service = new ObservacionesDiariasService()
+  private alcance = new DocenteAlcanceService()
 
   roster = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
@@ -76,6 +78,54 @@ export class ObservacionesDiariasController {
     try {
       const filtro = this.parseFiltroEstudiante(req)
       const data = await this.service.reportePorEstudiante(req.params['estudiante_id']!, req.auth!.institucion_id, filtro)
+      const html = generarHTMLTablaSimple({
+        titulo:    `Control Diario — ${data.estudiante}`,
+        subtitulo: `${data.curso} · ${data.periodo}`,
+        columnas: [
+          { header: 'Fecha',       key: 'fecha' },
+          { header: 'Materia',     key: 'materia' },
+          { header: 'Observación', key: 'categoria' },
+          { header: 'Detalle',     key: 'detalle' },
+          { header: 'Docente',     key: 'docente' },
+        ],
+        filas: data.observaciones,
+      })
+      const pdf = await generatePDFLandscape(html)
+      res.setHeader('Content-Type', 'application/pdf')
+      res.setHeader('Content-Disposition', `attachment; filename="control_diario_${data.codigo}.pdf"`)
+      res.send(pdf)
+    } catch (e) { next(e) }
+  }
+
+  // ── Reporte por estudiante, para el propio docente (acotado a sus cursos) ──
+
+  miGetParaEstudiante = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const estudiante_id = req.params['estudiante_id']!
+      const docente = await this.alcance.getDocente(req.auth!.usuario_id)
+      await this.alcance.verificarAccesoEstudiante(docente.id, estudiante_id)
+      res.json({ data: await this.service.getParaEstudiante(estudiante_id, req.auth!.institucion_id) })
+    } catch (e) { next(e) }
+  }
+
+  miReportePorEstudiante = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const estudiante_id = req.params['estudiante_id']!
+      const docente = await this.alcance.getDocente(req.auth!.usuario_id)
+      await this.alcance.verificarAccesoEstudiante(docente.id, estudiante_id)
+      const filtro = this.parseFiltroEstudiante(req)
+      const data = await this.service.reportePorEstudiante(estudiante_id, req.auth!.institucion_id, filtro)
+      res.json({ data })
+    } catch (e) { next(e) }
+  }
+
+  miReportePorEstudiantePdf = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const estudiante_id = req.params['estudiante_id']!
+      const docente = await this.alcance.getDocente(req.auth!.usuario_id)
+      await this.alcance.verificarAccesoEstudiante(docente.id, estudiante_id)
+      const filtro = this.parseFiltroEstudiante(req)
+      const data = await this.service.reportePorEstudiante(estudiante_id, req.auth!.institucion_id, filtro)
       const html = generarHTMLTablaSimple({
         titulo:    `Control Diario — ${data.estudiante}`,
         subtitulo: `${data.curso} · ${data.periodo}`,

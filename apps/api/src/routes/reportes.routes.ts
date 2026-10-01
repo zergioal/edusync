@@ -12,6 +12,7 @@ const canViewHonor = requireRol(Rol.COORDINADOR, Rol.DIRECTOR, Rol.SECRETARIA, R
 const canViewFull  = requireRol(Rol.COORDINADOR, Rol.DIRECTOR, Rol.SECRETARIA, Rol.ADMIN_SISTEMA)
 const canSecretaria = requireRol(Rol.SECRETARIA, Rol.COORDINADOR, Rol.DIRECTOR, Rol.ADMIN_SISTEMA)
 const canViewBTH    = requireRol(Rol.COORDINADOR, Rol.DIRECTOR, Rol.ADMIN_SISTEMA)
+const isDocente     = requireRol(Rol.DOCENTE)
 
 reportesRouter.get('/cuadro-honor',          canViewHonor, checkAlcanceCoordinador, ctrl.cuadroHonor)
 reportesRouter.get('/cuadro-honor/pdf',      canViewHonor, checkAlcanceCoordinador, ctrl.cuadroHonorPdf)
@@ -52,3 +53,12 @@ reportesRouter.get('/estadistica-matricula/excel',      canSecretaria, ctrl.esta
 reportesRouter.get('/padres-tutores',                  canSecretaria, ctrl.padresTutores)
 reportesRouter.get('/padres-tutores/pdf',               canSecretaria, ctrl.padresTutoresPdf)
 reportesRouter.get('/padres-tutores/excel',             canSecretaria, ctrl.padresTutoresExcel)
+
+// ── Reportes del docente, acotados a uno de sus propios cursos (?paralelo_id=) ──
+reportesRouter.get('/mi-nomina',            isDocente, ctrl.miNomina)
+reportesRouter.get('/mi-nomina/pdf',        isDocente, ctrl.miNominaPdf)
+reportesRouter.get('/mi-nomina/excel',      isDocente, ctrl.miNominaExcel)
+
+reportesRouter.get('/mi-padres-tutores',       isDocente, ctrl.miPadresTutores)
+reportesRouter.get('/mi-padres-tutores/pdf',   isDocente, ctrl.miPadresTutoresPdf)
+reportesRouter.get('/mi-padres-tutores/excel', isDocente, ctrl.miPadresTutoresExcel)
