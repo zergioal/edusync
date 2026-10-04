@@ -18,10 +18,11 @@ interface AsignacionOpcion {
 interface MiConfig { gestion: { id: string; anno: number }; periodos: Periodo[]; asignaciones: AsignacionOpcion[] }
 
 interface Entrada {
-  dia_semana: number
-  periodo:    number
-  materia:    { nombre: string }
-  paralelo:   { letra: string; grado: { nombre: string; nivel: { nombre: string } } }
+  dia_semana:    number
+  periodo:       number
+  asignacion_id: string
+  materia:       { nombre: string }
+  paralelo:      { letra: string; grado: { nombre: string; nivel: { nombre: string } } }
 }
 
 const DIAS = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado']
@@ -86,20 +87,9 @@ function CeldaModal({
   asignaciones: AsignacionOpcion[]
   actual:       Entrada | undefined
   onClose:      () => void
-  onAsignar:    (asignacion_id: string) => Promise<void>
-  onVaciar:     () => Promise<void>
+  onAsignar:    (asignacion_id: string) => void
+  onVaciar:     () => void
 }) {
-  const [busy, setBusy] = useState<string | null>(null)
-
-  async function elegir(id: string) {
-    setBusy(id)
-    try { await onAsignar(id) } finally { setBusy(null) }
-  }
-  async function vaciar() {
-    setBusy('__vaciar__')
-    try { await onVaciar() } finally { setBusy(null) }
-  }
-
   return (
     <Modal
       isOpen
@@ -108,11 +98,11 @@ function CeldaModal({
       footer={
         <div className="flex justify-between">
           {actual ? (
-            <Button variant="danger" size="sm" onClick={vaciar} loading={busy === '__vaciar__'} disabled={!!busy}>
+            <Button variant="danger" size="sm" onClick={() => { onVaciar(); onClose() }}>
               Dejar vacío
             </Button>
           ) : <span />}
-          <Button variant="secondary" onClick={onClose} disabled={!!busy}>Cerrar</Button>
+          <Button variant="secondary" onClick={onClose}>Cerrar</Button>
         </div>
       }
     >
@@ -121,16 +111,13 @@ function CeldaModal({
       ) : (
         <div className="space-y-1.5">
           {asignaciones.map(a => {
-            const seleccionada = actual?.materia.nombre === a.materia.nombre
-              && actual?.paralelo.letra === a.paralelo.letra
-              && actual?.paralelo.grado.nombre === a.paralelo.grado.nombre
+            const seleccionada = actual?.asignacion_id === a.id
             return (
               <button
                 key={a.id}
                 type="button"
-                onClick={() => elegir(a.id)}
-                disabled={!!busy}
-                className={`group relative flex w-full items-center gap-3 overflow-hidden rounded-lg border pl-4 pr-3 py-2.5 text-left text-sm transition-colors duration-150 disabled:opacity-60 ${
+                onClick={() => { onAsignar(a.id); onClose() }}
+                className={`group relative flex w-full items-center gap-3 overflow-hidden rounded-lg border pl-4 pr-3 py-2.5 text-left text-sm transition-colors duration-150 ${
                   seleccionada
                     ? 'border-indigo-200 dark:border-indigo-500/30 bg-indigo-50 dark:bg-indigo-500/10 text-fg'
                     : 'border-border bg-surface text-fg hover:bg-surface-2'
@@ -143,7 +130,6 @@ function CeldaModal({
                     {a.paralelo.grado.nivel.nombre} · {a.paralelo.grado.nombre} "{a.paralelo.letra}"
                   </p>
                 </div>
-                {busy === a.id && <Spinner />}
               </button>
             )
           })}
@@ -162,7 +148,9 @@ export default function MiHorarioPage() {
 
   const [config,  setConfig]  = useState<MiConfig | null>(null)
   const [mapa,    setMapa]    = useState<Map<string, Entrada>>(new Map())
+  const [dirty,   setDirty]   = useState(false)
   const [loading, setLoading] = useState(true)
+  const [saving,  setSaving]  = useState(false)
   const [celda,   setCelda]   = useState<{ dia: number; periodo: number } | null>(null)
   const [downloading, setDownloading] = useState<'pdf' | 'excel' | null>(null)
 
@@ -175,6 +163,7 @@ export default function MiHorarioPage() {
       ])
       setConfig(cfg)
       setMapa(new Map(entradas.map(e => [cellKey(e.dia_semana, e.periodo), e])))
+      setDirty(false)
     } catch {
       toastRef.current.error('No se pudo cargar tu horario')
     } finally {
@@ -183,6 +172,14 @@ export default function MiHorarioPage() {
   }, [])
 
   useEffect(() => { cargar() }, [cargar])
+
+  // Avisa antes de cerrar/recargar si hay cambios sin guardar.
+  useEffect(() => {
+    if (!dirty) return
+    const handler = (e: BeforeUnloadEvent) => { e.preventDefault() }
+    window.addEventListener('beforeunload', handler)
+    return () => window.removeEventListener('beforeunload', handler)
+  }, [dirty])
 
   const coloresPorAsignacion = useMemo(() => {
     const map = new Map<string, ColorCelda>()
@@ -195,25 +192,36 @@ export default function MiHorarioPage() {
     return map
   }, [config])
 
-  async function asignarCelda(dia: number, periodo: number, asignacion_id: string) {
-    try {
-      const entrada = await api.put<Entrada>('/horarios/celda', { dia_semana: dia, periodo, asignacion_id })
-      setMapa(prev => new Map(prev).set(cellKey(dia, periodo), entrada))
-      toast.success('Horario guardado')
-      setCelda(null)
-    } catch (err) {
-      toast.error(err instanceof ApiError ? err.message : 'Error al guardar')
+  function asignarCelda(dia: number, periodo: number, asignacion_id: string) {
+    const a = config?.asignaciones.find(x => x.id === asignacion_id)
+    if (!a) return
+    const entrada: Entrada = {
+      dia_semana: dia, periodo, asignacion_id,
+      materia:  { nombre: a.materia.nombre },
+      paralelo: { letra: a.paralelo.letra, grado: a.paralelo.grado },
     }
+    setMapa(prev => new Map(prev).set(cellKey(dia, periodo), entrada))
+    setDirty(true)
   }
 
-  async function vaciarCelda(dia: number, periodo: number) {
+  function vaciarCelda(dia: number, periodo: number) {
+    setMapa(prev => { const next = new Map(prev); next.delete(cellKey(dia, periodo)); return next })
+    setDirty(true)
+  }
+
+  async function guardarTodo() {
+    setSaving(true)
     try {
-      await api.delete(`/horarios/celda?dia_semana=${dia}&periodo=${periodo}`)
-      setMapa(prev => { const next = new Map(prev); next.delete(cellKey(dia, periodo)); return next })
-      toast.success('Celda vaciada')
-      setCelda(null)
-    } catch {
-      toast.error('No se pudo vaciar la celda')
+      const celdas = [...mapa.values()].map(e => ({
+        dia_semana: e.dia_semana, periodo: e.periodo, asignacion_id: e.asignacion_id,
+      }))
+      await api.put('/horarios/mio', { celdas })
+      toast.success('Horario guardado')
+      setDirty(false)
+    } catch (err) {
+      toast.error(err instanceof ApiError ? err.message : 'Error al guardar')
+    } finally {
+      setSaving(false)
     }
   }
 
@@ -247,7 +255,7 @@ export default function MiHorarioPage() {
         <div>
           <h1 className="text-xl font-bold text-fg">Mi Horario</h1>
           <p className="text-sm text-fg-muted mt-0.5">
-            Haz clic en una celda para asignar la materia y el curso de ese período. Se guarda automáticamente.
+            Haz clic en una celda para asignar la materia y el curso de ese período, y presiona "Guardar horario" al terminar.
           </p>
         </div>
         <div className="flex gap-2">
@@ -269,6 +277,10 @@ export default function MiHorarioPage() {
             <Icon name="file-pdf" className="h-4 w-4" />
             {downloading === 'pdf' ? 'Generando…' : 'PDF'}
           </button>
+          <Button onClick={guardarTodo} loading={saving} disabled={!dirty}>
+            <Icon name="save" className="h-4 w-4" />
+            Guardar horario
+          </Button>
         </div>
       </div>
 

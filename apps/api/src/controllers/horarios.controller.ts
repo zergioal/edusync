@@ -21,27 +21,12 @@ export class HorariosController {
     } catch (e) { next(e) }
   }
 
-  guardarCelda = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  guardarHorarioCompleto = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const { dia_semana, periodo, asignacion_id } = req.body as {
-        dia_semana: number; periodo: number; asignacion_id: string
-      }
-      if (dia_semana == null || periodo == null || !asignacion_id) {
-        throw new AppError(400, 'dia_semana, periodo y asignacion_id son requeridos', 'MISSING_PARAM')
-      }
-      const data = await this.service.guardarCelda(req.auth!.usuario_id, req.auth!.institucion_id, {
-        dia_semana, periodo, asignacion_id,
-      })
+      const { celdas } = req.body as { celdas: { dia_semana: number; periodo: number; asignacion_id: string }[] }
+      if (!Array.isArray(celdas)) throw new AppError(400, 'celdas debe ser un arreglo', 'MISSING_PARAM')
+      const data = await this.service.guardarHorarioCompleto(req.auth!.usuario_id, req.auth!.institucion_id, celdas)
       res.json({ data })
-    } catch (e) { next(e) }
-  }
-
-  borrarCelda = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-    try {
-      const { dia_semana, periodo } = req.query as Record<string, string>
-      if (!dia_semana || !periodo) throw new AppError(400, 'dia_semana y periodo son requeridos', 'MISSING_PARAM')
-      await this.service.borrarCelda(req.auth!.usuario_id, req.auth!.institucion_id, Number(dia_semana), Number(periodo))
-      res.status(204).send()
     } catch (e) { next(e) }
   }
 

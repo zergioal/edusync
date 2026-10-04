@@ -26,6 +26,11 @@ interface MensualData {
   records:     Record<string, Record<string, string>>
 }
 
+interface HorarioEntrada {
+  dia_semana:    number
+  asignacion_id: string | null
+}
+
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const DIA_ABREV = ['D', 'L', 'M', 'X', 'J', 'V', 'S']
@@ -67,6 +72,7 @@ export default function AsistenciaClasePage() {
   toastRef.current = toast
 
   const [asignacion,  setAsignacion]  = useState<AsignacionInfo | null>(null)
+  const [diasConClase, setDiasConClase] = useState<Set<number>>(new Set())
   const [mes,         setMes]         = useState<string>(mesStr(new Date()))
   const [estudiantes, setEstudiantes] = useState<Estudiante[]>([])
   // records[fecha][estudiante_id] = Estado | null (null = celda dejada vacía explícitamente)
@@ -83,6 +89,19 @@ export default function AsistenciaClasePage() {
       .then(setAsignacion)
       .catch(() => toastRef.current.error('No se pudo cargar la asignación'))
       .finally(() => setLoading(false))
+  }, [asignacion_id])
+
+  // Días de la semana en que el horario del docente tiene esta asignación — si no
+  // configuró horario para ella, queda un Set vacío y se cae al comportamiento por
+  // defecto (todos los días hábiles, más abajo).
+  useEffect(() => {
+    if (!asignacion_id) return
+    api.get<HorarioEntrada[]>('/horarios/mio')
+      .then(entradas => {
+        const dias = entradas.filter(e => e.asignacion_id === asignacion_id).map(e => e.dia_semana)
+        setDiasConClase(new Set(dias))
+      })
+      .catch(() => { /* sin horario configurado: se usa el fallback de todos los días */ })
   }, [asignacion_id])
 
   // Load monthly data when mes changes
@@ -183,10 +202,12 @@ export default function AsistenciaClasePage() {
   const schoolDays: string[] = []
   for (let d = 1; d <= daysInMonth; d++) {
     const dow = new Date(yearN!, monthN! - 1, d).getDay()
-    if (dow !== 0) {
-      const fecha = `${mes}-${String(d).padStart(2, '0')}`
-      schoolDays.push(fecha)
-    }
+    // Sin domingo nunca; si el horario ya tiene días definidos para esta
+    // asignación, solo esos — si no configuró horario, todos los hábiles.
+    if (dow === 0) continue
+    if (diasConClase.size > 0 && !diasConClase.has(dow)) continue
+    const fecha = `${mes}-${String(d).padStart(2, '0')}`
+    schoolDays.push(fecha)
   }
   const today = hoyLocalStr()
 
@@ -226,6 +247,11 @@ export default function AsistenciaClasePage() {
           <BackButton className="mb-2" />
           <h1 className="text-xl font-bold text-fg">Asistencia de Clase</h1>
           <p className="text-sm text-fg-muted mt-0.5">{titulo}</p>
+          <p className="text-xs text-fg-muted mt-0.5">
+            {diasConClase.size > 0
+              ? 'Mostrando solo los días de esta materia según tu horario configurado.'
+              : 'No configuraste tu horario para esta materia — se muestran todos los días hábiles.'}
+          </p>
         </div>
 
         <div className="flex items-center gap-2 flex-wrap">

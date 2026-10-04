@@ -145,57 +145,80 @@ export class HorariosService {
   async getMio(usuario_id: string, institucion_id: string) {
     const docente = await this.getDocente(usuario_id)
     const gestion  = await this.getGestionActiva(institucion_id)
-    return prisma.horario.findMany({
+    const horarios = await prisma.horario.findMany({
       where:   { docente_id: docente.id, gestion_id: gestion.id },
       include: {
         materia:  { select: { nombre: true } },
         paralelo: { select: { letra: true, grado: { select: { nombre: true, nivel: { select: { nombre: true } } } } } },
       },
     })
+    if (horarios.length === 0) return []
+
+    // Horario no tiene FK a Asignacion (no existe ese campo) — se resuelve cruzando
+    // por los mismos 4 campos que identifican a una asignación de forma única
+    // (@@unique([docente_id, materia_id, paralelo_id, gestion_id])). Así el frontend
+    // puede saber, por ejemplo, qué días de la semana tiene clase cada asignación.
+    const asignaciones = await prisma.asignacion.findMany({
+      where:  { docente_id: docente.id, gestion_id: gestion.id },
+      select: { id: true, materia_id: true, paralelo_id: true },
+    })
+    const asignacionPorClave = new Map(asignaciones.map(a => [`${a.materia_id}-${a.paralelo_id}`, a.id]))
+
+    return horarios.map(h => ({
+      ...h,
+      asignacion_id: asignacionPorClave.get(`${h.materia_id}-${h.paralelo_id}`) ?? null,
+    }))
   }
 
-  async guardarCelda(usuario_id: string, institucion_id: string, data: {
+  /** Reemplaza TODO el horario del docente (gestión activa) por el estado recibido —
+   *  edición en lote: el frontend acumula cambios en memoria y guarda todo de una vez. */
+  async guardarHorarioCompleto(usuario_id: string, institucion_id: string, celdas: {
     dia_semana: number
     periodo:    number
     asignacion_id: string
-  }) {
+  }[]) {
     const docente = await this.getDocente(usuario_id)
     const gestion  = await this.getGestionActiva(institucion_id)
 
-    if (!Number.isInteger(data.dia_semana) || data.dia_semana < 1 || data.dia_semana > 6) {
-      throw new AppError(400, 'Día inválido', 'VALIDATION')
+    for (const c of celdas) {
+      if (!Number.isInteger(c.dia_semana) || c.dia_semana < 1 || c.dia_semana > 6) {
+        throw new AppError(400, 'Día inválido', 'VALIDATION')
+      }
+      if (!Number.isInteger(c.periodo) || c.periodo < 1) {
+        throw new AppError(400, 'Período inválido', 'VALIDATION')
+      }
     }
-    if (!Number.isInteger(data.periodo) || data.periodo < 1) {
-      throw new AppError(400, 'Período inválido', 'VALIDATION')
+    const claves = new Set<string>()
+    for (const c of celdas) {
+      const clave = `${c.dia_semana}-${c.periodo}`
+      if (claves.has(clave)) throw new AppError(400, 'Hay más de una materia en la misma celda', 'VALIDATION')
+      claves.add(clave)
     }
 
-    const asignacion = await prisma.asignacion.findUnique({ where: { id: data.asignacion_id } })
-    if (!asignacion || asignacion.docente_id !== docente.id || asignacion.gestion_id !== gestion.id) {
-      throw new AppError(403, 'Esa asignación no te pertenece', 'FORBIDDEN')
+    const asignacionIds = [...new Set(celdas.map(c => c.asignacion_id))]
+    const asignaciones = asignacionIds.length > 0
+      ? await prisma.asignacion.findMany({ where: { id: { in: asignacionIds }, docente_id: docente.id, gestion_id: gestion.id } })
+      : []
+    const asignacionMap = new Map(asignaciones.map(a => [a.id, a]))
+    for (const id of asignacionIds) {
+      if (!asignacionMap.has(id)) throw new AppError(403, 'Una de las materias no te pertenece', 'FORBIDDEN')
     }
 
-    return prisma.horario.upsert({
-      where: {
-        docente_id_gestion_id_dia_semana_periodo: {
-          docente_id: docente.id, gestion_id: gestion.id, dia_semana: data.dia_semana, periodo: data.periodo,
-        },
-      },
-      create: {
-        docente_id: docente.id, gestion_id: gestion.id, dia_semana: data.dia_semana, periodo: data.periodo,
-        paralelo_id: asignacion.paralelo_id, materia_id: asignacion.materia_id,
-      },
-      update: { paralelo_id: asignacion.paralelo_id, materia_id: asignacion.materia_id },
-      include: {
-        materia:  { select: { nombre: true } },
-        paralelo: { select: { letra: true, grado: { select: { nombre: true, nivel: { select: { nombre: true } } } } } },
-      },
-    })
-  }
+    await prisma.$transaction([
+      prisma.horario.deleteMany({ where: { docente_id: docente.id, gestion_id: gestion.id } }),
+      ...(celdas.length > 0 ? [prisma.horario.createMany({
+        data: celdas.map(c => {
+          const a = asignacionMap.get(c.asignacion_id)!
+          return {
+            docente_id: docente.id, gestion_id: gestion.id,
+            dia_semana: c.dia_semana, periodo: c.periodo,
+            paralelo_id: a.paralelo_id, materia_id: a.materia_id,
+          }
+        }),
+      })] : []),
+    ])
 
-  async borrarCelda(usuario_id: string, institucion_id: string, dia_semana: number, periodo: number) {
-    const docente = await this.getDocente(usuario_id)
-    const gestion  = await this.getGestionActiva(institucion_id)
-    await prisma.horario.deleteMany({ where: { docente_id: docente.id, gestion_id: gestion.id, dia_semana, periodo } })
+    return this.getMio(usuario_id, institucion_id)
   }
 
   /** Tabla lista para exportar (PDF/Excel): una fila por período, una columna por día. */
