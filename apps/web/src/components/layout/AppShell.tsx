@@ -150,11 +150,15 @@ export function AppShell({ children }: AppShellProps) {
                 onClick={() => setMenuOpen(o => !o)}
                 className="flex items-center gap-2 rounded-lg px-1.5 py-1 hover:bg-surface-2 transition-colors"
               >
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand shadow-sm">
-                  <span className="text-xs font-bold text-brand-fg">
-                    {user?.nombre?.charAt(0)}{user?.apellido?.charAt(0)}
-                  </span>
-                </div>
+                {user?.foto_url ? (
+                  <img src={user.foto_url} alt="" className="h-8 w-8 rounded-lg object-cover shadow-sm" />
+                ) : (
+                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand shadow-sm">
+                    <span className="text-xs font-bold text-brand-fg">
+                      {user?.nombre?.charAt(0)}{user?.apellido?.charAt(0)}
+                    </span>
+                  </div>
+                )}
                 <div className="hidden md:block">
                   <p className="text-xs font-semibold text-fg leading-tight max-w-[130px] truncate">
                     {user?.nombre} {user?.apellido}

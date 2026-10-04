@@ -1,5 +1,6 @@
 import type { Request, Response, NextFunction } from 'express'
 import { UsuariosService } from '../services/usuarios.service'
+import { AppError } from '../middlewares/errorHandler'
 
 export class UsuariosController {
   private service = new UsuariosService()
@@ -55,6 +56,21 @@ export class UsuariosController {
         ...(apellido         !== undefined ? { apellido }        : {}),
         ...(grado_academico  !== undefined ? { grado_academico } : {}),
       })
+      res.json({ data })
+    } catch (e) { next(e) }
+  }
+
+  subirFoto = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      if (!req.file) throw new AppError(400, 'Falta el archivo de la foto', 'MISSING_FILE')
+      const data = await this.service.subirFoto(req.auth!.usuario_id, req.file.buffer, req.file.mimetype)
+      res.json({ data })
+    } catch (e) { next(e) }
+  }
+
+  quitarFoto = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const data = await this.service.quitarFoto(req.auth!.usuario_id)
       res.json({ data })
     } catch (e) { next(e) }
   }

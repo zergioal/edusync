@@ -7,7 +7,6 @@ import { useGestionActiva } from '../../hooks/useGestionActiva'
 import { useToast } from '../../components/ui/Toast'
 import { api, ApiError } from '../../lib/api'
 import { Badge, Spinner, Button } from '@edusync/ui'
-import { AvatarDisplay, AvatarPickerModal, useAvatar } from '../../components/ui/AvatarSelector'
 import { EditarPerfilModal } from '../../components/EditarPerfilModal'
 import { ROL_LABELS } from '../../lib/roleRoutes'
 const CargaHorariaDocentesPage = lazy(() => import('../director/CargaHorariaDocentesPage'))
@@ -50,7 +49,6 @@ function DirectorHome() {
   const toastRef = useRef(toast)
   toastRef.current = toast
   const { gestionLabel, trimestreLabel } = useGestionActiva()
-  const { avatarId, showPicker, openPicker, closePicker, onSaved } = useAvatar(user?.id ?? '')
 
   const [gestiones,  setGestiones]  = useState<GestionInfo[]>([])
   const [stats,      setStats]      = useState<Stats | null>(null)
@@ -97,11 +95,17 @@ function DirectorHome() {
       {/* Profile card */}
       <div className="rounded-2xl bg-surface border border-border shadow-sm p-4 flex items-center gap-4">
         <div className="relative">
-          <AvatarDisplay userId={user?.id ?? ''} avatarId={avatarId} size="xl" />
+          {user?.foto_url ? (
+            <img src={user.foto_url} alt="" className="h-24 w-24 rounded-2xl object-cover" />
+          ) : (
+            <div className="h-24 w-24 rounded-2xl bg-indigo-600 flex items-center justify-center text-5xl font-bold text-white">
+              {user?.nombre?.charAt(0)}{user?.apellido?.charAt(0)}
+            </div>
+          )}
           <button
-            onClick={openPicker}
+            onClick={() => setShowEditPerfil(true)}
             className="absolute -bottom-1.5 -right-1.5 h-6 w-6 rounded-full bg-indigo-600 text-white text-xs flex items-center justify-center shadow hover:bg-indigo-700 transition-colors"
-            title="Cambiar avatar"
+            title="Cambiar foto"
           >✎</button>
         </div>
 
@@ -211,9 +215,6 @@ function DirectorHome() {
         </div>
       </div>
 
-      {showPicker && user && (
-        <AvatarPickerModal userId={user.id} onClose={closePicker} onSaved={onSaved} />
-      )}
       {showEditPerfil && (
         <EditarPerfilModal onClose={() => setShowEditPerfil(false)} />
       )}

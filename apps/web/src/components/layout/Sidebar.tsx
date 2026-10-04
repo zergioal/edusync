@@ -141,9 +141,13 @@ export function Sidebar({ navItems, onClose, collapsible }: SidebarProps) {
           >
             <div className="relative h-9 w-9 flex-shrink-0">
               <div className={`absolute inset-0 rounded-full bg-gradient-to-br from-indigo-400 to-fuchsia-500 transition-all duration-500 ${quickOpen && expanded ? 'opacity-100 blur-[6px] scale-110' : 'opacity-0 blur-0 scale-100'}`} />
-              <div className="relative h-9 w-9 rounded-full bg-indigo-600 flex items-center justify-center text-sm font-bold text-white shadow">
-                {user?.nombre?.charAt(0)}{user?.apellido?.charAt(0)}
-              </div>
+              {user?.foto_url ? (
+                <img src={user.foto_url} alt="" className="relative h-9 w-9 rounded-full object-cover shadow" />
+              ) : (
+                <div className="relative h-9 w-9 rounded-full bg-indigo-600 flex items-center justify-center text-sm font-bold text-white shadow">
+                  {user?.nombre?.charAt(0)}{user?.apellido?.charAt(0)}
+                </div>
+              )}
             </div>
             <div className={`min-w-0 overflow-hidden text-left transition-all duration-200 ${expanded ? 'flex-1 opacity-100' : 'w-0 opacity-0'}`}>
               <p className="text-sm font-semibold text-white truncate whitespace-nowrap leading-tight">

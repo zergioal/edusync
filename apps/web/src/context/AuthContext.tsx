@@ -18,6 +18,7 @@ export interface AppUser {
   institucion_id:  string
   activo:          boolean
   grado_academico?: string | null
+  foto_url?:       string | null
   /** Solo para rol COORDINADOR: niveles a los que puede generar reportes.
    *  Vacío o ausente = sin restricción (accede a reportes de cualquier nivel). */
   alcance_niveles?: string[]

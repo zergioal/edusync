@@ -7,7 +7,6 @@ import { useGestionActiva } from '../../hooks/useGestionActiva'
 import { useToast } from '../../components/ui/Toast'
 import { Badge } from '@edusync/ui'
 import { api } from '../../lib/api'
-import { AvatarDisplay, AvatarPickerModal, useAvatar } from '../../components/ui/AvatarSelector'
 import { EditarPerfilModal } from '../../components/EditarPerfilModal'
 import { Icon } from '../../components/ui/Icon'
 
@@ -47,7 +46,6 @@ function DocenteHome() {
   toastRef.current = toast
   const navigate  = useNavigate()
   const { gestionLabel, trimestreLabel } = useGestionActiva()
-  const { avatarId, showPicker, openPicker, closePicker, onSaved } = useAvatar(user?.id ?? '')
 
   const [asignaciones, setAsignaciones] = useState<AsignacionCard[]>([])
   const [loadingStats, setLoadingStats] = useState(true)
@@ -70,11 +68,17 @@ function DocenteHome() {
       {/* Profile card */}
       <div className="rounded-2xl bg-surface border border-border shadow-sm p-4 flex items-center gap-4">
         <div className="relative">
-          <AvatarDisplay userId={user?.id ?? ''} avatarId={avatarId} size="xl" />
+          {user?.foto_url ? (
+            <img src={user.foto_url} alt="" className="h-24 w-24 rounded-2xl object-cover" />
+          ) : (
+            <div className="h-24 w-24 rounded-2xl bg-indigo-600 flex items-center justify-center text-5xl font-bold text-white">
+              {user?.nombre?.charAt(0)}{user?.apellido?.charAt(0)}
+            </div>
+          )}
           <button
-            onClick={openPicker}
+            onClick={() => setShowEditPerfil(true)}
             className="absolute -bottom-1.5 -right-1.5 h-6 w-6 rounded-full bg-indigo-600 text-white flex items-center justify-center shadow hover:bg-indigo-700 transition-colors"
-            title="Cambiar avatar"
+            title="Cambiar foto"
           ><Icon name="pencil" className="h-3.5 w-3.5" /></button>
         </div>
 
@@ -189,9 +193,6 @@ function DocenteHome() {
         </div>
       )}
 
-      {showPicker && user && (
-        <AvatarPickerModal userId={user.id} onClose={closePicker} onSaved={onSaved} />
-      )}
       {showEditPerfil && (
         <EditarPerfilModal onClose={() => setShowEditPerfil(false)} />
       )}

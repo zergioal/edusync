@@ -152,6 +152,7 @@ model Usuario {
   apellido         String
   grado_academico  String?
   telefono         String?
+  foto_url         String?
   activo           Boolean  @default(true)
   created_at       DateTime @default(now())
 
