@@ -4,6 +4,8 @@ import { useAuth } from '../../context/AuthContext'
 import { useToast } from '../../components/ui/Toast'
 import { Modal } from '../../components/ui/Modal'
 import { Button, Badge, Spinner } from '@edusync/ui'
+import { useMisCursos } from '../../hooks/useMisCursos'
+import { abbreviateGrado } from '../../lib/cursoDisplay'
 
 interface Anuncio {
   id:           string
@@ -33,13 +35,16 @@ export default function AnunciosInternosPage() {
   const toastRef = useRef(toast)
   toastRef.current = toast
   const { user } = useAuth()
+  const esDocente = user?.rol === 'DOCENTE'
+  const { cursos: misCursos } = useMisCursos()
 
-  const [anuncios,  setAnuncios]  = useState<Anuncio[]>([])
-  const [loading,   setLoading]   = useState(true)
-  const [modal,     setModal]     = useState(false)
-  const [ver,       setVer]       = useState<Anuncio | null>(null)
-  const [saving,    setSaving]    = useState(false)
-  const [form,      setForm]      = useState({ titulo: '', contenido: '', visible_para: 'TODOS', destacado: false })
+  const [anuncios,     setAnuncios]     = useState<Anuncio[]>([])
+  const [loading,      setLoading]      = useState(true)
+  const [modal,        setModal]        = useState(false)
+  const [ver,          setVer]          = useState<Anuncio | null>(null)
+  const [saving,       setSaving]       = useState(false)
+  const [form,         setForm]         = useState({ titulo: '', contenido: '', visible_para: 'TODOS', destacado: false })
+  const [paraleloIds,  setParaleloIds]  = useState<string[]>([])
 
   const canPublish = user ? CAN_PUBLISH.has(user.rol) : false
 
@@ -53,14 +58,27 @@ export default function AnunciosInternosPage() {
 
   useEffect(load, [])
 
+  function toggleParalelo(id: string) {
+    setParaleloIds(prev => prev.includes(id) ? prev.filter(p => p !== id) : [...prev, id])
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
+    if (esDocente && paraleloIds.length === 0) {
+      toastRef.current.error('Selecciona al menos un curso')
+      return
+    }
     setSaving(true)
     try {
-      await api.post('/anuncios', form)
-      toastRef.current.success('Anuncio publicado')
+      if (esDocente) {
+        await api.post('/anuncios', { titulo: form.titulo, contenido: form.contenido, paralelo_ids: paraleloIds })
+      } else {
+        await api.post('/anuncios', form)
+      }
+      toastRef.current.success('Comunicado publicado')
       setModal(false)
       setForm({ titulo: '', contenido: '', visible_para: 'TODOS', destacado: false })
+      setParaleloIds([])
       load()
     } catch (err) {
       toastRef.current.error(err instanceof ApiError ? err.message : 'Error al publicar')
@@ -114,10 +132,16 @@ export default function AnunciosInternosPage() {
                     <h3 className="font-semibold text-fg truncate">{a.titulo}</h3>
                   </div>
                   <p className="mt-1 text-sm text-fg-muted line-clamp-2">{a.contenido}</p>
-                  <div className="mt-2 flex items-center gap-3 text-xs text-fg-muted">
+                  <div className="mt-2 flex items-center gap-3 text-xs text-fg-muted flex-wrap">
                     <span>{a.autor.apellido}, {a.autor.nombre}</span>
                     <span>·</span>
                     <span>{formatFecha(a.publicado_en)}</span>
+                    {a.paralelo && (
+                      <>
+                        <span>·</span>
+                        <span>{abbreviateGrado(a.paralelo.grado.nombre, a.paralelo.letra)}</span>
+                      </>
+                    )}
                   </div>
                 </div>
                 <Badge variant="info">{VISIBLE_LABELS[a.visible_para] ?? a.visible_para}</Badge>
@@ -141,6 +165,7 @@ export default function AnunciosInternosPage() {
               <span>·</span>
               <span>{formatFecha(ver.publicado_en)}</span>
               <Badge variant="info">{VISIBLE_LABELS[ver.visible_para] ?? ver.visible_para}</Badge>
+              {ver.paralelo && <Badge variant="default">{abbreviateGrado(ver.paralelo.grado.nombre, ver.paralelo.letra)}</Badge>}
             </div>
             <div className="prose prose-sm max-w-none text-fg whitespace-pre-wrap">
               {ver.contenido}
@@ -182,27 +207,55 @@ export default function AnunciosInternosPage() {
               className="rounded-lg border border-border px-3 py-2 text-sm focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand"
             />
           </div>
-          <div className="flex flex-col gap-1">
-            <label className="text-sm font-medium text-fg">Visible para</label>
-            <select
-              value={form.visible_para}
-              onChange={e => setForm(f => ({ ...f, visible_para: e.target.value }))}
-              className="rounded-lg border border-border px-3 py-2 text-sm focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand"
-            >
-              {Object.entries(VISIBLE_LABELS).map(([v, l]) => (
-                <option key={v} value={v}>{l}</option>
-              ))}
-            </select>
-          </div>
-          <label className="flex items-center gap-2 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={form.destacado}
-              onChange={e => setForm(f => ({ ...f, destacado: e.target.checked }))}
-              className="h-4 w-4 rounded border-border text-blue-600"
-            />
-            <span className="text-sm text-fg">Marcar como destacado</span>
-          </label>
+          {esDocente ? (
+            <div className="flex flex-col gap-1.5">
+              <label className="text-sm font-medium text-fg">Cursos destinatarios</label>
+              <p className="text-xs text-fg-muted">
+                Solo lo verán los estudiantes y padres/tutores de los cursos que marques — nadie más.
+              </p>
+              {misCursos.length === 0 ? (
+                <p className="text-sm text-fg-muted italic">No tienes cursos asignados.</p>
+              ) : (
+                <div className="flex flex-col gap-1.5 rounded-lg border border-border p-3 max-h-48 overflow-y-auto">
+                  {misCursos.map(c => (
+                    <label key={c.id} className="flex items-center gap-2 cursor-pointer text-sm text-fg">
+                      <input
+                        type="checkbox"
+                        checked={paraleloIds.includes(c.id)}
+                        onChange={() => toggleParalelo(c.id)}
+                        className="h-4 w-4 rounded border-border text-blue-600"
+                      />
+                      {abbreviateGrado(c.grado.nombre, c.letra)} · {c.grado.nivel.nombre}
+                    </label>
+                  ))}
+                </div>
+              )}
+            </div>
+          ) : (
+            <>
+              <div className="flex flex-col gap-1">
+                <label className="text-sm font-medium text-fg">Visible para</label>
+                <select
+                  value={form.visible_para}
+                  onChange={e => setForm(f => ({ ...f, visible_para: e.target.value }))}
+                  className="rounded-lg border border-border px-3 py-2 text-sm focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand"
+                >
+                  {Object.entries(VISIBLE_LABELS).map(([v, l]) => (
+                    <option key={v} value={v}>{l}</option>
+                  ))}
+                </select>
+              </div>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={form.destacado}
+                  onChange={e => setForm(f => ({ ...f, destacado: e.target.checked }))}
+                  className="h-4 w-4 rounded border-border text-blue-600"
+                />
+                <span className="text-sm text-fg">Marcar como destacado</span>
+              </label>
+            </>
+          )}
         </form>
       </Modal>
     </div>

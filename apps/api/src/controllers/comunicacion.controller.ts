@@ -1,4 +1,5 @@
 import type { Request, Response, NextFunction } from 'express'
+import { Rol } from '@edusync/types'
 import { AnunciosService, TareasService, MensajesService, NotificacionesService } from '../services/comunicacion.service'
 
 const anunciosSvc       = new AnunciosService()
@@ -11,6 +12,12 @@ const notificacionesSvc = new NotificacionesService()
 export class AnunciosController {
   create = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
+      if (req.auth!.rol === Rol.DOCENTE) {
+        const { titulo, contenido, paralelo_ids } = req.body as { titulo: string; contenido: string; paralelo_ids: string[] }
+        const data = await anunciosSvc.createParaDocente(req.auth!.institucion_id, req.auth!.usuario_id, { titulo, contenido, paralelo_ids })
+        res.status(201).json({ data })
+        return
+      }
       const data = await anunciosSvc.create(req.auth!.institucion_id, req.auth!.usuario_id, req.body)
       res.status(201).json({ data })
     } catch (e) { next(e) }
@@ -19,24 +26,35 @@ export class AnunciosController {
   findAll = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const { visible_para, paralelo_id } = req.query as Record<string, string>
-      const data = await anunciosSvc.findAll(req.auth!.institucion_id, {
-        ...(visible_para ? { visible_para } : {}),
-        ...(paralelo_id  ? { paralelo_id }  : {}),
-      })
+      const data = await anunciosSvc.findAll(
+        req.auth!.institucion_id,
+        { usuario_id: req.auth!.usuario_id, rol: req.auth!.rol },
+        {
+          ...(visible_para ? { visible_para } : {}),
+          ...(paralelo_id  ? { paralelo_id }  : {}),
+        },
+      )
       res.json({ data })
     } catch (e) { next(e) }
   }
 
   update = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const data = await anunciosSvc.update(req.params['id']!, req.auth!.institucion_id, req.body)
+      const data = await anunciosSvc.update(
+        req.params['id']!, req.auth!.institucion_id,
+        { usuario_id: req.auth!.usuario_id, rol: req.auth!.rol },
+        req.body,
+      )
       res.json({ data })
     } catch (e) { next(e) }
   }
 
   remove = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      await anunciosSvc.remove(req.params['id']!, req.auth!.institucion_id)
+      await anunciosSvc.remove(
+        req.params['id']!, req.auth!.institucion_id,
+        { usuario_id: req.auth!.usuario_id, rol: req.auth!.rol },
+      )
       res.status(204).end()
     } catch (e) { next(e) }
   }
