@@ -9,8 +9,14 @@ import { notFound } from './middlewares/notFound'
 import { apiRouter } from './routes'
 import { auditoriaMiddleware } from './middlewares/auditoria'
 import { tenantMiddleware } from './middlewares/tenant.middleware'
+import { apiRateLimit } from './middlewares/rateLimit'
 
 const app = express()
+
+// Cloud Run (y la mayoría de PaaS) entregan la request a través de un único proxy
+// — sin esto, express-rate-limit (y cualquier otro código que lea req.ip) vería
+// siempre la IP del proxy en vez de la del cliente real.
+app.set('trust proxy', 1)
 
 // ─── CORS dinámico: permite cualquier subdominio de BASE_DOMAIN ───────────────
 
@@ -51,7 +57,7 @@ app.get('/health', (_req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() })
 })
 
-app.use('/api/v1', tenantMiddleware, auditoriaMiddleware, apiRouter)
+app.use('/api/v1', apiRateLimit, tenantMiddleware, auditoriaMiddleware, apiRouter)
 
 app.use(notFound)
 app.use(errorHandler)

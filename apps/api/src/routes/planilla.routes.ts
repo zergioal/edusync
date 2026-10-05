@@ -2,6 +2,7 @@ import { Router } from 'express'
 import multer from 'multer'
 import { PlanillaController } from '../controllers/planilla.controller'
 import { checkAccesoAcademico } from '../middlewares/checkAccesoAcademico'
+import { checkAccesoAsignacion } from '../middlewares/checkAccesoAsignacion'
 import { requireRol } from '../middlewares/requireRol'
 import { Rol } from '@edusync/types'
 
@@ -32,14 +33,16 @@ planillaRouter.get('/hijo/:estudiante_id', checkAccesoAcademico, ctrl.getHijo)
 planillaRouter.get('/estudiante/:estudiante_id', canViewEstudiante, ctrl.getParaStaff)
 
 // ── Vista docente: planilla completa de un paralelo ───────────────────────────
-planillaRouter.get('/:asignacion_id/registro/pdf',            canManage, ctrl.getRegistroPdf)
-planillaRouter.get('/:asignacion_id/registro/excel',           canManage, ctrl.getRegistroExcel)
-planillaRouter.get('/:asignacion_id/centralizador/pdf',        canManage, ctrl.getCentralizadorAsignacionPdf)
-planillaRouter.get('/:asignacion_id/centralizador/excel',      canManage, ctrl.getCentralizadorAsignacionExcel)
-planillaRouter.get('/:asignacion_id/centralizador',            canManage, ctrl.getCentralizadorAsignacion)
-planillaRouter.get('/:asignacion_id/subareas',                  canManage, ctrl.getCentralizadorSubareas)
-planillaRouter.get('/:asignacion_id/nota-extracurricular', canGestionarExtracurricular, ctrl.getNotaExtracurricular)
-planillaRouter.put('/:asignacion_id/nota-extracurricular', canGestionarExtracurricular, ctrl.putNotaExtracurricular)
-planillaRouter.get('/:asignacion_id/plantilla',  canImportar, ctrl.getPlantillaNotas)
-planillaRouter.post('/:asignacion_id/importar',  canImportar, uploadNotas.single('file'), ctrl.postImportarNotas)
-planillaRouter.get('/:asignacion_id', canManage, ctrl.get)
+// checkAccesoAsignacion va después del rol: primero se filtra por rol, luego se
+// confirma que ESA asignación en particular le pertenece al usuario (o a su institución).
+planillaRouter.get('/:asignacion_id/registro/pdf',            canManage, checkAccesoAsignacion, ctrl.getRegistroPdf)
+planillaRouter.get('/:asignacion_id/registro/excel',           canManage, checkAccesoAsignacion, ctrl.getRegistroExcel)
+planillaRouter.get('/:asignacion_id/centralizador/pdf',        canManage, checkAccesoAsignacion, ctrl.getCentralizadorAsignacionPdf)
+planillaRouter.get('/:asignacion_id/centralizador/excel',      canManage, checkAccesoAsignacion, ctrl.getCentralizadorAsignacionExcel)
+planillaRouter.get('/:asignacion_id/centralizador',            canManage, checkAccesoAsignacion, ctrl.getCentralizadorAsignacion)
+planillaRouter.get('/:asignacion_id/subareas',                  canManage, checkAccesoAsignacion, ctrl.getCentralizadorSubareas)
+planillaRouter.get('/:asignacion_id/nota-extracurricular', canGestionarExtracurricular, checkAccesoAsignacion, ctrl.getNotaExtracurricular)
+planillaRouter.put('/:asignacion_id/nota-extracurricular', canGestionarExtracurricular, checkAccesoAsignacion, ctrl.putNotaExtracurricular)
+planillaRouter.get('/:asignacion_id/plantilla',  canImportar, checkAccesoAsignacion, ctrl.getPlantillaNotas)
+planillaRouter.post('/:asignacion_id/importar',  canImportar, checkAccesoAsignacion, uploadNotas.single('file'), ctrl.postImportarNotas)
+planillaRouter.get('/:asignacion_id', canManage, checkAccesoAsignacion, ctrl.get)
