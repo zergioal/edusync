@@ -12,33 +12,42 @@ declare global {
 
 const SYSTEM_SUBDOMAINS = new Set(['www', 'api', 'localhost', 'app', 'admin'])
 
+const BASE_DOMAIN = process.env['BASE_DOMAIN'] ?? 'edusync.com.bo'
+const BASE_LABELS = BASE_DOMAIN.split('.').length
+
+/**
+ * Extrae el subdominio institucional de un host, pero SOLO si ese host en
+ * realidad cuelga de BASE_DOMAIN. El frontend (Vercel) y la API (Cloud Run)
+ * viven en dominios distintos, así que el header Host de una request a la API
+ * nunca es "algo.edusync.com.bo" — es el hostname propio de Cloud Run. Tratar
+ * ese host como si fuera un subdominio (como se hacía antes) producía un
+ * valor "no vacío" que nunca coincidía con ninguna institución y además
+ * tapaba el fallback correcto por Origin.
+ */
+function subdomainDeHost(host: string): string {
+  if (!host.endsWith(BASE_DOMAIN)) return ''
+  const parts = host.split('.')
+  if (parts.length <= BASE_LABELS) return '' // el dominio base exacto, sin subdominio
+  const sub = parts[0]?.toLowerCase() ?? ''
+  return SYSTEM_SUBDOMAINS.has(sub) ? '' : sub
+}
+
 export async function tenantMiddleware(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
-    // 1. Obtener subdominio: header explícito > Origin > Host
-    const xTenant  = req.headers['x-tenant-subdomain'] as string | undefined
-    const host      = (req.headers['host'] ?? '').split(':')[0] ?? ''
-    let subdomain   = ''
+    // 1. Obtener subdominio: header explícito > Origin > Host (los tres solo si
+    //    de verdad cuelgan de BASE_DOMAIN)
+    const xTenant = req.headers['x-tenant-subdomain'] as string | undefined
+    let subdomain = xTenant?.trim().toLowerCase() ?? ''
 
-    if (xTenant) {
-      subdomain = xTenant.trim().toLowerCase()
-    } else if (host.includes('.')) {
-      subdomain = host.split('.')[0]?.toLowerCase() ?? ''
+    if (!subdomain) {
+      const host = (req.headers['host'] ?? '').split(':')[0] ?? ''
+      subdomain = subdomainDeHost(host)
     }
 
-    // Fallback: extraer desde el header Origin si el subdomain extraído es del sistema
-    if (!subdomain || SYSTEM_SUBDOMAINS.has(subdomain)) {
+    if (!subdomain) {
       const originHeader = req.headers['origin'] as string | undefined
       if (originHeader) {
-        try {
-          const originHost   = new URL(originHeader).hostname
-          const originParts  = originHost.split('.')
-          if (originParts.length >= 3) {
-            const originSub = originParts[0]?.toLowerCase() ?? ''
-            if (originSub && !SYSTEM_SUBDOMAINS.has(originSub)) {
-              subdomain = originSub
-            }
-          }
-        } catch { /* URL inválida, ignorar */ }
+        try { subdomain = subdomainDeHost(new URL(originHeader).hostname) } catch { /* URL inválida, ignorar */ }
       }
     }
 

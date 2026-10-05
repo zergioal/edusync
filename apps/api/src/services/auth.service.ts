@@ -1,3 +1,4 @@
+import { prisma } from '@edusync/database'
 import { AppError } from '../middlewares/errorHandler'
 
 const SUPABASE_URL    = process.env['SUPABASE_URL']!
@@ -14,7 +15,10 @@ interface SupabaseAuthResponse {
 }
 
 export class AuthService {
-  async login(email: string, password: string) {
+  // tenantId: institución resuelta del subdominio por tenantMiddleware. Si se pasa,
+  // el login solo se completa si la cuenta pertenece a ESA institución — sin esto,
+  // una cuenta de una institución podía loguearse igual desde el subdominio de otra.
+  async login(email: string, password: string, tenantId?: string) {
     const res = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, {
       method:  'POST',
       headers: { 'apikey': SUPABASE_ANON, 'Content-Type': 'application/json' },
@@ -28,6 +32,19 @@ export class AuthService {
         ? 'Correo o contraseña incorrectos'
         : data.msg ?? 'Credenciales inválidas'
       throw new AppError(401, msg, 'AUTH_FAILED')
+    }
+
+    if (tenantId) {
+      const usuario = await prisma.usuario.findUnique({
+        where:  { email },
+        select: { institucion_id: true, activo: true },
+      })
+      if (!usuario || usuario.institucion_id !== tenantId) {
+        throw new AppError(403, 'Esta cuenta no pertenece a esta institución.', 'WRONG_TENANT')
+      }
+      if (!usuario.activo) {
+        throw new AppError(403, 'Esta cuenta está inactiva.', 'INACTIVE_USER')
+      }
     }
 
     return {

@@ -11,7 +11,7 @@ export class AuthController {
   login = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const { email, password } = req.body as { email: string; password: string }
-      const result = await this.service.login(email, password)
+      const result = await this.service.login(email, password, req.tenantId)
       res.json({ data: result })
     } catch (e) {
       // express-rate-limit (loginRateLimit) deja el conteo en req.rateLimit — lo usamos
