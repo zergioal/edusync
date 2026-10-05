@@ -4,6 +4,7 @@ import { AuthProvider } from './context/AuthContext'
 import { ProtectedRoute } from './components/layout/ProtectedRoute'
 import { RoleRoute } from './components/layout/RoleRoute'
 import { RoleRedirect } from './components/layout/RoleRedirect'
+import { esDominioPlataforma } from './config/tenant'
 import { Rol } from '@edusync/types'
 import { Spinner } from '@edusync/ui'
 
@@ -18,9 +19,14 @@ const RegenteDashboard     = lazy(() => import('./pages/dashboard/RegenteDashboa
 const DirectorDashboard    = lazy(() => import('./pages/dashboard/DirectorDashboard'))
 const NotFoundPage         = lazy(() => import('./pages/NotFoundPage'))
 
-const PublicHomePage = lazy(() => import('./pages/public/HomePage'))
+const PublicHomePage    = lazy(() => import('./pages/public/HomePage'))
+const PlataformaHomePage = lazy(() => import('./pages/public/PlataformaHomePage'))
 const GaleriaPage    = lazy(() => import('./pages/public/GaleriaPage'))
 const AnunciosPage   = lazy(() => import('./pages/public/AnunciosPage'))
+
+// edusync.com.bo (sin subdominio institucional) muestra la página de la plataforma;
+// cualquier subdominio de una institución (ej. pioxii.edusync.com.bo) muestra la suya.
+const RaizPublica = esDominioPlataforma() ? PlataformaHomePage : PublicHomePage
 
 function PageLoader() {
   return (
@@ -38,7 +44,7 @@ export default function App() {
       <Suspense fallback={<PageLoader />}>
         <Routes>
           {/* ── Portal público ─────────────────────────────────────── */}
-          <Route path="/"         element={<PublicHomePage />} />
+          <Route path="/"         element={<RaizPublica />} />
           <Route path="/galeria"  element={<GaleriaPage />} />
           <Route path="/anuncios" element={<AnunciosPage />} />
           <Route path="/login"    element={<LoginPage />} />

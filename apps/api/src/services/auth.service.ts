@@ -3,11 +3,14 @@ import { AppError } from '../middlewares/errorHandler'
 const SUPABASE_URL    = process.env['SUPABASE_URL']!
 const SUPABASE_ANON   = process.env['SUPABASE_ANON_KEY']!
 
+// GoTrue (el servicio de Auth de Supabase) responde los errores de este endpoint
+// como { code, error_code, msg } — no como { error: { message } }. Se llama directo
+// por REST (no con supabase-js) para poder leer el resultado en nuestro propio formato.
 interface SupabaseAuthResponse {
-  access_token:  string
-  refresh_token: string
-  user:          { id: string; email: string }
-  error?:        { message: string }
+  access_token?:  string
+  refresh_token?: string
+  user?:          { id: string; email: string }
+  msg?:           string
 }
 
 export class AuthService {
@@ -20,8 +23,11 @@ export class AuthService {
 
     const data = await res.json() as SupabaseAuthResponse
 
-    if (!res.ok || data.error) {
-      throw new AppError(401, data.error?.message ?? 'Credenciales inválidas', 'AUTH_FAILED')
+    if (!res.ok || !data.access_token) {
+      const msg = data.msg?.includes('Invalid login credentials')
+        ? 'Correo o contraseña incorrectos'
+        : data.msg ?? 'Credenciales inválidas'
+      throw new AppError(401, msg, 'AUTH_FAILED')
     }
 
     return {
@@ -40,7 +46,7 @@ export class AuthService {
 
     const data = await res.json() as SupabaseAuthResponse
 
-    if (!res.ok || data.error) {
+    if (!res.ok || !data.access_token) {
       throw new AppError(401, 'Refresh token inválido o expirado', 'REFRESH_FAILED')
     }
 

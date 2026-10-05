@@ -152,13 +152,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [loadUserProfile])
 
   const login = async (email: string, password: string) => {
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password })
-    if (error) {
-      const msg = error.message.includes('Invalid login credentials')
-        ? 'Correo o contraseña incorrectos'
-        : error.message
-      throw new Error(msg)
+    // Pasa por nuestro backend (no por supabase-js directo) para que el rate-limit de
+    // fuerza bruta en /auth/login (6 intentos/15min + aviso de intentos restantes) aplique
+    // de verdad. El backend devuelve los tokens de Supabase tal cual los emite GoTrue.
+    const res  = await fetch(`${API_BASE}/auth/login`, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json', ...getTenantHeaders() },
+      body:    JSON.stringify({ email, password }),
+    })
+    const body = await res.json() as {
+      data?:    { access_token: string; refresh_token: string }
+      message?: string
     }
+    if (!res.ok || !body.data) throw new Error(body.message ?? 'Correo o contraseña incorrectos')
+
+    const { data, error } = await supabase.auth.setSession({
+      access_token:  body.data.access_token,
+      refresh_token: body.data.refresh_token,
+    })
+    if (error) throw new Error(error.message)
     if (data.session) await loadUserProfile(data.session)
   }
 
