@@ -2,6 +2,7 @@ import { lazy, useEffect, useState } from 'react'
 import { Routes, Route } from 'react-router-dom'
 import { DashboardLayout } from '../../components/layout/DashboardLayout'
 import { StatCard } from '../../components/ui/StatCard'
+import { MiAvatar } from '../../components/ui/MiAvatar'
 import { useAuth } from '../../context/AuthContext'
 import { ROL_LABELS } from '../../lib/roleRoutes'
 import { api } from '../../lib/api'
@@ -60,19 +61,22 @@ function CoordinadorHome() {
   return (
     <div className="space-y-5">
       <div className="flex items-start justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-fg">
-            Bienvenido, {user?.grado_academico ? `${user.grado_academico} ` : ''}{user?.nombre} {user?.apellido}
-          </h1>
-          <div className="mt-1 flex items-center gap-2">
-            <Badge variant="info">{user?.rol ? ROL_LABELS[user.rol] : ''}</Badge>
-            {gestionLabel && <span className="text-sm text-fg-muted">{gestionLabel}</span>}
-            <button
-              onClick={() => setShowEditPerfil(true)}
-              className="text-xs font-medium text-indigo-600 hover:text-indigo-800"
-            >
-              Editar mis datos
-            </button>
+        <div className="flex items-center gap-3">
+          <MiAvatar onEditar={() => setShowEditPerfil(true)} />
+          <div>
+            <h1 className="text-2xl font-bold text-fg">
+              Bienvenido, {user?.grado_academico ? `${user.grado_academico} ` : ''}{user?.nombre} {user?.apellido}
+            </h1>
+            <div className="mt-1 flex items-center gap-2">
+              <Badge variant="info">{user?.rol ? ROL_LABELS[user.rol] : ''}</Badge>
+              {gestionLabel && <span className="text-sm text-fg-muted">{gestionLabel}</span>}
+              <button
+                onClick={() => setShowEditPerfil(true)}
+                className="text-xs font-medium text-indigo-600 hover:text-indigo-800"
+              >
+                Editar mis datos
+              </button>
+            </div>
           </div>
         </div>
         {trimestreLabel && (
