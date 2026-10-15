@@ -6,6 +6,7 @@ import { Rol } from '@edusync/types'
 import { Button, Badge, Spinner } from '@edusync/ui'
 import { BackButton } from '../../components/ui/BackButton'
 import { WhatsAppButton } from '../../components/ui/WhatsAppButton'
+import { WhatsAppEntrevistaButton } from '../../components/ui/WhatsAppEntrevistaButton'
 import { SelectGestion } from '../../components/select/SelectGestion'
 import { SelectTrimestre } from '../../components/select/SelectTrimestre'
 import { useGestionActiva } from '../../hooks/useGestionActiva'
@@ -408,10 +409,17 @@ function DatosTab({
                       <p className="font-medium text-fg">{c.numero}</p>
                       {c.relacion && <p className="text-xs text-fg-muted">{c.relacion}</p>}
                     </div>
-                    <WhatsAppButton
-                      numero={c.numero}
-                      mensaje={`Hola, le escribimos de la Unidad Educativa Privada PIO XII sobre ${est.usuario.apellido}, ${est.usuario.nombre}. `}
-                    />
+                    {puedeEditarTelefonos ? (
+                      <WhatsAppEntrevistaButton
+                        numero={c.numero}
+                        estudianteNombre={`${est.usuario.apellido}, ${est.usuario.nombre}`}
+                      />
+                    ) : (
+                      <WhatsAppButton
+                        numero={c.numero}
+                        mensaje={`Hola, le escribimos de la Unidad Educativa Privada PIO XII sobre ${est.usuario.apellido}, ${est.usuario.nombre}. `}
+                      />
+                    )}
                   </div>
                 ))}
             </div>
