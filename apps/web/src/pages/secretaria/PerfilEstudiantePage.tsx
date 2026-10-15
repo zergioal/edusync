@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom'
-import { api } from '../../lib/api'
+import { api, ApiError } from '../../lib/api'
 import { useAuth } from '../../context/AuthContext'
 import { Rol } from '@edusync/types'
 import { Button, Badge, Spinner } from '@edusync/ui'
@@ -133,6 +133,68 @@ function CambiarEstadoModal({
   )
 }
 
+function EditarTelefonosModal({
+  est, onClose, onSaved,
+}: {
+  est:     Estudiante
+  onClose: () => void
+  onSaved: (data: Pick<Estudiante, 'telefono1' | 'telefono1_relacion' | 'telefono2' | 'telefono2_relacion'>) => void
+}) {
+  const [telefono1,         setTelefono1]         = useState(est.telefono1 ?? '')
+  const [telefono1Relacion, setTelefono1Relacion] = useState(est.telefono1_relacion ?? '')
+  const [telefono2,         setTelefono2]         = useState(est.telefono2 ?? '')
+  const [telefono2Relacion, setTelefono2Relacion] = useState(est.telefono2_relacion ?? '')
+  const [saving, setSaving] = useState(false)
+  const [error,  setError]  = useState('')
+
+  const inputClass = 'rounded-lg border border-border px-3 py-2 text-sm focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-200'
+
+  const handleSave = useCallback(async () => {
+    setSaving(true)
+    setError('')
+    try {
+      const data = await api.patch<Estudiante>(`/estudiantes/${est.id}/telefonos-referencia`, {
+        telefono1:          telefono1.trim() || null,
+        telefono1_relacion: telefono1Relacion.trim() || null,
+        telefono2:          telefono2.trim() || null,
+        telefono2_relacion: telefono2Relacion.trim() || null,
+      })
+      onSaved({
+        telefono1: data.telefono1, telefono1_relacion: data.telefono1_relacion,
+        telefono2: data.telefono2, telefono2_relacion: data.telefono2_relacion,
+      })
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'No se pudo guardar')
+    } finally {
+      setSaving(false)
+    }
+  }, [est.id, telefono1, telefono1Relacion, telefono2, telefono2Relacion, onSaved])
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+      <div className="w-full max-w-md rounded-2xl bg-surface p-6 shadow-xl space-y-4">
+        <h2 className="text-lg font-bold text-fg">Editar contactos de referencia</h2>
+        <p className="text-xs text-fg-muted">Puedes agregar un número nuevo o corregir uno existente, pero no borrar uno ya registrado.</p>
+        <div className="grid grid-cols-2 gap-3">
+          <input value={telefono1} onChange={e => setTelefono1(e.target.value)} type="tel"
+            placeholder="Teléfono 1" className={inputClass} />
+          <input value={telefono1Relacion} onChange={e => setTelefono1Relacion(e.target.value)}
+            placeholder="Ej: Mamá, Papá, Tía…" className={inputClass} />
+          <input value={telefono2} onChange={e => setTelefono2(e.target.value)} type="tel"
+            placeholder="Teléfono 2" className={inputClass} />
+          <input value={telefono2Relacion} onChange={e => setTelefono2Relacion(e.target.value)}
+            placeholder="Ej: Mamá, Papá, Tía…" className={inputClass} />
+        </div>
+        {error && <p className="text-sm text-red-600">{error}</p>}
+        <div className="flex justify-end gap-2 pt-2">
+          <Button type="button" variant="ghost" onClick={onClose} disabled={saving}>Cancelar</Button>
+          <Button type="button" onClick={handleSave} disabled={saving}>{saving ? '…' : 'Guardar'}</Button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 interface HistorialEstadoRow {
   id: string; estado_anterior: EstadoEstudiante | null; estado_nuevo: EstadoEstudiante
   motivo: string | null; creado_en: string
@@ -173,17 +235,20 @@ function HistorialEstado({ estudianteId }: { estudianteId: string }) {
 }
 
 function DatosTab({
-  est, canManageTecnica, onMatriculaUpdate, onEstadoUpdate,
+  est, canManageTecnica, puedeEditarTelefonos, onMatriculaUpdate, onEstadoUpdate, onTelefonosUpdate,
 }: {
   est: Estudiante
-  canManageTecnica: boolean
+  canManageTecnica:     boolean
+  puedeEditarTelefonos: boolean
   onMatriculaUpdate: (matriculaId: string, lleva_tecnica: boolean) => void
   onEstadoUpdate:    (estado: EstadoEstudiante, estado_motivo: string | null, institucion_destino: string | null) => void
+  onTelefonosUpdate: (data: Pick<Estudiante, 'telefono1' | 'telefono1_relacion' | 'telefono2' | 'telefono2_relacion'>) => void
 }) {
   const matriculaActiva = est.matriculas.find(m => m.gestion.activa) ?? est.matriculas[0]
   const [toggleLoading, setToggleLoading] = useState(false)
   const [estadoLoading, setEstadoLoading] = useState(false)
   const [estadoModal,   setEstadoModal]   = useState<EstadoEstudiante | null>(null)
+  const [editTelefonos, setEditTelefonos] = useState(false)
 
   const handleToggleTecnica = useCallback(async () => {
     if (!matriculaActiva) return
@@ -320,7 +385,15 @@ function DatosTab({
       </div>
 
       <div className="rounded-xl border border-border bg-surface shadow-sm p-6">
-        <h2 className="text-sm font-semibold uppercase tracking-wide text-fg-muted mb-4">Contactos de referencia</h2>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-fg-muted">Contactos de referencia</h2>
+          {puedeEditarTelefonos && (
+            <button type="button" onClick={() => setEditTelefonos(true)}
+              className="text-xs font-semibold text-brand hover:text-brand-hover">
+              Editar
+            </button>
+          )}
+        </div>
         {!est.telefono1 && !est.telefono2
           ? <p className="text-sm text-fg-muted italic">Sin contactos registrados</p>
           : <div className="space-y-3">
@@ -384,6 +457,14 @@ function DatosTab({
           saving={estadoLoading}
           onClose={() => setEstadoModal(null)}
           onConfirm={confirmarCambioEstado}
+        />
+      )}
+
+      {editTelefonos && (
+        <EditarTelefonosModal
+          est={est}
+          onClose={() => setEditTelefonos(false)}
+          onSaved={data => { onTelefonosUpdate(data); setEditTelefonos(false) }}
         />
       )}
     </div>
@@ -1130,7 +1211,8 @@ export default function PerfilEstudiantePage({
   const volverA = searchParams.get('volver')
 
   const { user } = useAuth()
-  const canManageTecnica = user?.rol ? CAN_MANAGE_TECNICA.includes(user.rol) : false
+  const canManageTecnica     = user?.rol ? CAN_MANAGE_TECNICA.includes(user.rol) : false
+  const puedeEditarTelefonos = user?.rol === Rol.DOCENTE
 
   // Documentos/Certificados solo para roles con acceso al módulo (mismo guard que el backend)
   const baseTabs = canManageTecnica ? ALL_TABS : ALL_TABS.filter(t => t.key !== 'documentos' && t.key !== 'certificados')
@@ -1174,6 +1256,12 @@ export default function PerfilEstudiantePage({
     setEst(prev => prev ? { ...prev, estado, estado_motivo, institucion_destino, estado_fecha: new Date().toISOString() } : prev)
   }, [])
 
+  const handleTelefonosUpdate = useCallback((
+    data: Pick<Estudiante, 'telefono1' | 'telefono1_relacion' | 'telefono2' | 'telefono2_relacion'>,
+  ) => {
+    setEst(prev => prev ? { ...prev, ...data } : prev)
+  }, [])
+
   if (loading) return <div className="flex justify-center py-16"><Spinner /></div>
   if (error || !est) return <div className="text-center py-16 text-red-500">{error || 'Estudiante no encontrado'}</div>
 
@@ -1210,7 +1298,7 @@ export default function PerfilEstudiantePage({
       </div>
 
       {/* Tab content */}
-      {tab === 'datos'          && <DatosTab         est={est} canManageTecnica={canManageTecnica} onMatriculaUpdate={handleMatriculaUpdate} onEstadoUpdate={handleEstadoUpdate} />}
+      {tab === 'datos'          && <DatosTab         est={est} canManageTecnica={canManageTecnica} puedeEditarTelefonos={puedeEditarTelefonos} onMatriculaUpdate={handleMatriculaUpdate} onEstadoUpdate={handleEstadoUpdate} onTelefonosUpdate={handleTelefonosUpdate} />}
       {tab === 'calificaciones' && <CalificacionesTab estudianteId={est.id} />}
       {tab === 'asistencia'     && <AsistenciaTab     estudianteId={est.id} />}
       {tab === 'pensiones'      && <PensionesTab       estudianteId={est.id} />}

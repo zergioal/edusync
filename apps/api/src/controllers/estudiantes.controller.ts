@@ -1,8 +1,10 @@
 import type { Request, Response, NextFunction } from 'express'
 import { EstudiantesService } from '../services/estudiantes.service'
+import { DocenteAlcanceService } from '../services/docenteAlcance.service'
 
 export class EstudiantesController {
-  private service = new EstudiantesService()
+  private service  = new EstudiantesService()
+  private alcance  = new DocenteAlcanceService()
 
   findAll = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
@@ -31,6 +33,17 @@ export class EstudiantesController {
   update = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       res.json({ data: await this.service.update(req.params['id']!, req.body, req.auth!.usuario_id) })
+    } catch (e) { next(e) }
+  }
+
+  // Docente: solo puede agregar/editar los teléfonos de referencia de sus propios
+  // estudiantes (nunca borrarlos) — ver DocenteAlcanceService y el service para el detalle.
+  updateTelefonosReferencia = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const estudiante_id = req.params['id']!
+      const docente = await this.alcance.getDocente(req.auth!.usuario_id)
+      await this.alcance.verificarAccesoEstudiante(docente.id, estudiante_id)
+      res.json({ data: await this.service.updateTelefonosReferenciaDocente(estudiante_id, req.body) })
     } catch (e) { next(e) }
   }
 

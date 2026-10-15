@@ -117,6 +117,39 @@ export class EstudiantesService {
     return est
   }
 
+  /** Edición restringida para DOCENTE: solo agrega o edita los teléfonos de
+   *  referencia, nunca borra uno que ya tenía valor (la relación de parentesco sí
+   *  se puede limpiar, es solo una etiqueta). El update() general de abajo —usado
+   *  por Admin/Director/Coordinador/Secretaría— no tiene esta restricción. */
+  async updateTelefonosReferenciaDocente(
+    id: string,
+    data: {
+      telefono1?:          string | null
+      telefono1_relacion?: string | null
+      telefono2?:          string | null
+      telefono2_relacion?: string | null
+    },
+  ) {
+    const est = await this.findOne(id)
+
+    const estData: Record<string, unknown> = {}
+    for (const campo of ['telefono1', 'telefono2'] as const) {
+      if (data[campo] === undefined) continue
+      const actual = est[campo]
+      const nuevo  = data[campo]?.trim() || null
+      if (actual && !nuevo) {
+        throw new AppError(400, 'No puedes eliminar un teléfono ya registrado, solo editarlo', 'CANNOT_DELETE_PHONE')
+      }
+      estData[campo] = nuevo
+    }
+    for (const campo of ['telefono1_relacion', 'telefono2_relacion'] as const) {
+      if (data[campo] !== undefined) estData[campo] = data[campo]?.trim() || null
+    }
+
+    if (Object.keys(estData).length === 0) return est
+    return prisma.estudiante.update({ where: { id }, data: estData, include: EST_INCLUDE })
+  }
+
   async matricular(
     institucion_id: string,
     data: {
