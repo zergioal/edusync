@@ -11,8 +11,12 @@ export class AuthController {
   login = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const { email, password } = req.body as { email: string; password: string }
-      const result = await this.service.login(email, password, req.tenantId)
-      res.json({ data: result })
+      const { usuario_id, ...publicResult } = await this.service.login(email, password, req.tenantId)
+      // /auth/login es pública (todavía no hay sesión), así que auditoriaMiddleware
+      // no tiene req.auth — sin esto, la fila de auditoría del login quedaba sin
+      // usuario asociado y era invisible para el admin que audita por institución.
+      req.auditUsuarioId = usuario_id
+      res.json({ data: publicResult })
     } catch (e) {
       // express-rate-limit (loginRateLimit) deja el conteo en req.rateLimit — lo usamos
       // para avisar antes de que se bloquee, en vez de que el usuario se entere recién

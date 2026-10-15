@@ -1,6 +1,18 @@
 import type { Request, Response, NextFunction } from 'express'
 import { prisma, Prisma } from '@edusync/database'
 
+declare global {
+  // eslint-disable-next-line @typescript-eslint/no-namespace
+  namespace Express {
+    interface Request {
+      /** Usuario a registrar en la auditoría cuando la ruta es pública (p.ej.
+       *  /auth/login) y por lo tanto req.auth nunca se llega a poblar. El
+       *  controlador lo setea tras resolver quién inició sesión. */
+      auditUsuarioId?: string | undefined
+    }
+  }
+}
+
 export function auditoriaMiddleware(req: Request, res: Response, next: NextFunction): void {
   const method = req.method.toUpperCase()
   if (!['POST', 'PUT', 'PATCH', 'DELETE'].includes(method)) { next(); return }
@@ -23,8 +35,15 @@ export function auditoriaMiddleware(req: Request, res: Response, next: NextFunct
 
       prisma.auditoriaLog.create({
         data: {
-          usuario_id:     req.auth?.usuario_id ?? null,
-          institucion_id: req.auth?.institucion_id ?? null,
+          // req.auth solo existe en rutas protegidas. /auth/login es pública a
+          // propósito (todavía no hay sesión), así que sin estos dos fallbacks
+          // (tenantId siempre se resuelve por subdominio; auditUsuarioId lo
+          // setea el controlador tras un login exitoso) cada fila de login
+          // quedaba con institucion_id null — invisible para cualquier admin,
+          // porque el filtro de /auditoria siempre compara por su propia
+          // institución.
+          usuario_id:     req.auth?.usuario_id ?? req.auditUsuarioId ?? null,
+          institucion_id: req.auth?.institucion_id ?? req.tenantId ?? null,
           accion,
           recurso,
           recurso_id: id ?? null,

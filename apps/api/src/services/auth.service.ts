@@ -34,10 +34,11 @@ export class AuthService {
       throw new AppError(401, msg, 'AUTH_FAILED')
     }
 
+    let usuario_id: string | undefined
     if (tenantId) {
       const usuario = await prisma.usuario.findUnique({
         where:  { email },
-        select: { institucion_id: true, activo: true },
+        select: { id: true, institucion_id: true, activo: true },
       })
       if (!usuario || usuario.institucion_id !== tenantId) {
         throw new AppError(403, 'Esta cuenta no pertenece a esta institución.', 'WRONG_TENANT')
@@ -45,12 +46,16 @@ export class AuthService {
       if (!usuario.activo) {
         throw new AppError(403, 'Esta cuenta está inactiva.', 'INACTIVE_USER')
       }
+      usuario_id = usuario.id
     }
 
     return {
       access_token:  data.access_token,
       refresh_token: data.refresh_token,
       user:          data.user,
+      // Uso interno (auditoría) — AuthController lo usa para marcar quién inició
+      // sesión y lo quita antes de responder al cliente.
+      usuario_id,
     }
   }
 

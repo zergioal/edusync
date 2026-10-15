@@ -46,10 +46,19 @@ auditoriaRouter.get('/staff', canView, async (req, res, next) => {
       : []
     const accionPorUsuario = new Map(ultimasAcciones.map(a => [a.usuario_id, a]))
 
+    // listUsers pagina de a 1000 — con una sola institución hoy no se nota, pero
+    // sin recorrer todas las páginas, cualquier usuario que cae en la página 2+
+    // queda silenciosamente sin "última conexión" (parece que nunca se conectó).
     let conexionPorAuthId = new Map<string, string | null>()
     try {
-      const { data } = await getSupabaseAdmin().auth.admin.listUsers({ perPage: 1000, page: 1 })
-      conexionPorAuthId = new Map(data.users.map(u => [u.id, u.last_sign_in_at ?? null]))
+      const supabaseAdmin = getSupabaseAdmin()
+      let page = 1
+      for (;;) {
+        const { data } = await supabaseAdmin.auth.admin.listUsers({ perPage: 1000, page })
+        for (const u of data.users) conexionPorAuthId.set(u.id, u.last_sign_in_at ?? null)
+        if (data.users.length < 1000) break
+        page++
+      }
     } catch { /* si falla Supabase Auth, se devuelve sin última conexión */ }
 
     const result = staff.map(s => ({
