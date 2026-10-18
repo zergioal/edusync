@@ -6,6 +6,13 @@ Todos los cambios notables del proyecto. Formato: [Keep a Changelog](https://kee
 
 ## [Unreleased]
 
+### Seguridad
+- **Aislamiento multi-institución (IDOR cross-tenant):** varios servicios resolvían un recurso por id (`findOne`/`update`/`remove`/`pagar`/`anular`/consultas de asistencia) sin verificar que perteneciera a la institución de quien hacía el pedido — un usuario autenticado de una institución podía leer o modificar un registro de otra con solo conocer su UUID. Corregido en `estudiantes.service.ts`, `usuarios.service.ts`, `pensiones.service.ts` y `asistencia.service.ts`, siguiendo el mismo patrón ya usado en `checkAccesoAsignacion` (planilla/notas)
+- **Escalada de privilegios:** `POST /api/v1/usuarios` no exigía ningún rol — cualquier usuario autenticado podía crear una cuenta con `rol` arbitrario (incluido `ADMIN_SISTEMA`). Ahora requiere `ADMIN_SISTEMA`
+- **Rutas sin control de rol:** `GET /api/v1/estudiantes/:id`, `GET /api/v1/usuarios/:id`, `GET /api/v1/asistencia/clase` y `POST /api/v1/estudiantes` no exigían ningún rol — ahora cada una exige el conjunto de roles correcto
+- Nota: el header `X-Tenant-Subdomain` del frontend **no** interviene en la autorización de estas rutas — `institucion_id` siempre sale de una consulta a la base de datos a partir del token de Supabase ya verificado, nunca de un dato que el cliente controle
+- Tests de regresión (Vitest) en `apps/api/src/tests/tenant-isolation.test.ts` y `requireRol.test.ts`
+
 ### Pendiente
 - Integración de pagos en línea (QR boliviano)
 - App móvil (React Native / Expo)

@@ -165,8 +165,8 @@ pnpm db:reset        # Resetear BD y re-seedear (¡DESTRUCTIVO!)
 Cada institución tiene un subdominio único (`pioxii.edusync.bo`). El flujo es:
 
 1. El frontend lee el subdominio del hostname (o `VITE_DEV_TENANT` en dev) y lo envía como header `X-Tenant-Subdomain`.
-2. El middleware `tenantMiddleware` resuelve el subdominio a un `institucion_id` y lo adjunta a `req.tenant`.
-3. Todos los servicios filtran datos por `institucion_id`, garantizando aislamiento total entre tenants.
+2. El middleware `tenantMiddleware` resuelve el subdominio a un `institucion_id` y lo adjunta a `req.tenantId` — usado solo para decidir la institución de un login o de una pantalla pública (ver sección "Aislamiento multi-tenant" más abajo).
+3. Una vez logueado, todos los servicios filtran datos por `req.auth.institucion_id` (resuelto server-side desde el token verificado), no por `req.tenantId`.
 
 ## Arquitectura de calificaciones (Ley 070)
 
@@ -182,12 +182,18 @@ Dimension (SER_DECIDIR, SABER, HACER, AUTOEVALUACION)
 
 ## Seguridad
 
-- Todos los endpoints (excepto `/api/v1/auth/*`) requieren JWT válido de Supabase Auth
-- El token se verifica con `SUPABASE_JWT_SECRET`
-- `institucion_id` y `rol` se extraen del `app_metadata` del JWT
+- Todos los endpoints (excepto `/api/v1/auth/*`, `/api/v1/setup/*` y `/api/v1/public/*`) requieren un token de Supabase Auth válido, verificado contra el propio Supabase (`apps/api/src/middlewares/auth.ts`)
+- `req.auth.institucion_id` y `req.auth.rol` **no** salen de ningún claim del token ni de ningún header — se resuelven con una consulta a la base de datos (`prisma.usuario.findUnique`) a partir del id de usuario ya verificado por Supabase. El cliente no puede falsificarlos
 - El middleware `requireRol` protege rutas por rol
+- Rate-limiting en `/api/v1/auth/login` (6 intentos/15min) y en el resto de la API
 - CORS dinámico: permite `devOrigin` configurado + cualquier subdominio de `BASE_DOMAIN`
 - Helmet activo en todos los entornos
+
+### Aislamiento multi-tenant
+
+El header `X-Tenant-Subdomain` (o el subdominio del `Host`) **solo sirve para enrutar** — decide a qué institución corresponde un login o una pantalla pública, antes de que exista sesión. Una vez autenticado, ninguna consulta de datos usa ese header: todas filtran por `req.auth.institucion_id`, que sale de la base de datos como se explica arriba. Cambiar el header no permite ver datos de otra institución.
+
+El riesgo real de este tipo de arquitectura no es el header, sino un patrón distinto: un servicio que resuelve un recurso por id (`findOne`, `update`, `pagar`, etc.) y se olvida de comparar su `institucion_id` contra el de quien hace el pedido — ahí sí se puede leer o modificar un registro de otra institución con solo conocer su UUID (IDOR). El patrón correcto, usado en todo el código, es resolver el recurso **y** verificar pertenencia en la misma consulta o inmediatamente después (ver `checkAccesoAsignacion.ts` para el caso de planilla/notas, o el helper `verificarParalelo`/`verificarAsignacion` en `asistencia.service.ts`). Antes de corregirlo, `estudiantes.service.ts`, `usuarios.service.ts`, `pensiones.service.ts` y `asistencia.service.ts` tenían varios métodos con este hueco — ver `CHANGELOG.md` (sección "Seguridad", Unreleased) para el detalle.
 
 ## Tests
 
