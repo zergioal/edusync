@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { api, ApiError } from '../../lib/api'
 import { useToast } from '../../components/ui/Toast'
 import { Modal } from '../../components/ui/Modal'
+import { Icon } from '../../components/ui/Icon'
 import { Button, Spinner, Badge } from '@edusync/ui'
 
 interface Asignacion {
@@ -73,6 +74,17 @@ export default function TareasPage() {
 
   const filtradas = filtro ? tareas.filter(t => t.asignacion.materia.nombre === filtro) : tareas
 
+  async function eliminarTarea(id: string, titulo: string) {
+    if (!confirm(`¿Eliminar la tarea "${titulo}"? Los estudiantes que la tenían ya no la verán.`)) return
+    try {
+      await api.delete(`/tareas/${id}`)
+      toastRef.current.success('Tarea eliminada')
+      load()
+    } catch (err) {
+      toastRef.current.error(err instanceof ApiError ? err.message : 'Error al eliminar')
+    }
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -132,6 +144,14 @@ export default function TareasPage() {
                     )}
                   </div>
                   <div className="flex flex-col items-end gap-1 flex-shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => eliminarTarea(t.id, t.titulo)}
+                      title="Eliminar tarea"
+                      className="text-fg-muted hover:text-red-600 transition-colors"
+                    >
+                      <Icon name="trash" className="h-4 w-4" />
+                    </button>
                     <span className={`text-xs font-semibold ${dias < 0 ? 'text-red-500' : dias <= 2 ? 'text-amber-500' : 'text-green-600'}`}>
                       {dias < 0 ? `Vencida hace ${-dias}d` : dias === 0 ? 'Vence hoy' : `${dias}d restantes`}
                     </span>

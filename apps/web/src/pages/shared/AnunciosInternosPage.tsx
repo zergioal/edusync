@@ -3,6 +3,7 @@ import { api, ApiError } from '../../lib/api'
 import { useAuth } from '../../context/AuthContext'
 import { useToast } from '../../components/ui/Toast'
 import { Modal } from '../../components/ui/Modal'
+import { Icon } from '../../components/ui/Icon'
 import { Button, Badge, Spinner } from '@edusync/ui'
 import { useMisCursos } from '../../hooks/useMisCursos'
 import { abbreviateGrado } from '../../lib/cursoDisplay'
@@ -15,6 +16,7 @@ interface Anuncio {
   destacado:    boolean
   publicado_en: string
   activo:       boolean
+  autor_id:     string
   autor:        { nombre: string; apellido: string; rol: string }
   paralelo:     { letra: string; grado: { nombre: string } } | null
 }
@@ -87,6 +89,18 @@ export default function AnunciosInternosPage() {
     }
   }
 
+  async function eliminarAnuncio(id: string, titulo: string) {
+    if (!confirm(`¿Eliminar el comunicado "${titulo}"? Quienes lo recibieron dejarán de verlo.`)) return
+    try {
+      await api.delete(`/anuncios/${id}`)
+      toastRef.current.success('Comunicado eliminado')
+      setVer(null)
+      load()
+    } catch (err) {
+      toastRef.current.error(err instanceof ApiError ? err.message : 'Error al eliminar')
+    }
+  }
+
   function formatFecha(s: string) {
     return new Date(s).toLocaleDateString('es-BO', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
   }
@@ -144,7 +158,19 @@ export default function AnunciosInternosPage() {
                     )}
                   </div>
                 </div>
-                <Badge variant="info">{VISIBLE_LABELS[a.visible_para] ?? a.visible_para}</Badge>
+                <div className="flex items-center gap-2 flex-shrink-0">
+                  <Badge variant="info">{VISIBLE_LABELS[a.visible_para] ?? a.visible_para}</Badge>
+                  {esDocente && a.autor_id === user?.id && (
+                    <button
+                      type="button"
+                      onClick={e => { e.stopPropagation(); eliminarAnuncio(a.id, a.titulo) }}
+                      title="Eliminar comunicado"
+                      className="text-fg-muted hover:text-red-600 transition-colors"
+                    >
+                      <Icon name="trash" className="h-4 w-4" />
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
           ))}
@@ -156,7 +182,14 @@ export default function AnunciosInternosPage() {
         isOpen={ver !== null}
         onClose={() => setVer(null)}
         title={ver?.titulo ?? ''}
-        footer={<Button variant="secondary" onClick={() => setVer(null)}>Cerrar</Button>}
+        footer={
+          <div className="flex justify-end gap-3">
+            {ver && esDocente && ver.autor_id === user?.id && (
+              <Button variant="danger" onClick={() => eliminarAnuncio(ver.id, ver.titulo)}>Eliminar</Button>
+            )}
+            <Button variant="secondary" onClick={() => setVer(null)}>Cerrar</Button>
+          </div>
+        }
       >
         {ver && (
           <div className="space-y-4">

@@ -242,6 +242,9 @@ export class AnunciosService {
       throw new AppError(403, 'Solo puedes eliminar tus propios comunicados', 'FORBIDDEN')
     }
     await prisma.anuncio.update({ where: { id }, data: { activo: false } })
+    // Anuncio no tiene FK hacia Notificacion (solo referencia_id suelto) — se borra
+    // por ese par, así quien lo recibió deja de verlo en su campana de notificaciones.
+    await prisma.notificacion.deleteMany({ where: { referencia_id: id, referencia_tipo: 'ANUNCIO' } })
   }
 }
 
@@ -346,6 +349,9 @@ export class TareasService {
 
   async remove(id: string, docente_usuario_id: string) {
     await this.update(id, docente_usuario_id, { activo: false })
+    // Tarea sí tiene FK real hacia Notificacion (tarea_id) — se borran las que haya
+    // generado, así deja de verse en la campana de quien la recibió.
+    await prisma.notificacion.deleteMany({ where: { tarea_id: id } })
   }
 }
 

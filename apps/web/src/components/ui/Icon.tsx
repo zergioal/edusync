@@ -9,7 +9,7 @@ export type IconName =
   | 'award' | 'users'
   | 'document-x' | 'user-x' | 'door-exit' | 'clipboard-x' | 'mail' | 'alert-triangle' | 'pencil' | 'user-minus'
   | 'x' | 'download' | 'upload' | 'file-pdf' | 'file-excel' | 'clock' | 'save' | 'lock'
-  | 'arrow-left' | 'settings' | 'whatsapp'
+  | 'arrow-left' | 'settings' | 'whatsapp' | 'trash'
 
 // Set minimalista de línea, mismo lenguaje visual que components/ui/NavIcon.tsx
 // (viewBox 24x24, trazo redondeado) — para tarjetas de reportes y botones de acción.
@@ -164,6 +164,12 @@ const PATHS: Record<IconName, string[]> = {
     'M12 8.5a3.5 3.5 0 100 7 3.5 3.5 0 000-7z',
     'M12 2.5v3M12 18.5v3M21.5 12h-3M5.5 12h-3',
     'M18.5 5.5l-2.1 2.1M7.6 16.4l-2.1 2.1M18.5 18.5l-2.1-2.1M7.6 7.6L5.5 5.5',
+  ],
+  trash: [
+    'M4 7h16',
+    'M9 7V5a1 1 0 011-1h4a1 1 0 011 1v2',
+    'M6 7l1 13a1 1 0 001 1h8a1 1 0 001-1l1-13',
+    'M10 11v6', 'M14 11v6',
   ],
   whatsapp: [
     'M12 3a9 9 0 00-7.75 13.5L3 21l4.65-1.22A9 9 0 1012 3z',
