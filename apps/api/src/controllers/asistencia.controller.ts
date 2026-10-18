@@ -1,6 +1,12 @@
 import type { Request, Response, NextFunction } from 'express'
 import { AsistenciaService } from '../services/asistencia.service'
 import { AppError }          from '../middlewares/errorHandler'
+import { generarHTMLTablaSimple } from '../templates/reporte-tabla.template'
+import { generateTablaSimpleExcel } from '../utils/excel.generator'
+import { generatePDFLandscape } from '../utils/pdf.generator'
+import { getInstitucionInfo } from '../utils/institucion.util'
+
+const LEYENDA_ASISTENCIA = 'P = Presente · F = Falta · A = Atraso · L = Licencia'
 
 export class AsistenciaController {
   private service = new AsistenciaService()
@@ -73,6 +79,45 @@ export class AsistenciaController {
           mes,
         ),
       })
+    } catch (e) { next(e) }
+  }
+
+  getClaseMensualPdf = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const { asignacion_id, mes } = req.query as { asignacion_id: string; mes: string }
+      if (!asignacion_id || !mes) throw new AppError(400, 'asignacion_id y mes requeridos', 'MISSING_PARAM')
+      const [tabla, institucion] = await Promise.all([
+        this.service.getClaseMensualTabla(asignacion_id, mes),
+        getInstitucionInfo(req.auth!.institucion_id),
+      ])
+      const html = generarHTMLTablaSimple({
+        institucion,
+        titulo:    `Asistencia — ${tabla.materia}`,
+        subtitulo: `${tabla.curso} · ${mes} · Gestión ${tabla.anno} · ${LEYENDA_ASISTENCIA}`,
+        columnas:  tabla.columnas,
+        filas:     tabla.filas,
+      })
+      const pdf = await generatePDFLandscape(html)
+      res.setHeader('Content-Type', 'application/pdf')
+      res.setHeader('Content-Disposition', `attachment; filename="asistencia_${mes}.pdf"`)
+      res.send(pdf)
+    } catch (e) { next(e) }
+  }
+
+  getClaseMensualExcel = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const { asignacion_id, mes } = req.query as { asignacion_id: string; mes: string }
+      if (!asignacion_id || !mes) throw new AppError(400, 'asignacion_id y mes requeridos', 'MISSING_PARAM')
+      const tabla = await this.service.getClaseMensualTabla(asignacion_id, mes)
+      const buf = generateTablaSimpleExcel({
+        titulo:    `Asistencia — ${tabla.materia}`,
+        subtitulo: `${tabla.curso} · ${mes} · Gestión ${tabla.anno} · ${LEYENDA_ASISTENCIA}`,
+        columnas:  tabla.columnas,
+        filas:     tabla.filas,
+      })
+      res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+      res.setHeader('Content-Disposition', `attachment; filename="asistencia_${mes}.xlsx"`)
+      res.send(buf)
     } catch (e) { next(e) }
   }
 

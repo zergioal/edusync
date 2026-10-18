@@ -1,9 +1,10 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useParams } from 'react-router-dom'
-import { api, ApiError } from '../../lib/api'
+import { api, apiDownload, ApiError } from '../../lib/api'
 import { useToast } from '../../components/ui/Toast'
 import { hoyLocalStr, parseFechaLocal } from '../../lib/date'
 import { BackButton } from '../../components/ui/BackButton'
+import { ExportarButton } from '../../components/ui/ExportarButton'
 import { Spinner } from '@edusync/ui'
 
 type Estado = 'PRESENTE' | 'AUSENTE' | 'TARDANZA' | 'LICENCIA'
@@ -81,6 +82,7 @@ export default function AsistenciaClasePage() {
   const [savingDays,  setSavingDays]  = useState<Set<string>>(new Set())
   const [loading,     setLoading]     = useState(true)
   const [loadingData, setLoadingData] = useState(false)
+  const [dlState,     setDlState]     = useState<'idle' | 'pdf' | 'xlsx'>('idle')
 
   // Load asignacion header once
   useEffect(() => {
@@ -183,6 +185,21 @@ export default function AsistenciaClasePage() {
     }
   }
 
+  async function exportar(tipo: 'pdf' | 'xlsx') {
+    if (!asignacion_id) return
+    setDlState(tipo)
+    try {
+      await apiDownload(
+        `/asistencia/clase/mensual/${tipo === 'pdf' ? 'pdf' : 'excel'}?asignacion_id=${asignacion_id}&mes=${mes}`,
+        `asistencia_${mes}.${tipo === 'pdf' ? 'pdf' : 'xlsx'}`,
+      )
+    } catch {
+      toastRef.current.error('Error al generar el archivo')
+    } finally {
+      setDlState('idle')
+    }
+  }
+
   async function guardarTodo() {
     const days = [...dirtyDays]
     if (days.length === 0) return
@@ -270,6 +287,8 @@ export default function AsistenciaClasePage() {
               className="px-3 py-2 text-fg-muted hover:bg-surface-2 disabled:opacity-30 transition-colors text-lg leading-none"
             >›</button>
           </div>
+
+          <ExportarButton disabled={estudiantes.length === 0} dlState={dlState} onExport={exportar} />
 
           {/* Save button */}
           {dirtyDays.size > 0 && (

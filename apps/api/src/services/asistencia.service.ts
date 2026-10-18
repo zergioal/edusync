@@ -386,6 +386,65 @@ export class AsistenciaService {
     }
   }
 
+  // ── Exportación PDF/Excel del registro mensual (docente) ─────────────────
+
+  async getClaseMensualTabla(asignacion_id: string, mes: string) {
+    const [yearStr, monthStr] = mes.split('-')
+    const year  = parseInt(yearStr!)
+    const month = parseInt(monthStr!) - 1
+    const inicio    = new Date(year, month, 1)
+    const fin       = new Date(year, month + 1, 0, 23, 59, 59, 999)
+    const diasEnMes = new Date(year, month + 1, 0).getDate()
+
+    const asig = await prisma.asignacion.findUnique({
+      where:   { id: asignacion_id },
+      include: {
+        materia:  { select: { nombre: true } },
+        paralelo: { include: { grado: { include: { nivel: true } } } },
+        gestion:  { select: { anno: true } },
+      },
+    })
+    if (!asig) throw new AppError(404, 'Asignación no encontrada', 'NOT_FOUND')
+
+    const [matriculas, registros] = await Promise.all([
+      prisma.matricula.findMany({
+        where:   { paralelo_id: asig.paralelo_id, gestion_id: asig.gestion_id, estudiante: { estado: 'ACTIVO' } },
+        include: { estudiante: { include: { usuario: { select: { nombre: true, apellido: true } } } } },
+        orderBy: { estudiante: { usuario: { apellido: 'asc' } } },
+      }),
+      prisma.asistenciaClase.findMany({
+        where:  { asignacion_id, fecha: { gte: inicio, lte: fin } },
+        select: { estudiante_id: true, fecha: true, estado: true },
+      }),
+    ])
+
+    // Mismas siglas que usa la pantalla del docente (P/F/A/L — Presente/Falta/Atraso/Licencia).
+    const ESTADO_LETRA: Record<string, string> = { PRESENTE: 'P', AUSENTE: 'F', TARDANZA: 'A', LICENCIA: 'L' }
+    const porDia = new Map<string, string>() // `${estudiante_id}-${dia_del_mes}` -> letra
+    for (const r of registros) {
+      porDia.set(`${r.estudiante_id}-${r.fecha.getUTCDate()}`, ESTADO_LETRA[r.estado] ?? '')
+    }
+
+    const columnas = [
+      { header: 'Apellidos y Nombres', key: 'estudiante' },
+      ...Array.from({ length: diasEnMes }, (_, i) => ({ header: String(i + 1), key: `d${i + 1}` })),
+    ]
+
+    const filas = matriculas.map(m => {
+      const fila: Record<string, string> = { estudiante: `${m.estudiante.usuario.apellido}, ${m.estudiante.usuario.nombre}` }
+      for (let d = 1; d <= diasEnMes; d++) fila[`d${d}`] = porDia.get(`${m.estudiante_id}-${d}`) ?? ''
+      return fila
+    })
+
+    return {
+      columnas,
+      filas,
+      materia: asig.materia.nombre,
+      curso:   `${asig.paralelo.grado.nivel.nombre} · ${asig.paralelo.grado.nombre} "${asig.paralelo.letra}"`,
+      anno:    asig.gestion.anno,
+    }
+  }
+
   // ── Estudiantes de un paralelo (para carga de asistencia) ────────────────
 
   async getEstudiantesParalelo(paralelo_id: string, gestion_id: string) {

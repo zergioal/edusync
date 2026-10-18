@@ -19,6 +19,8 @@ asistenciaRouter.get('/clase/mensual/hijo/:estudiante_id', ctrl.getClaseMensualH
 // ── Asistencia de clase (docente) ──────────────────────────────────────────
 asistenciaRouter.post('/clase',                    isDocente,  ctrl.registrarClase)
 asistenciaRouter.get('/clase/mensual',             canManage,  ctrl.getClaseMensual)
+asistenciaRouter.get('/clase/mensual/pdf',         canManage,  ctrl.getClaseMensualPdf)
+asistenciaRouter.get('/clase/mensual/excel',       canManage,  ctrl.getClaseMensualExcel)
 asistenciaRouter.get('/clase/reporte',             canManage,  ctrl.reporteClase)
 asistenciaRouter.get('/clase',                     ctrl.getClase)
 
