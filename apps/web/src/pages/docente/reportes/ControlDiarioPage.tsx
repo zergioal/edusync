@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react'
-import { Link } from 'react-router-dom'
+import { useState, useEffect, useRef } from 'react'
+import { Link, useSearchParams } from 'react-router-dom'
 import { api, apiDownload } from '../../../lib/api'
 import { useToast } from '../../../components/ui/Toast'
 import { SelectMiCurso } from '../../../components/docente/SelectMiCurso'
@@ -29,7 +29,12 @@ function mesActual() { return new Date().toISOString().slice(0, 7) }
 
 export default function ControlDiarioPage() {
   const toast = useToast()
-  const [paraleloId, setParaleloId] = useState('')
+  const [searchParams] = useSearchParams()
+  // Para enlazar directo desde "Ver reporte individual" (Control Diario del curso):
+  // se consume una sola vez, apenas cargan los estudiantes del curso pre-seleccionado.
+  const estudianteIdDesdeUrl = useRef(searchParams.get('estudiante_id') ?? '')
+
+  const [paraleloId, setParaleloId] = useState(() => searchParams.get('paralelo_id') ?? '')
   const [vista,       setVista]     = useState<Vista>('estudiante')
 
   // ── Por estudiante ──────────────────────────────────────────────────────
@@ -55,11 +60,19 @@ export default function ControlDiarioPage() {
   const [downloading, setDownloading] = useState(false)
 
   useEffect(() => {
-    setEstudianteId(''); setBuscar(''); setDataEst(null); setDataCurso(null)
-    if (!paraleloId) { setEstudiantes([]); return }
+    setDataEst(null); setDataCurso(null)
+    if (!paraleloId) { setEstudiantes([]); setEstudianteId(''); setBuscar(''); return }
     setLoadingEst(true)
     api.get<EstudianteCurso[]>(`/estudiantes?paralelo_id=${paraleloId}`)
-      .then(setEstudiantes)
+      .then(list => {
+        setEstudiantes(list)
+        if (estudianteIdDesdeUrl.current) {
+          setEstudianteId(estudianteIdDesdeUrl.current)
+          estudianteIdDesdeUrl.current = ''
+        } else {
+          setEstudianteId(''); setBuscar('')
+        }
+      })
       .catch(() => toast.error('No se pudieron cargar los estudiantes del curso'))
       .finally(() => setLoadingEst(false))
     // eslint-disable-next-line react-hooks/exhaustive-deps

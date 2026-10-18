@@ -147,7 +147,7 @@ export default function ControlDiarioParaleloPage() {
             className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-sm font-medium text-fg-muted hover:bg-surface-2 hover:text-fg transition-colors"
           >
             <Icon name="document-list" className="h-4 w-4" />
-            Ver reporte
+            Ver reporte general
           </button>
         </div>
       </div>
@@ -197,7 +197,17 @@ export default function ControlDiarioParaleloPage() {
             return (
               <div key={est.estudiante_id} className="rounded-xl border border-border bg-surface p-4 shadow-sm">
                 <div className="flex items-center justify-between gap-3 flex-wrap">
-                  <p className="font-medium text-fg">{est.apellido}, {est.nombre}</p>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <p className="font-medium text-fg">{est.apellido}, {est.nombre}</p>
+                    <button
+                      type="button"
+                      onClick={() => navigate(`/dashboard/docente/reportes/control-diario?paralelo_id=${paralelo_id}&estudiante_id=${est.estudiante_id}`)}
+                      className="inline-flex items-center gap-1 text-xs font-medium text-brand hover:text-brand-hover transition-colors"
+                    >
+                      <Icon name="document-list" className="h-3.5 w-3.5" />
+                      Ver reporte individual
+                    </button>
+                  </div>
                   {deHoy.length > 0 && (
                     <span className="text-xs font-semibold text-amber-700 bg-amber-100 rounded-full px-2 py-0.5">
                       Hoy: {deHoy.length}
