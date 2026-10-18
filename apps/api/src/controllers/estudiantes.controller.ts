@@ -1,6 +1,7 @@
 import type { Request, Response, NextFunction } from 'express'
 import { EstudiantesService } from '../services/estudiantes.service'
 import { DocenteAlcanceService } from '../services/docenteAlcance.service'
+import { Rol } from '@edusync/types'
 
 export class EstudiantesController {
   private service  = new EstudiantesService()
@@ -20,7 +21,14 @@ export class EstudiantesController {
 
   findOne = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      res.json({ data: await this.service.findOne(req.params['id']!) })
+      const estudiante_id = req.params['id']!
+      // Docente: además de ser de su institución, el estudiante debe estar en uno de
+      // sus propios cursos (institución sola no basta — ver DocenteAlcanceService).
+      if (req.auth!.rol === Rol.DOCENTE) {
+        const docente = await this.alcance.getDocente(req.auth!.usuario_id)
+        await this.alcance.verificarAccesoEstudiante(docente.id, estudiante_id)
+      }
+      res.json({ data: await this.service.findOne(estudiante_id, req.auth!.institucion_id) })
     } catch (e) { next(e) }
   }
 
@@ -32,7 +40,7 @@ export class EstudiantesController {
 
   update = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      res.json({ data: await this.service.update(req.params['id']!, req.body, req.auth!.usuario_id) })
+      res.json({ data: await this.service.update(req.params['id']!, req.body, req.auth!.usuario_id, req.auth!.institucion_id) })
     } catch (e) { next(e) }
   }
 
@@ -49,26 +57,26 @@ export class EstudiantesController {
 
   historialEstado = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      res.json({ data: await this.service.getHistorialEstado(req.params['id']!) })
+      res.json({ data: await this.service.getHistorialEstado(req.params['id']!, req.auth!.institucion_id) })
     } catch (e) { next(e) }
   }
 
   remove = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      await this.service.remove(req.params['id']!)
+      await this.service.remove(req.params['id']!, req.auth!.institucion_id)
       res.status(204).send()
     } catch (e) { next(e) }
   }
 
   linkPadre = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      res.status(201).json({ data: await this.service.linkPadre(req.params['id']!, req.body) })
+      res.status(201).json({ data: await this.service.linkPadre(req.params['id']!, req.body, req.auth!.institucion_id) })
     } catch (e) { next(e) }
   }
 
   unlinkPadre = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      res.json({ data: await this.service.unlinkPadre(req.params['id']!, req.params['padreId']!) })
+      res.json({ data: await this.service.unlinkPadre(req.params['id']!, req.params['padreId']!, req.auth!.institucion_id) })
     } catch (e) { next(e) }
   }
 }

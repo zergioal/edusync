@@ -15,7 +15,7 @@ const TRANSICIONES_VALIDAS: Record<string, string[]> = {
 }
 
 const EST_INCLUDE = {
-  usuario: { select: { nombre: true, apellido: true, email: true, activo: true } },
+  usuario: { select: { nombre: true, apellido: true, email: true, activo: true, institucion_id: true } },
   nivel:   true,
   matriculas: {
     include: {
@@ -111,9 +111,14 @@ export class EstudiantesService {
     })
   }
 
-  async findOne(id: string) {
+  // institucion_id opcional: cuando se pasa (todo caller externo debe pasarlo), se verifica
+  // que el estudiante pertenezca a esa institución — sin esto, cualquier usuario autenticado
+  // podía leer el perfil completo de un estudiante de OTRA institución solo con su UUID.
+  async findOne(id: string, institucion_id?: string) {
     const est = await prisma.estudiante.findUnique({ where: { id }, include: EST_INCLUDE })
-    if (!est) throw new AppError(404, 'Estudiante no encontrado', 'NOT_FOUND')
+    if (!est || (institucion_id && est.usuario.institucion_id !== institucion_id)) {
+      throw new AppError(404, 'Estudiante no encontrado', 'NOT_FOUND')
+    }
     return est
   }
 
@@ -178,10 +183,14 @@ export class EstudiantesService {
       where:   { id: data.paralelo_id },
       include: { grado: { include: { nivel: true } } },
     })
-    if (!paralelo) throw new AppError(404, 'Paralelo no encontrado', 'NOT_FOUND')
+    if (!paralelo || paralelo.grado.nivel.institucion_id !== institucion_id) {
+      throw new AppError(404, 'Paralelo no encontrado', 'NOT_FOUND')
+    }
 
     const gestion = await prisma.gestion.findUnique({ where: { id: data.gestion_id } })
-    if (!gestion) throw new AppError(404, 'Gestión no encontrada', 'NOT_FOUND')
+    if (!gestion || gestion.institucion_id !== institucion_id) {
+      throw new AppError(404, 'Gestión no encontrada', 'NOT_FOUND')
+    }
 
     // Check email not already registered
     const existing = await prisma.usuario.findUnique({ where: { email: data.email } })
@@ -246,6 +255,13 @@ export class EstudiantesService {
       }
     }
 
+    if (tutor1Id && data.tutor1_existing_id) {
+      const tutorExistente = await prisma.usuario.findUnique({ where: { id: tutor1Id }, select: { institucion_id: true } })
+      if (!tutorExistente || tutorExistente.institucion_id !== institucion_id) {
+        throw new AppError(404, 'Padre/tutor no encontrado', 'NOT_FOUND')
+      }
+    }
+
     if (tutor1Id) {
       await prisma.relacionPadreHijo.upsert({
         where:  { padre_id_estudiante_id: { padre_id: tutor1Id, estudiante_id: estudiante.id } },
@@ -278,8 +294,9 @@ export class EstudiantesService {
       telefono2_relacion?:   string | null
     },
     actorUsuarioId: string,
+    institucion_id: string,
   ) {
-    const est = await this.findOne(id)
+    const est = await this.findOne(id, institucion_id)
 
     const usuarioData: Record<string, unknown> = {}
     if (data.nombre   !== undefined) usuarioData.nombre   = data.nombre
@@ -368,10 +385,11 @@ export class EstudiantesService {
       }
     })
 
-    return this.findOne(id)
+    return this.findOne(id, institucion_id)
   }
 
-  async getHistorialEstado(estudiante_id: string) {
+  async getHistorialEstado(estudiante_id: string, institucion_id: string) {
+    await this.findOne(estudiante_id, institucion_id) // valida pertenencia e inexistencia
     return prisma.historialEstadoEstudiante.findMany({
       where:   { estudiante_id },
       include: { usuario: { select: { nombre: true, apellido: true } } },
@@ -382,14 +400,24 @@ export class EstudiantesService {
   async linkPadre(
     estudiante_id: string,
     data: { padre_id?: string; nombre?: string; apellido?: string; email?: string; telefono?: string },
+    institucion_id: string,
   ) {
     const est = await prisma.estudiante.findUnique({
       where:  { id: estudiante_id },
       select: { id: true, usuario: { select: { institucion_id: true } } },
     })
-    if (!est) throw new AppError(404, 'Estudiante no encontrado', 'NOT_FOUND')
+    if (!est || est.usuario.institucion_id !== institucion_id) {
+      throw new AppError(404, 'Estudiante no encontrado', 'NOT_FOUND')
+    }
 
     let padre_id = data.padre_id
+
+    if (padre_id) {
+      const padre = await prisma.usuario.findUnique({ where: { id: padre_id }, select: { institucion_id: true } })
+      if (!padre || padre.institucion_id !== institucion_id) {
+        throw new AppError(404, 'Padre/tutor no encontrado', 'NOT_FOUND')
+      }
+    }
 
     if (!padre_id) {
       if (!data.nombre || !data.apellido || !data.email) {
@@ -420,24 +448,27 @@ export class EstudiantesService {
       update: {},
     })
 
-    return this.findOne(estudiante_id)
+    return this.findOne(estudiante_id, institucion_id)
   }
 
-  async unlinkPadre(estudiante_id: string, padre_id: string) {
+  async unlinkPadre(estudiante_id: string, padre_id: string, institucion_id: string) {
+    await this.findOne(estudiante_id, institucion_id) // valida pertenencia
     await prisma.relacionPadreHijo.delete({
       where: { padre_id_estudiante_id: { padre_id, estudiante_id } },
     }).catch(() => {
       throw new AppError(404, 'Relación no encontrada', 'NOT_FOUND')
     })
-    return this.findOne(estudiante_id)
+    return this.findOne(estudiante_id, institucion_id)
   }
 
-  async remove(id: string) {
+  async remove(id: string, institucion_id: string) {
     const est = await prisma.estudiante.findUnique({
       where:  { id },
-      select: { usuario_id: true, usuario: { select: { supabase_auth_id: true } } },
+      select: { usuario_id: true, usuario: { select: { supabase_auth_id: true, institucion_id: true } } },
     })
-    if (!est) throw new AppError(404, 'Estudiante no encontrado', 'NOT_FOUND')
+    if (!est || est.usuario.institucion_id !== institucion_id) {
+      throw new AppError(404, 'Estudiante no encontrado', 'NOT_FOUND')
+    }
 
     await prisma.usuario.delete({ where: { id: est.usuario_id } })
     getSupabaseAdmin().auth.admin.deleteUser(est.usuario.supabase_auth_id).catch(() => {})
