@@ -25,7 +25,7 @@ export class UsuariosController {
 
   findOne = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const data = await this.service.findOne(req.params['id']!)
+      const data = await this.service.findOne(req.params['id']!, req.auth!.institucion_id)
       res.json({ data })
     } catch (e) { next(e) }
   }
@@ -39,7 +39,7 @@ export class UsuariosController {
 
   update = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const data = await this.service.update(req.params['id']!, req.body)
+      const data = await this.service.update(req.params['id']!, req.body, req.auth!.institucion_id)
       res.json({ data })
     } catch (e) { next(e) }
   }
@@ -77,7 +77,7 @@ export class UsuariosController {
 
   remove = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      await this.service.remove(req.params['id']!)
+      await this.service.remove(req.params['id']!, req.auth!.institucion_id)
       res.status(204).send()
     } catch (e) { next(e) }
   }
@@ -89,7 +89,7 @@ export class UsuariosController {
         res.status(400).json({ error: true, code: 'VALIDATION_ERROR', message: 'La contraseña debe tener al menos 6 caracteres' })
         return
       }
-      const data = await this.service.resetPassword(req.params['id']!, password, req.auth!.rol)
+      const data = await this.service.resetPassword(req.params['id']!, password, req.auth!.rol, req.auth!.institucion_id)
       res.json({ data })
     } catch (e) { next(e) }
   }

@@ -55,9 +55,14 @@ export class UsuariosService {
     return user
   }
 
-  async findOne(id: string) {
+  // institucion_id opcional: cuando se pasa (todo caller externo debe pasarlo, salvo
+  // reusos internos sobre el propio usuario autenticado), se verifica pertenencia —
+  // sin esto, cualquier id de usuario de OTRA institución era legible/editable igual.
+  async findOne(id: string, institucion_id?: string) {
     const user = await prisma.usuario.findUnique({ where: { id } })
-    if (!user) throw new AppError(404, 'Usuario no encontrado', 'NOT_FOUND')
+    if (!user || (institucion_id && user.institucion_id !== institucion_id)) {
+      throw new AppError(404, 'Usuario no encontrado', 'NOT_FOUND')
+    }
     return user
   }
 
@@ -68,8 +73,12 @@ export class UsuariosService {
     return prisma.usuario.create({ data: { ...data, institucion_id } })
   }
 
-  async update(id: string, data: Partial<{ nombre: string; apellido: string; activo: boolean; grado_academico: string | null; foto_url: string | null }>) {
-    await this.findOne(id)
+  async update(
+    id: string,
+    data: Partial<{ nombre: string; apellido: string; activo: boolean; grado_academico: string | null; foto_url: string | null }>,
+    institucion_id?: string,
+  ) {
+    await this.findOne(id, institucion_id)
     return prisma.usuario.update({ where: { id }, data })
   }
 
@@ -101,13 +110,13 @@ export class UsuariosService {
     return prisma.usuario.update({ where: { id: usuario_id }, data: { foto_url: null } })
   }
 
-  async remove(id: string) {
-    await this.findOne(id)
+  async remove(id: string, institucion_id?: string) {
+    await this.findOne(id, institucion_id)
     return prisma.usuario.delete({ where: { id } })
   }
 
-  async resetPassword(id: string, newPassword: string, actorRol: Rol) {
-    const usuario = await this.findOne(id)
+  async resetPassword(id: string, newPassword: string, actorRol: Rol, institucion_id: string) {
+    const usuario = await this.findOne(id, institucion_id)
     const esPersonal = ['DIRECTOR', 'COORDINADOR', 'SECRETARIA', 'CONTADOR', 'REGENTE'].includes(usuario.rol)
 
     if (esPersonal) {
