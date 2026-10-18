@@ -55,7 +55,7 @@ export class AsistenciaController {
     try {
       const { asignacion_id, mes } = req.query as { asignacion_id: string; mes: string }
       if (!asignacion_id || !mes) throw new AppError(400, 'asignacion_id y mes requeridos', 'MISSING_PARAM')
-      res.json({ data: await this.service.getClaseMensual(asignacion_id, mes) })
+      res.json({ data: await this.service.getClaseMensual(asignacion_id, mes, req.auth!.institucion_id) })
     } catch (e) { next(e) }
   }
 
@@ -87,7 +87,7 @@ export class AsistenciaController {
       const { asignacion_id, mes } = req.query as { asignacion_id: string; mes: string }
       if (!asignacion_id || !mes) throw new AppError(400, 'asignacion_id y mes requeridos', 'MISSING_PARAM')
       const [tabla, institucion] = await Promise.all([
-        this.service.getClaseMensualTabla(asignacion_id, mes),
+        this.service.getClaseMensualTabla(asignacion_id, mes, req.auth!.institucion_id),
         getInstitucionInfo(req.auth!.institucion_id),
       ])
       const html = generarHTMLTablaSimple({
@@ -108,7 +108,7 @@ export class AsistenciaController {
     try {
       const { asignacion_id, mes } = req.query as { asignacion_id: string; mes: string }
       if (!asignacion_id || !mes) throw new AppError(400, 'asignacion_id y mes requeridos', 'MISSING_PARAM')
-      const tabla = await this.service.getClaseMensualTabla(asignacion_id, mes)
+      const tabla = await this.service.getClaseMensualTabla(asignacion_id, mes, req.auth!.institucion_id)
       const buf = generateTablaSimpleExcel({
         titulo:    `Asistencia — ${tabla.materia}`,
         subtitulo: `${tabla.curso} · ${mes} · Gestión ${tabla.anno} · ${LEYENDA_ASISTENCIA}`,
@@ -125,7 +125,7 @@ export class AsistenciaController {
     try {
       const { asignacion_id, fecha } = req.query as { asignacion_id: string; fecha: string }
       if (!asignacion_id || !fecha) throw new AppError(400, 'asignacion_id y fecha requeridos', 'MISSING_PARAM')
-      res.json({ data: await this.service.getClase(asignacion_id, fecha) })
+      res.json({ data: await this.service.getClase(asignacion_id, fecha, req.auth!.institucion_id) })
     } catch (e) { next(e) }
   }
 
@@ -160,7 +160,7 @@ export class AsistenciaController {
         fecha: string
         registros: Array<{ estudiante_id: string; estado: 'PRESENTE' | 'AUSENTE' | 'TARDANZA' | 'LICENCIA' }>
       }
-      const data = await this.service.registrarDiaria(req.auth!.usuario_id, paralelo_id, fecha, registros)
+      const data = await this.service.registrarDiaria(req.auth!.usuario_id, paralelo_id, fecha, registros, req.auth!.institucion_id)
       res.status(201).json({ data })
     } catch (e) { next(e) }
   }
@@ -169,7 +169,7 @@ export class AsistenciaController {
     try {
       const { paralelo_id, fecha } = req.query as { paralelo_id: string; fecha: string }
       if (!paralelo_id || !fecha) throw new AppError(400, 'paralelo_id y fecha requeridos', 'MISSING_PARAM')
-      res.json({ data: await this.service.getDiaria(paralelo_id, fecha) })
+      res.json({ data: await this.service.getDiaria(paralelo_id, fecha, req.auth!.institucion_id) })
     } catch (e) { next(e) }
   }
 
@@ -184,7 +184,7 @@ export class AsistenciaController {
         fecha_inicio,
         fecha_fin,
         ...(estudiante_id ? { estudiante_id } : {}),
-      }) })
+      }, req.auth!.institucion_id) })
     } catch (e) { next(e) }
   }
 
@@ -194,7 +194,7 @@ export class AsistenciaController {
     try {
       const { trimestre_id } = req.query as { trimestre_id: string }
       if (!trimestre_id) throw new AppError(400, 'trimestre_id requerido', 'MISSING_PARAM')
-      res.json({ data: await this.service.consolidada(req.params['estudiante_id']!, trimestre_id) })
+      res.json({ data: await this.service.consolidada(req.params['estudiante_id']!, trimestre_id, req.auth!.institucion_id) })
     } catch (e) { next(e) }
   }
 
@@ -210,7 +210,7 @@ export class AsistenciaController {
     try {
       const { paralelo_id, gestion_id } = req.query as { paralelo_id: string; gestion_id: string }
       if (!paralelo_id || !gestion_id) throw new AppError(400, 'paralelo_id y gestion_id requeridos', 'MISSING_PARAM')
-      res.json({ data: await this.service.getEstudiantesParalelo(paralelo_id, gestion_id) })
+      res.json({ data: await this.service.getEstudiantesParalelo(paralelo_id, gestion_id, req.auth!.institucion_id) })
     } catch (e) { next(e) }
   }
 }

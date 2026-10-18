@@ -22,7 +22,7 @@ asistenciaRouter.get('/clase/mensual',             canManage,  ctrl.getClaseMens
 asistenciaRouter.get('/clase/mensual/pdf',         canManage,  ctrl.getClaseMensualPdf)
 asistenciaRouter.get('/clase/mensual/excel',       canManage,  ctrl.getClaseMensualExcel)
 asistenciaRouter.get('/clase/reporte',             canManage,  ctrl.reporteClase)
-asistenciaRouter.get('/clase',                     ctrl.getClase)
+asistenciaRouter.get('/clase',                     canManage, ctrl.getClase)
 
 // ── Asistencia diaria (regente) ────────────────────────────────────────────
 asistenciaRouter.get('/resumen-hoy',               isRegente,  ctrl.resumenHoy)

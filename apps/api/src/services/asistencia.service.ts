@@ -20,6 +20,25 @@ async function filtrarSoloActivos<T extends RegistroAsistencia>(registros: T[]):
 
 export class AsistenciaService {
 
+  // asignacion_id/paralelo_id llegan siempre en el body/query, controlados por quien
+  // llama — sin esto, cualquier staff autenticado podía leer/escribir asistencia de
+  // otra institución con solo conocer el id.
+  private async verificarAsignacion(asignacion_id: string, institucion_id: string): Promise<void> {
+    const asignacion = await prisma.asignacion.findFirst({
+      where:  { id: asignacion_id, gestion: { institucion_id } },
+      select: { id: true },
+    })
+    if (!asignacion) throw new AppError(404, 'Asignación no encontrada', 'NOT_FOUND')
+  }
+
+  private async verificarParalelo(paralelo_id: string, institucion_id: string): Promise<void> {
+    const paralelo = await prisma.paralelo.findFirst({
+      where:  { id: paralelo_id, grado: { nivel: { institucion_id } } },
+      select: { id: true },
+    })
+    if (!paralelo) throw new AppError(404, 'Paralelo no encontrado', 'NOT_FOUND')
+  }
+
   // ── Vistas estudiante/padre ────────────────────────────────────────────────
 
   async getMia(usuario_id: string, trimestre_id: string) {
@@ -74,7 +93,9 @@ export class AsistenciaService {
     return { guardados: registros.length }
   }
 
-  async getClase(asignacion_id: string, fecha: string) {
+  async getClase(asignacion_id: string, fecha: string, institucion_id: string) {
+    await this.verificarAsignacion(asignacion_id, institucion_id)
+
     const registros = await prisma.asistenciaClase.findMany({
       where:   { asignacion_id, fecha: new Date(fecha) },
       include: { estudiante: { include: { usuario: { select: { nombre: true, apellido: true } } } } },
@@ -134,7 +155,9 @@ export class AsistenciaService {
     paralelo_id: string,
     fecha: string,
     registros: RegistroAsistencia[],
+    institucion_id: string,
   ) {
+    await this.verificarParalelo(paralelo_id, institucion_id)
     registros = await filtrarSoloActivos(registros)
 
     const fechaDate = new Date(fecha)
@@ -152,7 +175,8 @@ export class AsistenciaService {
     return { guardados: registros.length }
   }
 
-  async getDiaria(paralelo_id: string, fecha: string) {
+  async getDiaria(paralelo_id: string, fecha: string, institucion_id: string) {
+    await this.verificarParalelo(paralelo_id, institucion_id)
     const registros = await prisma.asistenciaDiaria.findMany({
       where:   { paralelo_id, fecha: new Date(fecha) },
       include: { estudiante: { include: { usuario: { select: { nombre: true, apellido: true } } } } },
@@ -171,7 +195,8 @@ export class AsistenciaService {
     fecha_inicio: string
     fecha_fin: string
     estudiante_id?: string
-  }) {
+  }, institucion_id: string) {
+    await this.verificarParalelo(opts.paralelo_id, institucion_id)
     const registros = await prisma.asistenciaDiaria.findMany({
       where: {
         paralelo_id: opts.paralelo_id,
@@ -223,9 +248,21 @@ export class AsistenciaService {
 
   // ── Consolidada por estudiante ─────────────────────────────────────────────
 
-  async consolidada(estudiante_id: string, trimestre_id: string) {
-    const trimestre = await prisma.trimestre.findUnique({ where: { id: trimestre_id } })
-    if (!trimestre) throw new AppError(404, 'Trimestre no encontrado', 'NOT_FOUND')
+  async consolidada(estudiante_id: string, trimestre_id: string, institucion_id?: string) {
+    const trimestre = await prisma.trimestre.findUnique({
+      where:  { id: trimestre_id },
+      include: { gestion: { select: { institucion_id: true } } },
+    })
+    if (!trimestre || (institucion_id && trimestre.gestion.institucion_id !== institucion_id)) {
+      throw new AppError(404, 'Trimestre no encontrado', 'NOT_FOUND')
+    }
+    if (institucion_id) {
+      const estudiante = await prisma.estudiante.findFirst({
+        where:  { id: estudiante_id, usuario: { institucion_id } },
+        select: { id: true },
+      })
+      if (!estudiante) throw new AppError(404, 'Estudiante no encontrado', 'NOT_FOUND')
+    }
 
     const [diaria, clase] = await Promise.all([
       prisma.asistenciaDiaria.findMany({
@@ -346,15 +383,15 @@ export class AsistenciaService {
 
   // ── Vista mensual de clase (docente) ────────────────────────────────────
 
-  async getClaseMensual(asignacion_id: string, mes: string) {
+  async getClaseMensual(asignacion_id: string, mes: string, institucion_id: string) {
     const [yearStr, monthStr] = mes.split('-')
     const year  = parseInt(yearStr!)
     const month = parseInt(monthStr!) - 1
     const inicio = new Date(year, month, 1)
     const fin    = new Date(year, month + 1, 0, 23, 59, 59, 999)
 
-    const asig = await prisma.asignacion.findUnique({
-      where:  { id: asignacion_id },
+    const asig = await prisma.asignacion.findFirst({
+      where:  { id: asignacion_id, gestion: { institucion_id } },
       select: { paralelo_id: true, gestion_id: true },
     })
     if (!asig) throw new AppError(404, 'Asignación no encontrada', 'NOT_FOUND')
@@ -388,7 +425,7 @@ export class AsistenciaService {
 
   // ── Exportación PDF/Excel del registro mensual (docente) ─────────────────
 
-  async getClaseMensualTabla(asignacion_id: string, mes: string) {
+  async getClaseMensualTabla(asignacion_id: string, mes: string, institucion_id: string) {
     const [yearStr, monthStr] = mes.split('-')
     const year  = parseInt(yearStr!)
     const month = parseInt(monthStr!) - 1
@@ -396,8 +433,8 @@ export class AsistenciaService {
     const fin       = new Date(year, month + 1, 0, 23, 59, 59, 999)
     const diasEnMes = new Date(year, month + 1, 0).getDate()
 
-    const asig = await prisma.asignacion.findUnique({
-      where:   { id: asignacion_id },
+    const asig = await prisma.asignacion.findFirst({
+      where:   { id: asignacion_id, gestion: { institucion_id } },
       include: {
         materia:  { select: { nombre: true } },
         paralelo: { include: { grado: { include: { nivel: true } } } },
@@ -447,7 +484,8 @@ export class AsistenciaService {
 
   // ── Estudiantes de un paralelo (para carga de asistencia) ────────────────
 
-  async getEstudiantesParalelo(paralelo_id: string, gestion_id: string) {
+  async getEstudiantesParalelo(paralelo_id: string, gestion_id: string, institucion_id: string) {
+    await this.verificarParalelo(paralelo_id, institucion_id)
     const matriculas = await prisma.matricula.findMany({
       where:   { paralelo_id, gestion_id, estudiante: { estado: 'ACTIVO' } },
       include: {
