@@ -55,6 +55,7 @@ export class PensionesController {
         req.params['id']!,
         req.body as { fecha_pago: string; comprobante: string },
         req.auth!.usuario_id,
+        req.auth!.institucion_id,
       )
       res.json({ data })
     } catch (e) { next(e) }
@@ -62,7 +63,7 @@ export class PensionesController {
 
   anular = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const data = await this.service.anular(req.params['id']!, req.auth!.usuario_id)
+      const data = await this.service.anular(req.params['id']!, req.auth!.usuario_id, req.auth!.institucion_id)
       res.json({ data })
     } catch (e) { next(e) }
   }
@@ -95,7 +96,7 @@ export class PensionesController {
   estadoCuenta = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const { gestion_id } = req.query as { gestion_id?: string }
-      const data = await this.service.estadoCuenta(req.params['estudiante_id']!, gestion_id)
+      const data = await this.service.estadoCuenta(req.params['estudiante_id']!, gestion_id, req.auth!.institucion_id)
       res.json({ data })
     } catch (e) { next(e) }
   }

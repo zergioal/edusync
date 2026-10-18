@@ -267,9 +267,11 @@ export class PensionesService {
 
   // ── Pagar ────────────────────────────────────────────────────────────────────
 
-  async pagar(id: string, datos: { fecha_pago: string; comprobante: string }, registrado_por: string) {
-    const pension = await prisma.pension.findUnique({ where: { id } })
-    if (!pension) throw new AppError(404, 'Pensión no encontrada', 'NOT_FOUND')
+  async pagar(id: string, datos: { fecha_pago: string; comprobante: string }, registrado_por: string, institucion_id: string) {
+    const pension = await prisma.pension.findUnique({ where: { id }, include: { gestion: { select: { institucion_id: true } } } })
+    if (!pension || pension.gestion.institucion_id !== institucion_id) {
+      throw new AppError(404, 'Pensión no encontrada', 'NOT_FOUND')
+    }
     if (pension.pagado) throw new AppError(409, 'Esta pensión ya está pagada', 'ALREADY_PAID')
 
     const [updated] = await prisma.$transaction([
@@ -323,9 +325,11 @@ export class PensionesService {
 
   // ── Anular ───────────────────────────────────────────────────────────────────
 
-  async anular(id: string, anulado_por: string) {
-    const pension = await prisma.pension.findUnique({ where: { id } })
-    if (!pension) throw new AppError(404, 'Pensión no encontrada', 'NOT_FOUND')
+  async anular(id: string, anulado_por: string, institucion_id: string) {
+    const pension = await prisma.pension.findUnique({ where: { id }, include: { gestion: { select: { institucion_id: true } } } })
+    if (!pension || pension.gestion.institucion_id !== institucion_id) {
+      throw new AppError(404, 'Pensión no encontrada', 'NOT_FOUND')
+    }
     if (!pension.pagado) throw new AppError(409, 'Esta pensión no está pagada', 'NOT_PAID')
     return prisma.pension.update({
       where: { id },
@@ -445,7 +449,7 @@ export class PensionesService {
 
   // ── Estado de cuenta ─────────────────────────────────────────────────────────
 
-  async estadoCuenta(estudiante_id: string, gestion_id?: string) {
+  async estadoCuenta(estudiante_id: string, gestion_id?: string, institucion_id?: string) {
     const estudiante = await prisma.estudiante.findUnique({
       where:   { id: estudiante_id },
       include: {
@@ -457,7 +461,9 @@ export class PensionesService {
         },
       },
     })
-    if (!estudiante) throw new AppError(404, 'Estudiante no encontrado', 'NOT_FOUND')
+    if (!estudiante || (institucion_id && estudiante.usuario.institucion_id !== institucion_id)) {
+      throw new AppError(404, 'Estudiante no encontrado', 'NOT_FOUND')
+    }
 
     // RN-10: si es becado, retornar estado especial
     if (estudiante.becado) {
