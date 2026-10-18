@@ -7,6 +7,7 @@ import { generarHTMLRegistroMateria, type DatosRegistroMateria } from '../templa
 import { generarHTMLCentralizadorAsignacion, type DatosCentralizadorAsignacion } from '../templates/centralizador-asignacion.template'
 import { generatePDFLandscape } from '../utils/pdf.generator'
 import { generateRegistroMateriaExcel, generateCentralizadorAsignacionExcel } from '../utils/excel.generator'
+import { getInstitucionInfo } from '../utils/institucion.util'
 
 export class PlanillaController {
   private service = new PlanillaService()
@@ -20,10 +21,14 @@ export class PlanillaController {
     } catch (e) { next(e) }
   }
 
-  private async buildRegistroData(asignacion_id: string, trimestre_id: string): Promise<DatosRegistroMateria> {
-    const data = await this.service.get(asignacion_id, trimestre_id)
+  private async buildRegistroData(asignacion_id: string, trimestre_id: string, institucion_id: string): Promise<DatosRegistroMateria> {
+    const [data, institucion] = await Promise.all([
+      this.service.get(asignacion_id, trimestre_id),
+      getInstitucionInfo(institucion_id),
+    ])
     const trimestre = data.asignacion.gestion.trimestres.find(t => t.id === trimestre_id)
     return {
+      institucion,
       materia:   data.asignacion.materia.nombre,
       campo:     data.asignacion.materia.campo.nombre,
       nivel:     data.asignacion.paralelo.grado.nivel.nombre,
@@ -44,7 +49,7 @@ export class PlanillaController {
     try {
       const { trimestre_id } = req.query as Record<string, string>
       if (!trimestre_id) throw new AppError(400, 'trimestre_id es requerido', 'MISSING_PARAM')
-      const payload = await this.buildRegistroData(req.params['asignacion_id']!, trimestre_id)
+      const payload = await this.buildRegistroData(req.params['asignacion_id']!, trimestre_id, req.auth!.institucion_id)
       const pdf = await generatePDFLandscape(generarHTMLRegistroMateria(payload))
       res.setHeader('Content-Type', 'application/pdf')
       res.setHeader('Content-Disposition', `attachment; filename="registro_${payload.materia}_T${payload.trimestre}.pdf"`)
@@ -56,7 +61,7 @@ export class PlanillaController {
     try {
       const { trimestre_id } = req.query as Record<string, string>
       if (!trimestre_id) throw new AppError(400, 'trimestre_id es requerido', 'MISSING_PARAM')
-      const payload = await this.buildRegistroData(req.params['asignacion_id']!, trimestre_id)
+      const payload = await this.buildRegistroData(req.params['asignacion_id']!, trimestre_id, req.auth!.institucion_id)
       const buf = generateRegistroMateriaExcel(payload)
       res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
       res.setHeader('Content-Disposition', `attachment; filename="registro_${payload.materia}_T${payload.trimestre}.xlsx"`)
@@ -64,9 +69,13 @@ export class PlanillaController {
     } catch (e) { next(e) }
   }
 
-  private async buildCentralizadorAsignacionData(asignacion_id: string): Promise<DatosCentralizadorAsignacion> {
-    const data = await this.service.getCentralizadorAsignacion(asignacion_id)
+  private async buildCentralizadorAsignacionData(asignacion_id: string, institucion_id: string): Promise<DatosCentralizadorAsignacion> {
+    const [data, institucion] = await Promise.all([
+      this.service.getCentralizadorAsignacion(asignacion_id),
+      getInstitucionInfo(institucion_id),
+    ])
     return {
+      institucion,
       materia:    data.asignacion.materia.nombre,
       nivel:      data.asignacion.paralelo.grado.nivel.nombre,
       grado:      data.asignacion.paralelo.grado.nombre,
@@ -80,7 +89,7 @@ export class PlanillaController {
 
   getCentralizadorAsignacionPdf = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const payload = await this.buildCentralizadorAsignacionData(req.params['asignacion_id']!)
+      const payload = await this.buildCentralizadorAsignacionData(req.params['asignacion_id']!, req.auth!.institucion_id)
       const pdf = await generatePDFLandscape(generarHTMLCentralizadorAsignacion(payload))
       res.setHeader('Content-Type', 'application/pdf')
       res.setHeader('Content-Disposition', `attachment; filename="centralizador_${payload.materia}.pdf"`)
@@ -90,7 +99,7 @@ export class PlanillaController {
 
   getCentralizadorAsignacionExcel = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const payload = await this.buildCentralizadorAsignacionData(req.params['asignacion_id']!)
+      const payload = await this.buildCentralizadorAsignacionData(req.params['asignacion_id']!, req.auth!.institucion_id)
       const buf = generateCentralizadorAsignacionExcel(payload)
       res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
       res.setHeader('Content-Disposition', `attachment; filename="centralizador_${payload.materia}.xlsx"`)

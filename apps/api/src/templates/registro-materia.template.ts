@@ -1,8 +1,11 @@
+import { encabezadoConLogo, type InstitucionInfo } from './_header'
+
 const AZUL = '#1F3864'
 
 type Escala = 'ED' | 'DA' | 'DO' | 'DP'
 
 export interface DatosRegistroMateria {
+  institucion?: InstitucionInfo
   materia:   string
   campo:     string
   nivel:     string
@@ -34,6 +37,22 @@ const ESCALA_COLOR: Record<Escala, string> = {
 
 export function generarHTMLRegistroMateria(d: DatosRegistroMateria): string {
   const totalIndicCols = d.dimensiones.reduce((s, dim) => s + dim.indicadores.length, 0)
+  // Columnas de datos = una por indicador + una "PROM." por dimensión.
+  const totalDataCols = totalIndicCols + d.dimensiones.length
+
+  // Anchos fijos para las columnas que no crecen con la cantidad de indicadores;
+  // el resto se reparte en partes iguales entre las columnas de datos — así, con
+  // muchos indicadores, cada columna se angosta de forma pareja en vez de que
+  // "Apellidos y Nombres" les quite espacio (antes competían por ancho libre).
+  const PCT_NRO = 3, PCT_NOMBRE = 15, PCT_TOTAL = 5, PCT_ESCALA = 5
+  const pctDatos = totalDataCols > 0 ? (100 - PCT_NRO - PCT_NOMBRE - PCT_TOTAL - PCT_ESCALA) / totalDataCols : 0
+  const colgroup = `<colgroup>
+    <col style="width:${PCT_NRO}%">
+    <col style="width:${PCT_NOMBRE}%">
+    ${Array(totalDataCols).fill(0).map(() => `<col style="width:${pctDatos.toFixed(3)}%">`).join('')}
+    <col style="width:${PCT_TOTAL}%">
+    <col style="width:${PCT_ESCALA}%">
+  </colgroup>`
 
   const groupHeader = d.dimensiones.map(dim =>
     `<th colspan="${dim.indicadores.length + 1}" style="background:${AZUL};color:#fff;padding:4px 2px;font-size:9px;text-align:center;">${dim.nombre} <span style="font-weight:normal;">/ ${dim.puntaje_max}pts</span></th>`
@@ -41,7 +60,7 @@ export function generarHTMLRegistroMateria(d: DatosRegistroMateria): string {
 
   const indicHeader = d.dimensiones.map(dim => {
     const cols = dim.indicadores.map(ind =>
-      `<th style="background:#E8EBF0;padding:3px 1px;font-size:7px;max-width:36px;overflow:hidden;writing-mode:vertical-rl;transform:rotate(180deg);height:65px;">${ind.nombre}</th>`
+      `<th style="background:#E8EBF0;padding:3px 1px;font-size:7px;overflow:hidden;word-break:break-word;writing-mode:vertical-rl;transform:rotate(180deg);height:70px;">${ind.nombre}</th>`
     ).join('')
     return `${cols}<th style="background:#D6DCE5;color:${AZUL};padding:3px;font-size:8px;font-weight:bold;">PROM.</th>`
   }).join('')
@@ -71,27 +90,28 @@ export function generarHTMLRegistroMateria(d: DatosRegistroMateria): string {
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: Arial, sans-serif; font-size: 10px; }
-  table { border-collapse: collapse; width: 100%; }
-  th, td { border: 1px solid #ddd; }
+  table { border-collapse: collapse; width: 100%; table-layout: fixed; }
+  th, td { border: 1px solid #ddd; word-wrap: break-word; overflow-wrap: break-word; }
   @page { size: Letter landscape; margin: 0.7cm; }
 </style>
 </head>
 <body>
-<div style="text-align:center;margin-bottom:6px;">
+${encabezadoConLogo(d.institucion, `
   <div style="font-size:13px;font-weight:bold;color:${AZUL};">REGISTRO DE CALIFICACIONES</div>
   <div style="font-size:10px;color:#444;">
     ${d.materia} (${d.campo}) | ${d.nivel} – ${d.grado} "${d.paralelo}" | Trimestre ${d.trimestre}° | Gestión ${d.anno}
   </div>
   <div style="font-size:9px;color:#666;">Prof. ${d.docente}</div>
-</div>
+`)}
 <table>
+  ${colgroup}
   <thead>
     <tr>
-      <th rowspan="2" style="background:${AZUL};color:#fff;padding:4px;font-size:9px;width:24px;">N°</th>
-      <th rowspan="2" style="background:${AZUL};color:#fff;padding:4px;font-size:9px;min-width:120px;text-align:left;">Apellidos y Nombres</th>
+      <th rowspan="2" style="background:${AZUL};color:#fff;padding:4px;font-size:9px;">N°</th>
+      <th rowspan="2" style="background:${AZUL};color:#fff;padding:4px;font-size:9px;text-align:left;">Apellidos y Nombres</th>
       ${groupHeader}
-      <th rowspan="2" style="background:#111827;color:#fff;padding:4px;font-size:9px;width:36px;">Total</th>
-      <th rowspan="2" style="background:#111827;color:#fff;padding:4px;font-size:9px;width:36px;">Escala</th>
+      <th rowspan="2" style="background:#111827;color:#fff;padding:4px;font-size:9px;">Total</th>
+      <th rowspan="2" style="background:#111827;color:#fff;padding:4px;font-size:9px;">Escala</th>
     </tr>
     <tr>
       ${indicHeader}

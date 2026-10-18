@@ -1,8 +1,11 @@
+import { encabezadoConLogo, type InstitucionInfo } from './_header'
+
 const AZUL = '#1F3864'
 
 type Escala = 'ED' | 'DA' | 'DO' | 'DP'
 
 export interface DatosCentralizadorAsignacion {
+  institucion?: InstitucionInfo
   materia:   string
   nivel:     string
   grado:     string
@@ -57,12 +60,12 @@ export function generarHTMLCentralizadorAsignacion(d: DatosCentralizadorAsignaci
 </style>
 </head>
 <body>
-<div style="text-align:center;margin-bottom:6px;">
+${encabezadoConLogo(d.institucion, `
   <div style="font-size:13px;font-weight:bold;color:${AZUL};">CENTRALIZADOR DE LA MATERIA</div>
   <div style="font-size:10px;color:#444;">
     ${d.materia} | ${d.nivel} – ${d.grado} "${d.paralelo}" | Gestión ${d.anno}
   </div>
-</div>
+`)}
 <table>
   <thead>
     <tr>

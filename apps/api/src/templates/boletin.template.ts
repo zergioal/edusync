@@ -1,4 +1,5 @@
 import type { Escala } from '../services/calculo.service'
+import { LOGO_UE_DEFAULT_DATA_URI } from '../assets/logo-ue.data'
 
 const AZUL    = '#1F3864'
 const AZUL_CL = '#2E5EA8'
@@ -50,9 +51,7 @@ function headerHTML(d: BoletinBase, subtitulo: string): string {
 <table class="no-border" style="margin-bottom:8px;">
   <tr>
     <td style="width:80px;vertical-align:middle;">
-      ${d.institucion.logo_url
-        ? `<img src="${d.institucion.logo_url}" style="max-width:70px;max-height:70px;" />`
-        : `<div style="width:70px;height:70px;background:#eee;text-align:center;padding-top:25px;font-size:9px;color:#999;">LOGO</div>`}
+      <img src="${d.institucion.logo_url || LOGO_UE_DEFAULT_DATA_URI}" style="max-width:70px;max-height:70px;object-fit:contain;" />
     </td>
     <td style="text-align:center;vertical-align:middle;">
       <div style="font-size:14px;font-weight:bold;color:${AZUL};">${d.institucion.nombre}</div>
