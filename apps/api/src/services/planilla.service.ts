@@ -438,7 +438,7 @@ export class PlanillaService {
     const institucion_id = asignacion.docente.usuario.institucion_id
     const { paralelo_id, gestion_id } = asignacion
 
-    const [dimensionesRaw, subareaAsigs, matriculas] = await Promise.all([
+    const [dimensionesRaw, subareaAsigs, matriculas, paralelo, trimestre] = await Promise.all([
       prisma.dimension.findMany({ where: { institucion_id }, orderBy: { orden: 'asc' } }),
       prisma.asignacion.findMany({
         where:   { paralelo_id, gestion_id, materia: { es_subarea_de_id: padre.id } },
@@ -457,7 +457,11 @@ export class PlanillaService {
           { estudiante: { usuario: { nombre:   'asc' } } },
         ],
       }),
+      prisma.paralelo.findUnique({ where: { id: paralelo_id }, include: { grado: { include: { nivel: true } } } }),
+      prisma.trimestre.findUnique({ where: { id: trimestre_id }, include: { gestion: { select: { anno: true } } } }),
     ])
+    if (!paralelo) throw new AppError(404, 'Paralelo no encontrado', 'NOT_FOUND')
+    if (!trimestre) throw new AppError(404, 'Trimestre no encontrado', 'NOT_FOUND')
 
     const dimensiones: DimInfo[] = dimensionesRaw.map(d => ({
       id: d.id, nombre: d.nombre, puntaje_max: d.puntaje_max, orden: d.orden,
@@ -504,6 +508,11 @@ export class PlanillaService {
 
     return {
       area_padre: padre.nombre,
+      nivel:      paralelo.grado.nivel.nombre,
+      grado:      paralelo.grado.nombre,
+      paralelo:   paralelo.letra,
+      anno:       trimestre.gestion.anno,
+      trimestre:  trimestre.numero,
       subareas: subareaAsigs.map(a => ({
         asignacion_id: a.id,
         nombre:        a.materia.nombre,

@@ -5,8 +5,9 @@ import { NotasImportarService } from '../services/notas-importar.service'
 import { AppError } from '../middlewares/errorHandler'
 import { generarHTMLRegistroMateria, type DatosRegistroMateria } from '../templates/registro-materia.template'
 import { generarHTMLCentralizadorAsignacion, type DatosCentralizadorAsignacion } from '../templates/centralizador-asignacion.template'
+import { generarHTMLCentralizadorSubareas, type DatosCentralizadorSubareas } from '../templates/centralizador-subareas.template'
 import { generatePDFLandscape } from '../utils/pdf.generator'
-import { generateRegistroMateriaExcel, generateCentralizadorAsignacionExcel } from '../utils/excel.generator'
+import { generateRegistroMateriaExcel, generateCentralizadorAsignacionExcel, generateCentralizadorSubareasExcel } from '../utils/excel.generator'
 import { getInstitucionInfo } from '../utils/institucion.util'
 
 export class PlanillaController {
@@ -141,6 +142,34 @@ export class PlanillaController {
       const { trimestre_id } = req.query as Record<string, string>
       if (!trimestre_id) throw new AppError(400, 'trimestre_id es requerido', 'MISSING_PARAM')
       res.json({ data: await this.service.getCentralizadorSubareas(req.params['asignacion_id']!, trimestre_id) })
+    } catch (e) { next(e) }
+  }
+
+  getCentralizadorSubareasPdf = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const { trimestre_id } = req.query as Record<string, string>
+      if (!trimestre_id) throw new AppError(400, 'trimestre_id es requerido', 'MISSING_PARAM')
+      const [data, institucion] = await Promise.all([
+        this.service.getCentralizadorSubareas(req.params['asignacion_id']!, trimestre_id),
+        getInstitucionInfo(req.auth!.institucion_id),
+      ])
+      const payload: DatosCentralizadorSubareas = { ...data, institucion }
+      const pdf = await generatePDFLandscape(generarHTMLCentralizadorSubareas(payload))
+      res.setHeader('Content-Type', 'application/pdf')
+      res.setHeader('Content-Disposition', `attachment; filename="centralizador_subareas_${data.area_padre}.pdf"`)
+      res.send(pdf)
+    } catch (e) { next(e) }
+  }
+
+  getCentralizadorSubareasExcel = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const { trimestre_id } = req.query as Record<string, string>
+      if (!trimestre_id) throw new AppError(400, 'trimestre_id es requerido', 'MISSING_PARAM')
+      const data = await this.service.getCentralizadorSubareas(req.params['asignacion_id']!, trimestre_id)
+      const buf = generateCentralizadorSubareasExcel(data)
+      res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+      res.setHeader('Content-Disposition', `attachment; filename="centralizador_subareas_${data.area_padre}.xlsx"`)
+      res.send(buf)
     } catch (e) { next(e) }
   }
 

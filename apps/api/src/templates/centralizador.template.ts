@@ -9,7 +9,13 @@ export interface DatosCentralizador {
   nivel:     string
   trimestre: number
   anno:      number
-  materias:  Array<{ id: string; nombre: string; campo: string }>
+  materias:  Array<{
+    id: string; nombre: string; campo: string
+    /** true si esta columna es un área cuya nota sale del promedio de sus subáreas (no de indicadores propios). */
+    esAreaConSubareas?:   boolean
+    /** asignacion_id de una de sus subáreas — para enlazar al centralizador de subáreas que originó el promedio. */
+    subareaAsignacionId?: string
+  }>
   estudiantes: Array<{
     nombre:   string
     apellido: string

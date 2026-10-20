@@ -216,3 +216,58 @@ export function generateCentralizadorAsignacionExcel(data: CentralizadorAsignaci
   XLSX.utils.book_append_sheet(wb, ws, 'Centralizador')
   return XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' }) as Buffer
 }
+
+// ─── Centralizador de subáreas (promedio combinado de un área con subáreas) ──
+
+export interface CentralizadorSubareasExcelData {
+  area_padre: string
+  nivel:      string
+  grado:      string
+  paralelo:   string
+  anno:       number
+  trimestre:  number
+  subareas:   Array<{ asignacion_id: string; nombre: string; docente: string }>
+  estudiantes: Array<{
+    codigo:        string
+    nombre:        string
+    apellido:      string
+    notasSubareas: Array<{ asignacion_id: string; total: number | null }>
+    promedio:      number | null
+  }>
+}
+
+export function generateCentralizadorSubareasExcel(data: CentralizadorSubareasExcelData): Buffer {
+  const wb = XLSX.utils.book_new()
+
+  const titulo    = `Centralizador de Subáreas – ${data.area_padre}`
+  const subtitulo = `${data.nivel} ${data.grado} "${data.paralelo}" – Trimestre ${data.trimestre}° – Gestión ${data.anno}`
+
+  const headerRow1: (string | number)[] = ['N°', 'Apellidos y Nombres', ...data.subareas.map(s => s.nombre), 'Promedio combinado']
+  const headerRow2: (string | number)[] = ['', '', ...data.subareas.map(s => s.docente), '']
+
+  const rows: (string | number | null)[][] = [
+    [titulo],
+    [subtitulo],
+    [],
+    headerRow1,
+    headerRow2,
+    ...data.estudiantes.map((est, i) => [
+      i + 1,
+      `${est.apellido} ${est.nombre}`,
+      ...data.subareas.map(s => est.notasSubareas.find(n => n.asignacion_id === s.asignacion_id)?.total ?? ''),
+      est.promedio ?? '',
+    ]),
+  ]
+
+  const ws = XLSX.utils.aoa_to_sheet(rows)
+
+  const lastCol = 2 + data.subareas.length
+  ws['!cols'] = [{ wch: 4 }, { wch: 28 }, ...data.subareas.map(() => ({ wch: 14 })), { wch: 12 }]
+  ws['!merges'] = [
+    { s: { r: 0, c: 0 }, e: { r: 0, c: lastCol } },
+    { s: { r: 1, c: 0 }, e: { r: 1, c: lastCol } },
+  ]
+
+  XLSX.utils.book_append_sheet(wb, ws, 'Subáreas')
+  return XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' }) as Buffer
+}

@@ -44,7 +44,7 @@ async function loadParaleloData(
     prisma.asignacion.findMany({
       where:   { paralelo_id, gestion_id },
       include: {
-        materia:     { include: { campo: true, parent_materia: { select: { nombre: true } } } },
+        materia:     { include: { campo: true, parent_materia: { select: { id: true, nombre: true, solo_si_bth: true } } } },
         docente:     { include: { usuario: { select: { nombre: true, apellido: true } } } },
         indicadores: { where: { trimestre_id }, select: { id: true, dimension_id: true } },
       },
@@ -145,24 +145,68 @@ export class ReportesService {
     const { trimestre, paralelo, dimensiones, asignaciones, matriculas, notasIndex, notaExtraIndex } =
       await loadParaleloData(paralelo_id, trimestre_id, institucion_id)
 
-    const materias = asignaciones.map(a => ({
-      id:    a.id,
-      nombre: a.materia.nombre,
-      campo:  a.materia.campo.nombre,
-    }))
+    // Igual que en boletines.service.ts: un área con subáreas no aparece como columna
+    // propia — su nota sale del promedio de sus subáreas (ni las subáreas ni el área
+    // "antigua" se muestran por separado). Las subáreas especiales se funden en los
+    // indicadores de su subárea "normal" hermana — acá no aplica porque ninguna
+    // subárea especial aporta su propia columna/promedio (lo mismo que el boletín).
+    const regularAsigs = asignaciones.filter(a => !a.materia.es_subarea_de_id && !a.materia.tiene_subareas)
+    const subareaAsigs = asignaciones.filter(a => !!a.materia.es_subarea_de_id && !a.materia.es_especial)
+    const especialAsigs = asignaciones.filter(a => !!a.materia.es_subarea_de_id && a.materia.es_especial)
+
+    const subAreasByParent = new Map<string, typeof subareaAsigs>()
+    for (const asig of subareaAsigs) {
+      const pid = asig.materia.es_subarea_de_id!
+      if (!subAreasByParent.has(pid)) subAreasByParent.set(pid, [])
+      subAreasByParent.get(pid)!.push(asig)
+    }
+
+    const materias = [
+      ...regularAsigs.map(a => ({ id: a.id, nombre: a.materia.nombre, campo: a.materia.campo.nombre })),
+      ...[...subAreasByParent.entries()].map(([parentId, subAsigs]) => {
+        const parent = subAsigs[0]!.materia.parent_materia!
+        return {
+          id:                  `area-${parentId}`,
+          nombre:              parent.nombre,
+          campo:               subAsigs[0]!.materia.campo.nombre,
+          esAreaConSubareas:   true,
+          subareaAsignacionId: subAsigs[0]!.id,
+        }
+      }),
+    ]
 
     const estudiantesOut = matriculas.map(m => {
       const est  = m.estudiante
       const mapa = notasIndex.get(est.id) ?? new Map()
+      const llevaTecnica = m.lleva_tecnica ?? true
       const notas: Record<string, { total: number | null }> = {}
       let sumTotal = 0, cnt = 0
 
-      for (const asig of asignaciones) {
+      for (const asig of regularAsigs) {
+        const especialesDeEstaMateria = especialAsigs.filter(e => e.materia.es_subarea_de_id === asig.materia_id)
+        const indicadoresCombinados = [...asig.indicadores, ...especialesDeEstaMateria.flatMap(e => e.indicadores)]
         const notaExtracurricular = notaExtraIndex.get(`${asig.id}:${est.id}`) ?? 0
-        const { total, hasAny } = calcNotasEstudiante(asig.indicadores, mapa, dimensiones, notaExtracurricular)
+        const { total, hasAny } = calcNotasEstudiante(indicadoresCombinados, mapa, dimensiones, notaExtracurricular)
         notas[asig.id] = { total: hasAny ? total : null }
         if (hasAny) { sumTotal += total; cnt++ }
       }
+
+      for (const [parentId, subAsigsRaw] of subAreasByParent) {
+        // Subáreas de área técnica (BTH) electiva: solo cuentan para quien lleva_tecnica.
+        const subAsigs = subAsigsRaw.filter(a => !a.materia.parent_materia?.solo_si_bth || llevaTecnica)
+        const totalesConNotas: number[] = []
+        for (const asig of subAsigs) {
+          const notaExtracurricular = notaExtraIndex.get(`${asig.id}:${est.id}`) ?? 0
+          const { total, hasAny } = calcNotasEstudiante(asig.indicadores, mapa, dimensiones, notaExtracurricular)
+          if (hasAny) totalesConNotas.push(total)
+        }
+        const colId = `area-${parentId}`
+        if (totalesConNotas.length === 0) { notas[colId] = { total: null }; continue }
+        const promedioArea = Math.round(totalesConNotas.reduce((s, t) => s + t, 0) / totalesConNotas.length)
+        notas[colId] = { total: promedioArea }
+        sumTotal += promedioArea; cnt++
+      }
+
       return {
         nombre:   est.usuario.nombre,
         apellido: est.usuario.apellido,

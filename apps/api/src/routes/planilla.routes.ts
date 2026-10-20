@@ -41,6 +41,8 @@ planillaRouter.get('/:asignacion_id/centralizador/pdf',        canManage, checkA
 planillaRouter.get('/:asignacion_id/centralizador/excel',      canManage, checkAccesoAsignacion, ctrl.getCentralizadorAsignacionExcel)
 planillaRouter.get('/:asignacion_id/centralizador',            canManage, checkAccesoAsignacion, ctrl.getCentralizadorAsignacion)
 planillaRouter.get('/:asignacion_id/subareas',                  canManage, checkAccesoAsignacion, ctrl.getCentralizadorSubareas)
+planillaRouter.get('/:asignacion_id/subareas/pdf',               canManage, checkAccesoAsignacion, ctrl.getCentralizadorSubareasPdf)
+planillaRouter.get('/:asignacion_id/subareas/excel',             canManage, checkAccesoAsignacion, ctrl.getCentralizadorSubareasExcel)
 planillaRouter.get('/:asignacion_id/nota-extracurricular', canGestionarExtracurricular, checkAccesoAsignacion, ctrl.getNotaExtracurricular)
 planillaRouter.put('/:asignacion_id/nota-extracurricular', canGestionarExtracurricular, checkAccesoAsignacion, ctrl.putNotaExtracurricular)
 planillaRouter.get('/:asignacion_id/plantilla',  canImportar, checkAccesoAsignacion, ctrl.getPlantillaNotas)
