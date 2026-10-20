@@ -92,7 +92,7 @@ export class PlanillaService {
         materia: {
           include: {
             campo: true,
-            parent_materia: { select: { nombre: true } },
+            parent_materia: { select: { nombre: true, solo_si_bth: true } },
             // Subáreas especiales hermanas: sus columnas se anexan de solo lectura al registro del área.
             subareas: { where: { es_especial: true, activa: true }, select: { id: true } },
           },
@@ -115,7 +115,7 @@ export class PlanillaService {
       : { institucion_id }
 
     // Query 2+3: dimensiones y matrículas en paralelo
-    const [dimensiones, matriculas] = await Promise.all([
+    const [dimensiones, matriculasRaw] = await Promise.all([
       prisma.dimension.findMany({
         where: dimensionesWhere,
         include: {
@@ -139,6 +139,11 @@ export class PlanillaService {
         ],
       }),
     ])
+
+    // Subárea de un área electiva (ej. Técnica Tecnológica): solo aparecen los estudiantes
+    // que llevan esa modalidad, igual que ya respeta boletines.service.ts y el centralizador.
+    const esSubareaBth = !!asignacion.materia.es_subarea_de_id && !!asignacion.materia.parent_materia?.solo_si_bth
+    const matriculas = esSubareaBth ? matriculasRaw.filter(m => m.lleva_tecnica ?? true) : matriculasRaw
 
     // Auto-siembra: la primera vez que se abre la planilla de un trimestre, cada dimensión sin
     // indicadores propios recibe su set por defecto (ver INDICADORES_DEFECTO). No aplica a una
@@ -302,7 +307,12 @@ export class PlanillaService {
       where: { id: asignacion_id },
       include: {
         docente:  { include: { usuario: { select: { nombre: true, apellido: true, institucion_id: true } } } },
-        materia:  { include: { subareas: { where: { es_especial: true, activa: true }, select: { id: true } } } },
+        materia:  {
+          include: {
+            parent_materia: { select: { solo_si_bth: true } },
+            subareas: { where: { es_especial: true, activa: true }, select: { id: true } },
+          },
+        },
         paralelo: { include: { grado: { include: { nivel: true } } } },
         gestion:  { include: { trimestres: { orderBy: { numero: 'asc' as const } } } },
       },
@@ -312,7 +322,7 @@ export class PlanillaService {
     const institucion_id = asignacion.docente.usuario.institucion_id
     const trimestres      = asignacion.gestion.trimestres
 
-    const [dimensiones, matriculas] = await Promise.all([
+    const [dimensiones, matriculasRaw] = await Promise.all([
       prisma.dimension.findMany({
         where: { institucion_id },
         include: { indicadores: { where: { asignacion_id } } },
@@ -327,6 +337,10 @@ export class PlanillaService {
         ],
       }),
     ])
+
+    // Subárea de un área electiva (ej. Técnica Tecnológica): solo los estudiantes que llevan esa modalidad.
+    const esSubareaBth = !!asignacion.materia.es_subarea_de_id && !!asignacion.materia.parent_materia?.solo_si_bth
+    const matriculas = esSubareaBth ? matriculasRaw.filter(m => m.lleva_tecnica ?? true) : matriculasRaw
 
     // Si esta materia tiene subáreas especiales hermanas, sus notas se suman aquí también —
     // el total que ve el profesor A debe coincidir con el que ya ve en su registro.
