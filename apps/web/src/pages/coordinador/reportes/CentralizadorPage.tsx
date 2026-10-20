@@ -131,21 +131,33 @@ export default function CentralizadorPage() {
           <div className="overflow-x-auto">
             <table className="min-w-full border-collapse text-xs">
               <thead>
-                <tr className="bg-[#1F3864] text-white">
-                  <th className="border border-blue-800 px-2 py-1.5 text-center w-8">N°</th>
-                  <th className="border border-blue-800 px-3 py-1.5 text-left min-w-[140px]">Apellidos y Nombres</th>
+                <tr className="bg-[#1F3864]">
+                  <th className="border border-blue-800" colSpan={2}></th>
                   {data.materias.map(m => (
-                    <th key={m.id} className="border border-blue-800 px-1 py-1.5 text-center align-bottom" style={{ height: 70 }}>
+                    <th key={m.id} className="border border-blue-800 p-0.5 align-bottom">
                       {m.esAreaConSubareas && (
                         <Link
                           to={`subareas/${m.subareaAsignacionId}?trimestre_id=${trimestreId}`}
                           title={`Ver el centralizador de subáreas que generó el promedio de ${m.nombre}`}
-                          className="mb-1 block rounded bg-emerald-600 px-1 py-0.5 text-[8px] font-bold text-white hover:bg-emerald-700 whitespace-nowrap"
+                          className="block rounded bg-emerald-600 px-1 py-1 text-center text-[9px] font-bold leading-tight text-white hover:bg-emerald-700"
                         >
-                          Centralizador Subáreas
+                          Centralizador<br />Subáreas
                         </Link>
                       )}
-                      <div title={m.nombre} style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)', height: m.esAreaConSubareas ? 50 : 70, margin: '0 auto' }}>
+                    </th>
+                  ))}
+                  <th className="border border-blue-800"></th>
+                </tr>
+                <tr className="bg-[#1F3864] text-white">
+                  <th className="border border-blue-800 px-2 py-1.5 text-center w-8">N°</th>
+                  <th className="border border-blue-800 px-3 py-1.5 text-left min-w-[140px]">Apellidos y Nombres</th>
+                  {data.materias.map(m => (
+                    <th key={m.id} className="border border-blue-800 px-1 py-1.5 text-center align-bottom" style={{ height: 90 }}>
+                      <div
+                        title={m.nombre}
+                        className="text-[11px] font-semibold tracking-wide"
+                        style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)', lineHeight: 1.15, height: 86, margin: '0 auto' }}
+                      >
                         {m.nombre}
                       </div>
                     </th>
