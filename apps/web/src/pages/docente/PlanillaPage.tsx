@@ -22,6 +22,10 @@ interface IndicadorModalState {
 
 // ─── Constantes de estilo por dimensión (índice 0-3 = SER, SABER, HACER, AUTO) ─
 
+// Resaltado de fila al pasar el cursor — se repite en CADA celda de la fila (todas
+// tienen su propio fondo opaco, así que el hover del <tr> nunca se veía por debajo;
+// con group/group-hover sí gana, en los dos temas).
+const ROW_HOVER = 'group-hover:bg-indigo-100 dark:group-hover:bg-indigo-900/40'
 const DIM_HEADER_BG   = ['bg-blue-600',  'bg-emerald-600', 'bg-amber-600',  'bg-purple-600' ]
 const DIM_HEADER_TEXT = ['text-white',   'text-white',     'text-white',    'text-white'    ]
 const DIM_CELL_BG     = ['bg-blue-50 dark:bg-blue-950/30',   'bg-emerald-50 dark:bg-emerald-950/30',  'bg-amber-50 dark:bg-amber-950/30',   'bg-purple-50 dark:bg-purple-950/30'  ]
@@ -1009,14 +1013,14 @@ export default function PlanillaPage() {
               )}
 
               {estudiantes.map((est, rowIdx) => (
-                <tr key={est.id} className="hover:bg-surface-2/60 transition-colors">
+                <tr key={est.id} className="group transition-colors">
                   {/* N° */}
-                  <td className="sticky left-0 z-10 bg-surface w-10 px-2 py-2 text-center text-xs text-fg-muted border-r border-border">
+                  <td className={`sticky left-0 z-10 bg-surface ${ROW_HOVER} w-10 px-2 py-2 text-center text-xs text-fg-muted border-r border-border transition-colors`}>
                     {rowIdx + 1}
                   </td>
 
                   {/* Nombre — lleva al perfil del estudiante; "volver" regresa aquí mismo */}
-                  <td className="sticky left-10 z-10 bg-surface w-52 px-4 py-2 border-r border-border whitespace-nowrap">
+                  <td className={`sticky left-10 z-10 bg-surface ${ROW_HOVER} w-52 px-4 py-2 border-r border-border whitespace-nowrap transition-colors`}>
                     <button
                       type="button"
                       onClick={() => navigate(
@@ -1039,7 +1043,7 @@ export default function PlanillaPage() {
                         return (
                           <td
                             key={ind.id}
-                            className={`${DIM_CELL_BG[idx] ?? 'bg-bg'} border-r border-border px-1 py-1.5 text-center`}
+                            className={`${DIM_CELL_BG[idx] ?? 'bg-bg'} ${ROW_HOVER} border-r border-border px-1 py-1.5 text-center transition-colors`}
                           >
                             <NotaCell
                               value={est.notas[ind.id] ?? null}
@@ -1060,12 +1064,12 @@ export default function PlanillaPage() {
 
                       {/* Celda vacía bajo la columna "+" (mantiene alineación de columnas) */}
                       {mostrarAgregar(dim) && (
-                        <td className={`${DIM_CELL_BG[idx] ?? 'bg-bg'} border-r border-dashed border-border`} />
+                        <td className={`${DIM_CELL_BG[idx] ?? 'bg-bg'} ${ROW_HOVER} border-r border-dashed border-border transition-colors`} />
                       )}
 
                       {/* PROM celda */}
                       <td
-                        className={`${DIM_PROM_BG[idx] ?? 'bg-surface-2'} ${DIM_PROM_TEXT[idx] ?? 'text-fg'} border-r border-border px-3 py-2 text-center text-sm font-bold`}
+                        className={`${DIM_PROM_BG[idx] ?? 'bg-surface-2'} ${DIM_PROM_TEXT[idx] ?? 'text-fg'} ${ROW_HOVER} border-r border-border px-3 py-2 text-center text-sm font-bold transition-colors`}
                       >
                         {est.promedios[dim.id] != null ? est.promedios[dim.id] : <span className="text-fg-muted/50">—</span>}
                       </td>
@@ -1076,13 +1080,13 @@ export default function PlanillaPage() {
                   {!esEspecial && (
                     <>
                       <td
-                        className="px-2 py-2 text-center text-sm font-semibold text-indigo-700 dark:text-indigo-300 bg-indigo-50/60 dark:bg-indigo-500/10 border-r border-border"
+                        className={`px-2 py-2 text-center text-sm font-semibold text-indigo-700 dark:text-indigo-300 bg-indigo-50/60 dark:bg-indigo-500/10 ${ROW_HOVER} border-r border-border transition-colors`}
                         title="Cargada por Admin/Director/Coordinador/Secretaría"
                       >
                         {est.notaExtracurricular != null ? est.notaExtracurricular : <span className="text-fg-muted/50 font-normal">—</span>}
                       </td>
                       <td
-                        className={`px-3 py-2 text-center text-sm font-bold border-r border-border ${
+                        className={`px-3 py-2 text-center text-sm font-bold border-r border-border ${ROW_HOVER} transition-colors ${
                           est.total != null && est.total < 51
                             ? 'text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/30'
                             : 'text-fg bg-surface'
@@ -1100,7 +1104,7 @@ export default function PlanillaPage() {
                         ) : <span className="text-fg-muted/50">—</span>}
                       </td>
 
-                      <td className="px-3 py-2 text-center bg-surface">
+                      <td className={`px-3 py-2 text-center bg-surface ${ROW_HOVER} transition-colors`}>
                         {est.escala ? (
                           <span className={`inline-block rounded px-2 py-0.5 text-xs font-bold ${ESCALA_COLORS[est.escala] ?? ''}`}>
                             {est.escala}
