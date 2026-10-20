@@ -10,6 +10,7 @@ import PadresTutoresPage          from './PadresTutoresPage'
 import CentralizadorPage  from '../../coordinador/reportes/CentralizadorPage'
 import PromocionAnualPage from '../../coordinador/reportes/PromocionAnualPage'
 import ReporteAsistenciaPage from '../../regente/ReporteAsistenciaPage'
+import CentralizadorSubareasStaffPage from '../../shared/CentralizadorSubareasStaffPage'
 
 const CARDS: { to: string; icon: IconName; title: string; desc: string }[] = [
   { to: 'nomina',              icon: 'document-list', title: 'Nómina de Estudiantes',        desc: 'Lista de estudiantes inscritos, con filtros por gestión, nivel, grado y paralelo.' },
@@ -65,6 +66,7 @@ export default function ReportesPage() {
       <Route path="documentacion" element={<DocumentacionPendientePage />} />
       <Route path="estadistica"   element={<EstadisticaMatriculaPage />} />
       <Route path="calificaciones" element={<CentralizadorPage />} />
+      <Route path="calificaciones/subareas/:asignacion_id" element={<CentralizadorSubareasStaffPage />} />
       <Route path="asistencia"    element={<ReporteAsistenciaPage />} />
       <Route path="promocion"     element={<PromocionAnualPage />} />
       <Route path="certificados"  element={<CertificadosReportePage />} />

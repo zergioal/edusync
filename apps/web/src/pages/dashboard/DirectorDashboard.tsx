@@ -28,6 +28,7 @@ const PersonalPage             = lazy(() => import('../admin/PersonalPage'))
 const PadresPage               = lazy(() => import('../secretaria/PadresPage'))
 const ProyectosBTHPage         = lazy(() => import('../coordinador/ProyectosBTHPage'))
 const RegistrosPage            = lazy(() => import('../shared/RegistrosPage'))
+const CentralizadorSubareasStaffPage = lazy(() => import('../shared/CentralizadorSubareasStaffPage'))
 
 interface GestionInfo {
   id:        string
@@ -236,6 +237,7 @@ export default function DirectorDashboard() {
         <Route path="horarios"          element={<HorariosPage />} />
         <Route path="reportes/*"        element={<ReportesPage />} />
         <Route path="registros"         element={<RegistrosPage />} />
+        <Route path="registros/subareas/:asignacion_id" element={<CentralizadorSubareasStaffPage />} />
         <Route path="proyectos-bth"     element={<ProyectosBTHPage />} />
         <Route path="carga-horaria"     element={<CargaHorariaDocentesPage />} />
         <Route path="ajustes-institucionales" element={<AjustesInstitucionalesPage />} />

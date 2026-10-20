@@ -9,6 +9,7 @@ import PromocionAnualPage from './reportes/PromocionAnualPage'
 import ControlDiarioReportePage from './reportes/ControlDiarioReportePage'
 import ListaBTHPage       from './reportes/ListaBTHPage'
 import NotasSubareasPage  from './reportes/NotasSubareasPage'
+import CentralizadorSubareasStaffPage from '../shared/CentralizadorSubareasStaffPage'
 
 const CARDS: { to: string; icon: IconName; title: string; desc: string }[] = [
   { to: 'cuadro-honor',   icon: 'trophy',           title: 'Cuadro de Honor',          desc: 'Ranking de estudiantes por promedio general del trimestre.' },
@@ -64,6 +65,7 @@ export default function ReportesPage() {
       <Route index           element={<ReportesMenu />} />
       <Route path="cuadro-honor"  element={<CuadroHonorPage />} />
       <Route path="centralizador" element={<CentralizadorPage />} />
+      <Route path="centralizador/subareas/:asignacion_id" element={<CentralizadorSubareasStaffPage />} />
       <Route path="parciales"     element={<ParcialesPage />} />
       <Route path="carpetas"      element={<CarpetasPage />} />
       <Route path="promocion"     element={<PromocionAnualPage />} />

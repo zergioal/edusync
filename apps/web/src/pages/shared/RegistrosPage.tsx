@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef, Fragment } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { useSearchParams, useNavigate } from 'react-router-dom'
 import { api, apiDownload } from '../../lib/api'
 import { useToast } from '../../components/ui/Toast'
 import { useGestionActiva } from '../../hooks/useGestionActiva'
@@ -68,6 +68,7 @@ function PlanillaLectura({ asignacionId, onBack }: { asignacionId: string; onBac
   const toast    = useToast()
   const toastRef = useRef(toast)
   toastRef.current = toast
+  const navigate = useNavigate()
 
   const [trimestreId, setTrimestreId] = useState('')
   const [initDone,    setInitDone]    = useState(false)
@@ -163,6 +164,18 @@ function PlanillaLectura({ asignacionId, onBack }: { asignacionId: string; onBac
         <div className="rounded-lg bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-200 dark:border-indigo-500/30 px-4 py-3 text-sm text-indigo-800 dark:text-indigo-300">
           Subárea especial — sus notas se promedian dentro de {asignacion.materia.parent_materia?.nombre ?? 'el área principal'}, no tienen una nota final propia.
         </div>
+      )}
+
+      {/* Subárea normal: acceso directo al centralizador de subáreas del área */}
+      {asignacion.materia.es_subarea_de_id && !esEspecial && (
+        <button
+          type="button"
+          onClick={() => navigate(`subareas/${asignacionId}?trimestre_id=${trimestreActual?.id ?? ''}`)}
+          className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700 transition-colors"
+        >
+          <Icon name="notebook" className="h-4 w-4" />
+          Centralizador de subáreas de {asignacion.materia.parent_materia?.nombre ?? 'esta área'}
+        </button>
       )}
 
       {/* Datos: exportar el registro */}
