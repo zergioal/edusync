@@ -22,10 +22,11 @@ interface IndicadorModalState {
 
 // ─── Constantes de estilo por dimensión (índice 0-3 = SER, SABER, HACER, AUTO) ─
 
-// Resaltado de fila al pasar el cursor — se repite en CADA celda de la fila (todas
-// tienen su propio fondo opaco, así que el hover del <tr> nunca se veía por debajo;
-// con group/group-hover sí gana, en los dos temas).
-const ROW_HOVER = 'group-hover:bg-indigo-100 dark:group-hover:bg-indigo-900/40'
+// Resaltado de fila al pasar el cursor o al navegar con el teclado (flechas entre casillas,
+// que mueven el foco con .focus() — eso activa :focus-within en el <tr> sin JS adicional) —
+// se repite en CADA celda de la fila (todas tienen su propio fondo opaco, así que el hover
+// del <tr> nunca se veía por debajo; con group/group-hover sí gana, en los dos temas).
+const ROW_HOVER = 'group-hover:bg-indigo-100 dark:group-hover:bg-indigo-900/40 group-focus-within:bg-indigo-100 dark:group-focus-within:bg-indigo-900/40'
 const DIM_HEADER_BG   = ['bg-blue-600',  'bg-emerald-600', 'bg-amber-600',  'bg-purple-600' ]
 const DIM_HEADER_TEXT = ['text-white',   'text-white',     'text-white',    'text-white'    ]
 const DIM_CELL_BG     = ['bg-blue-50 dark:bg-blue-950/30',   'bg-emerald-50 dark:bg-emerald-950/30',  'bg-amber-50 dark:bg-amber-950/30',   'bg-purple-50 dark:bg-purple-950/30'  ]
