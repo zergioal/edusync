@@ -6,7 +6,7 @@ import { ApiError, apiDownload, apiUpload } from '../../lib/api'
 import { Button, Spinner, Badge } from '@edusync/ui'
 import { getTrimestreActivo, trimestreLabel } from '../../lib/trimestre'
 import { useIsMobile } from '../../hooks/useIsMobile'
-import { useCentralizadorAnualMensaje, type MensajeAnual } from '../../hooks/useCentralizadorAnualMensaje'
+import { useCentralizadorAnualMensaje, colorDeMensaje, type MensajeAnual } from '../../hooks/useCentralizadorAnualMensaje'
 import { IndicadorFormModal, type IndicadorFormValues } from '../../components/planilla/IndicadorFormModal'
 import { ImportarNotasResultModal, type ImportarNotasResult } from '../../components/planilla/ImportarNotasResultModal'
 import { ExportarButton } from '../../components/ui/ExportarButton'
@@ -541,7 +541,7 @@ function PlanillaMobileView({
             <p className="text-xs text-white/60 truncate">{estudiante.apellido}, {estudiante.nombre}</p>
             <span className="font-semibold text-sm">Total</span>
             {esUltimoTrimestre && mensajeDe(estudiante.id, estudiante.total) && (
-              <p className={`text-[11px] font-semibold ${mensajeDe(estudiante.id, estudiante.total)!.aprobado ? 'text-emerald-400' : 'text-red-400'}`}>
+              <p className={`mt-0.5 inline-block rounded px-1.5 py-0.5 text-[10px] font-bold ${colorDeMensaje(mensajeDe(estudiante.id, estudiante.total)!)}`}>
                 {mensajeDe(estudiante.id, estudiante.total)!.texto}
               </p>
             )}
@@ -1153,7 +1153,7 @@ export default function PlanillaPage() {
                       {esUltimoTrimestre && (
                         <td className={`px-3 py-2 text-center bg-surface ${ROW_HOVER} transition-colors`}>
                           {mensajeDe(est.id, est.total) && (
-                            <span className={`text-xs font-semibold ${mensajeDe(est.id, est.total)!.aprobado ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}`}>
+                            <span className={`inline-block rounded px-2 py-0.5 text-xs font-bold ${colorDeMensaje(mensajeDe(est.id, est.total)!)}`}>
                               {mensajeDe(est.id, est.total)!.texto}
                             </span>
                           )}

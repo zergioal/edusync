@@ -10,6 +10,15 @@ interface CentralizadorAnualData {
 export interface MensajeAnual {
   texto:    string
   aprobado: boolean
+  falta:    number
+}
+
+/** Color del aviso según cuánto le falta: 1-50 blanco, 51-59 amarillo, 60+ rojo. Aprobado: verde. */
+export function colorDeMensaje(msg: MensajeAnual): string {
+  if (msg.aprobado) return 'bg-emerald-600 text-white'
+  if (msg.falta <= 50) return 'bg-slate-500 dark:bg-slate-600 text-white'
+  if (msg.falta <= 59) return 'bg-amber-500 text-white'
+  return 'bg-red-600 text-white'
 }
 
 /**
@@ -44,8 +53,8 @@ export function useCentralizadorAnualMensaje(
     const falta = data.meta - acumulado
 
     return falta <= 0
-      ? { texto: 'Aprobado de año', aprobado: true }
-      : { texto: `Le falta ${falta} puntos para aprobar de año`, aprobado: false }
+      ? { texto: 'Aprobado de año', aprobado: true, falta: 0 }
+      : { texto: `Le falta ${falta} puntos para aprobar de año`, aprobado: false, falta }
   }
 
   return { mensajeDe }

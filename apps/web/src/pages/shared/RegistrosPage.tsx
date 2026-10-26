@@ -4,7 +4,7 @@ import { api, apiDownload } from '../../lib/api'
 import { useToast } from '../../components/ui/Toast'
 import { useGestionActiva } from '../../hooks/useGestionActiva'
 import { usePlanilla } from '../../hooks/usePlanilla'
-import { useCentralizadorAnualMensaje } from '../../hooks/useCentralizadorAnualMensaje'
+import { useCentralizadorAnualMensaje, colorDeMensaje } from '../../hooks/useCentralizadorAnualMensaje'
 import { getTrimestreActivo, trimestreLabel } from '../../lib/trimestre'
 import { abbreviateGrado, NIVEL_STYLES, NIVEL_FALLBACK } from '../../lib/cursoDisplay'
 import { Spinner, Badge } from '@edusync/ui'
@@ -251,8 +251,10 @@ function PlanillaLectura({ asignacionId, onBack }: { asignacionId: string; onBac
               </div>
             )}
             {esUltimoTrimestre && !esEspecial && mensajeDe(est.id, est.total) && (
-              <p className={`mt-1 text-right text-[11px] font-semibold ${mensajeDe(est.id, est.total)!.aprobado ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}`}>
-                {mensajeDe(est.id, est.total)!.texto}
+              <p className="mt-1 text-right">
+                <span className={`inline-block rounded px-2 py-0.5 text-[11px] font-bold ${colorDeMensaje(mensajeDe(est.id, est.total)!)}`}>
+                  {mensajeDe(est.id, est.total)!.texto}
+                </span>
               </p>
             )}
           </div>
@@ -358,7 +360,7 @@ function PlanillaLectura({ asignacionId, onBack }: { asignacionId: string; onBac
                     {esUltimoTrimestre && (
                       <td className="px-3 py-2 text-center bg-surface">
                         {mensajeDe(est.id, est.total) && (
-                          <span className={`text-xs font-semibold ${mensajeDe(est.id, est.total)!.aprobado ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}`}>
+                          <span className={`inline-block rounded px-2 py-0.5 text-xs font-bold ${colorDeMensaje(mensajeDe(est.id, est.total)!)}`}>
                             {mensajeDe(est.id, est.total)!.texto}
                           </span>
                         )}
