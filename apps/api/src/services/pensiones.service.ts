@@ -8,6 +8,17 @@ const MES_NOMBRES = [
   'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre',
 ]
 
+/**
+ * Convierte una fecha "YYYY-MM-DD" (sin hora, elegida por el usuario en su calendario local) a un
+ * Date anclado al mediodía UTC de ese mismo día — `new Date("YYYY-MM-DD")` la interpreta como
+ * medianoche UTC, que al mostrarla luego con la hora local de Bolivia (UTC-4) retrocede al día
+ * anterior. Mediodía UTC es seguro para cualquier zona horaria real.
+ */
+function parseFechaSolo(fecha: string): Date {
+  const [anno, mes, dia] = fecha.split('-').map(Number)
+  return new Date(Date.UTC(anno!, mes! - 1, dia!, 12, 0, 0))
+}
+
 function diasMora(mes: number, anno: number): number {
   const inicio = new Date(anno, mes - 1, 1)
   const hoy    = new Date()
@@ -279,7 +290,7 @@ export class PensionesService {
         where: { id },
         data: {
           pagado:      true,
-          fecha_pago:  new Date(datos.fecha_pago),
+          fecha_pago:  parseFechaSolo(datos.fecha_pago),
           comprobante: datos.comprobante,
           anulado_por: null,
           anulado_en:  null,
@@ -289,7 +300,7 @@ export class PensionesService {
         data: {
           pension_id:    id,
           registrado_por,
-          fecha:         new Date(datos.fecha_pago),
+          fecha:         parseFechaSolo(datos.fecha_pago),
           comprobante:   datos.comprobante,
         },
       }),
@@ -427,10 +438,10 @@ export class PensionesService {
         await prisma.$transaction([
           prisma.pension.update({
             where: { id: pension.id },
-            data:  { pagado: true, fecha_pago: new Date(datos.fecha_pago), comprobante, anulado_por: null, anulado_en: null },
+            data:  { pagado: true, fecha_pago: parseFechaSolo(datos.fecha_pago), comprobante, anulado_por: null, anulado_en: null },
           }),
           prisma.pago.create({
-            data: { pension_id: pension.id, registrado_por: datos.registrado_por, fecha: new Date(datos.fecha_pago), comprobante },
+            data: { pension_id: pension.id, registrado_por: datos.registrado_por, fecha: parseFechaSolo(datos.fecha_pago), comprobante },
           }),
         ])
         pagadas++
