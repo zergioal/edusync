@@ -179,6 +179,7 @@ export interface CentralizadorAsignacionExcelData {
     codigo:      string
     totales:     Record<string, number | null>
     escalas:     Record<string, string | null>
+    promedio:    number
     observacion: string
   }>
 }
@@ -189,7 +190,7 @@ export function generateCentralizadorAsignacionExcel(data: CentralizadorAsignaci
   const titulo    = `Centralizador – ${data.materia}`
   const subtitulo = `${data.nivel} ${data.grado} "${data.paralelo}" – Gestión ${data.anno}`
 
-  const headerRow: (string | number)[] = ['N°', 'Apellidos y Nombres', ...data.trimestres.map(t => `${t.numero}° Trim.`), 'Observaciones']
+  const headerRow: (string | number)[] = ['N°', 'Apellidos y Nombres', ...data.trimestres.map(t => `${t.numero}° Trim.`), 'Promedio', 'Observaciones']
 
   const rows: (string | number | null)[][] = [
     [titulo],
@@ -200,14 +201,15 @@ export function generateCentralizadorAsignacionExcel(data: CentralizadorAsignaci
       i + 1,
       `${est.apellido} ${est.nombre}`,
       ...data.trimestres.map(t => est.totales[t.id] ?? ''),
+      est.promedio,
       est.observacion,
     ]),
   ]
 
   const ws = XLSX.utils.aoa_to_sheet(rows)
 
-  const lastCol = 2 + data.trimestres.length
-  ws['!cols'] = [{ wch: 4 }, { wch: 28 }, ...data.trimestres.map(() => ({ wch: 9 })), { wch: 40 }]
+  const lastCol = 3 + data.trimestres.length
+  ws['!cols'] = [{ wch: 4 }, { wch: 28 }, ...data.trimestres.map(() => ({ wch: 9 })), { wch: 10 }, { wch: 40 }]
   ws['!merges'] = [
     { s: { r: 0, c: 0 }, e: { r: 0, c: lastCol } },
     { s: { r: 1, c: 0 }, e: { r: 1, c: lastCol } },

@@ -19,6 +19,7 @@ export interface DatosCentralizadorAsignacion {
     codigo:      string
     totales:     Record<string, number | null>
     escalas:     Record<string, Escala | null>
+    promedio:    number
     observacion: string
   }>
 }
@@ -44,6 +45,7 @@ export function generarHTMLCentralizadorAsignacion(d: DatosCentralizadorAsignaci
       <td style="text-align:center;font-size:9px;padding:3px;">${idx + 1}</td>
       <td style="font-size:9px;padding:3px;">${est.apellido} ${est.nombre}</td>
       ${cells}
+      <td style="text-align:center;font-size:9px;padding:3px;font-weight:bold;color:${AZUL};">${est.promedio}</td>
       <td style="font-size:8px;padding:3px;color:#444;">${est.observacion}</td>
     </tr>`
   }).join('')
@@ -72,12 +74,13 @@ ${encabezadoConLogo(d.institucion, `
       <th style="background:${AZUL};color:#fff;padding:4px;font-size:9px;width:28px;">N°</th>
       <th style="background:${AZUL};color:#fff;padding:4px;font-size:9px;min-width:130px;text-align:left;">Apellidos y Nombres</th>
       ${headerCols}
+      <th style="background:${AZUL};color:#fff;padding:4px;font-size:9px;width:60px;">Promedio</th>
       <th style="background:${AZUL};color:#fff;padding:4px;font-size:9px;min-width:160px;">Observaciones</th>
     </tr>
   </thead>
   <tbody>
     ${filas}
-    ${d.estudiantes.length === 0 ? `<tr><td colspan="${3 + d.trimestres.length}" style="text-align:center;padding:10px;font-size:9px;color:#999;">Sin estudiantes matriculados</td></tr>` : ''}
+    ${d.estudiantes.length === 0 ? `<tr><td colspan="${4 + d.trimestres.length}" style="text-align:center;padding:10px;font-size:9px;color:#999;">Sin estudiantes matriculados</td></tr>` : ''}
   </tbody>
 </table>
 <div style="margin-top:8px;font-size:8px;color:#999;text-align:center;">

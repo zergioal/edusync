@@ -415,6 +415,7 @@ export class PlanillaService {
         codigo:   est.codigo,
         totales,
         escalas,
+        promedio: Math.round(acumulado / trimestres.length),
         observacion,
       }
     })
