@@ -2,6 +2,8 @@
 
 Sistema web multi-tenant para la gestión de unidades educativas bolivianas bajo el marco de la **Ley 070 Avelino Siñani - Elizardo Pérez**.
 
+En producción: [pioxii.edusync.com.bo](https://pioxii.edusync.com.bo) (U.E. Privada Pío XII, Cochabamba).
+
 ## Stack tecnológico
 
 | Capa | Tecnología |
@@ -12,8 +14,9 @@ Sistema web multi-tenant para la gestión de unidades educativas bolivianas bajo
 | Base de datos | PostgreSQL vía Supabase + Prisma ORM |
 | Autenticación | Supabase Auth (JWT) |
 | Tests | Vitest |
-| Deploy API | Railway |
+| Deploy API | Google Cloud Run (Docker) |
 | Deploy Web | Vercel |
+| DNS | Cloudflare |
 
 ## Estructura del proyecto
 
@@ -207,7 +210,7 @@ Tests cubiertos: cálculo de escalas, promedios por dimensión, lógica de promo
 
 ## Guía de despliegue
 
-Ver [DEPLOYMENT.md](./DEPLOYMENT.md) para instrucciones detalladas de despliegue en Railway (API) y Vercel (Web).
+Ver [DEPLOYMENT.md](./DEPLOYMENT.md) para instrucciones detalladas de despliegue en Google Cloud Run (API) y Vercel (Web). Cada push a `main` dispara build + deploy automático en ambos.
 
 ## Licencia
 
