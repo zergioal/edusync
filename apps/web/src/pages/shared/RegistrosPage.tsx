@@ -122,7 +122,7 @@ function PlanillaLectura({ asignacionId, onBack }: { asignacionId: string; onBac
   const { asignacion, dimensiones, estudiantes } = data
   const esEspecial     = asignacion.materia.es_especial
   const totalIndicCols = dimensiones.reduce((n, d) => n + d.indicadores.length, 0)
-  const colSpanVacio   = 2 + totalIndicCols + dimensiones.length + (esEspecial ? 0 : 3)
+  const colSpanVacio   = 2 + totalIndicCols + dimensiones.length + (esEspecial ? 0 : 3) + (esUltimoTrimestre ? 1 : 0)
 
   return (
     <div className="space-y-4">
@@ -283,6 +283,9 @@ function PlanillaLectura({ asignacionId, onBack }: { asignacionId: string; onBac
                   <th rowSpan={2} className="bg-indigo-900 dark:bg-indigo-950 text-white px-2 py-2 text-center text-[10px] font-bold uppercase border-b border-slate-700 whitespace-nowrap">Nota<br />Extracurricular</th>
                   <th rowSpan={2} className="bg-slate-800 dark:bg-slate-900 text-white px-3 py-2 text-center text-xs font-bold uppercase border-b border-slate-700 whitespace-nowrap">TOTAL</th>
                   <th rowSpan={2} className="bg-slate-800 dark:bg-slate-900 text-white px-3 py-2 text-center text-xs font-bold uppercase border-b border-slate-700">ESCALA</th>
+                  {esUltimoTrimestre && (
+                    <th rowSpan={2} className="bg-slate-800 dark:bg-slate-900 text-white px-3 py-2 text-center text-xs font-bold uppercase border-b border-slate-700 whitespace-nowrap">Observaciones</th>
+                  )}
                 </>
               )}
             </tr>
@@ -351,12 +354,16 @@ function PlanillaLectura({ asignacionId, onBack }: { asignacionId: string; onBac
                       {est.escala
                         ? <span className={`inline-block rounded px-2 py-0.5 text-xs font-bold ${ESCALA_COLORS[est.escala] ?? ''}`}>{est.escala}</span>
                         : <span className="text-fg-muted/50">—</span>}
-                      {esUltimoTrimestre && mensajeDe(est.id, est.total) && (
-                        <div className={`mt-1 text-[10px] font-semibold leading-tight ${mensajeDe(est.id, est.total)!.aprobado ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}`}>
-                          {mensajeDe(est.id, est.total)!.texto}
-                        </div>
-                      )}
                     </td>
+                    {esUltimoTrimestre && (
+                      <td className="px-3 py-2 text-center bg-surface">
+                        {mensajeDe(est.id, est.total) && (
+                          <span className={`text-xs font-semibold ${mensajeDe(est.id, est.total)!.aprobado ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}`}>
+                            {mensajeDe(est.id, est.total)!.texto}
+                          </span>
+                        )}
+                      </td>
+                    )}
                   </>
                 )}
               </tr>

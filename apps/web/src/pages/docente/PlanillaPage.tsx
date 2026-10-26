@@ -947,6 +947,14 @@ export default function PlanillaPage() {
                     >
                       ESCALA
                     </th>
+                    {esUltimoTrimestre && (
+                      <th
+                        rowSpan={2}
+                        className="bg-slate-800 dark:bg-slate-900 text-white px-3 py-2 text-center text-xs font-bold uppercase border-b border-slate-700 whitespace-nowrap"
+                      >
+                        Observaciones
+                      </th>
+                    )}
                   </>
                 )}
               </tr>
@@ -1033,7 +1041,7 @@ export default function PlanillaPage() {
               {estudiantes.length === 0 && (
                 <tr>
                   <td
-                    colSpan={2 + totalIndicCols + dimsEditables.length + dimensiones.length + (esEspecial ? 0 : 3)}
+                    colSpan={2 + totalIndicCols + dimsEditables.length + dimensiones.length + (esEspecial ? 0 : 3) + (esUltimoTrimestre ? 1 : 0)}
                     className="py-10 text-center text-fg-muted"
                   >
                     No hay estudiantes matriculados en este paralelo.
@@ -1141,12 +1149,16 @@ export default function PlanillaPage() {
                         ) : (
                           <span className="text-fg-muted/50">—</span>
                         )}
-                        {esUltimoTrimestre && mensajeDe(est.id, est.total) && (
-                          <div className={`mt-1 text-[10px] font-semibold leading-tight ${mensajeDe(est.id, est.total)!.aprobado ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}`}>
-                            {mensajeDe(est.id, est.total)!.texto}
-                          </div>
-                        )}
                       </td>
+                      {esUltimoTrimestre && (
+                        <td className={`px-3 py-2 text-center bg-surface ${ROW_HOVER} transition-colors`}>
+                          {mensajeDe(est.id, est.total) && (
+                            <span className={`text-xs font-semibold ${mensajeDe(est.id, est.total)!.aprobado ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}`}>
+                              {mensajeDe(est.id, est.total)!.texto}
+                            </span>
+                          )}
+                        </td>
+                      )}
                     </>
                   )}
                 </tr>

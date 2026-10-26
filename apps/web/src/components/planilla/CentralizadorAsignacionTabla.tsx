@@ -33,6 +33,13 @@ const ESCALA_COLORS: Record<Escala, string> = {
   DP: 'text-emerald-600 dark:text-emerald-400',
 }
 
+function escalaDe(total: number): Escala {
+  if (total <= 50) return 'ED'
+  if (total <= 68) return 'DA'
+  if (total <= 84) return 'DO'
+  return 'DP'
+}
+
 export function CentralizadorAsignacionTabla({ asignacionId }: { asignacionId: string }) {
   const [data,    setData]    = useState<CentralizadorAsignacionData | null>(null)
   const [error,   setError]   = useState('')
@@ -97,7 +104,7 @@ export function CentralizadorAsignacionTabla({ asignacionId }: { asignacionId: s
               {data.trimestres.map(t => (
                 <th key={t.id} className="px-3 py-2.5 text-center">{t.numero}° T</th>
               ))}
-              <th className="px-3 py-2.5 text-center">Promedio</th>
+              <th className="border-l border-r border-border px-3 py-2.5 text-center">Promedio</th>
               <th className="px-4 py-2.5">Observaciones</th>
             </tr>
           </thead>
@@ -121,7 +128,9 @@ export function CentralizadorAsignacionTabla({ asignacionId }: { asignacionId: s
                     </td>
                   )
                 })}
-                <td className="px-3 py-2.5 text-center font-bold text-fg">{est.promedio}</td>
+                <td className="border-l border-r border-border px-3 py-2.5 text-center">
+                  <span className={`text-base font-bold ${ESCALA_COLORS[escalaDe(est.promedio)]}`}>{est.promedio}</span>
+                </td>
                 <td className="px-4 py-2.5 text-xs text-fg-muted">{est.observacion}</td>
               </tr>
             ))}
