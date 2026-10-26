@@ -6,6 +6,7 @@ import { ApiError, apiDownload, apiUpload } from '../../lib/api'
 import { Button, Spinner, Badge } from '@edusync/ui'
 import { getTrimestreActivo, trimestreLabel } from '../../lib/trimestre'
 import { useIsMobile } from '../../hooks/useIsMobile'
+import { useCentralizadorAnualMensaje, type MensajeAnual } from '../../hooks/useCentralizadorAnualMensaje'
 import { IndicadorFormModal, type IndicadorFormValues } from '../../components/planilla/IndicadorFormModal'
 import { ImportarNotasResultModal, type ImportarNotasResult } from '../../components/planilla/ImportarNotasResultModal'
 import { ExportarButton } from '../../components/ui/ExportarButton'
@@ -236,6 +237,8 @@ interface PlanillaMobileViewProps {
   onGuardar:         () => void
   guardando:         boolean
   onReload:          () => void
+  esUltimoTrimestre: boolean
+  mensajeDe:         (estudianteId: string, total: number | null) => MensajeAnual | null
 }
 
 function PlanillaMobileView({
@@ -255,6 +258,8 @@ function PlanillaMobileView({
   onGuardar,
   guardando,
   onReload,
+  esUltimoTrimestre,
+  mensajeDe,
 }: PlanillaMobileViewProps) {
   const navigate = useNavigate()
   const [selectedEstIdx, setSelectedEstIdx] = useState(0)
@@ -313,30 +318,20 @@ function PlanillaMobileView({
         </p>
       </div>
 
-      {/* Selector de trimestre + Centralizador */}
-      <div className="flex gap-2">
-        <div className="flex flex-1 rounded-lg border border-border overflow-hidden">
-          {trimestres.map(t => (
-            <button
-              key={t.id}
-              onClick={() => onSelectTrimestre(t)}
-              className={`flex-1 flex items-center justify-center gap-1 px-3 py-2 text-xs font-semibold transition-colors ${
-                selectedTrimestre?.id === t.id ? 'bg-brand text-brand-fg' : 'bg-surface text-fg-muted'
-              } ${t.cerrado ? 'opacity-60' : ''}`}
-            >
-              {trimestreLabel(t.numero)}
-              {t.cerrado && <Icon name="lock" className="h-3 w-3" />}
-            </button>
-          ))}
-        </div>
-        {!asignacion.materia.es_especial && (
+      {/* Selector de trimestre */}
+      <div className="flex rounded-lg border border-border overflow-hidden">
+        {trimestres.map(t => (
           <button
-            onClick={() => navigate('centralizador')}
-            className="flex-shrink-0 inline-flex items-center gap-1.5 rounded-lg border border-border bg-surface px-3 py-2 text-xs font-semibold text-fg-muted hover:bg-surface-2 hover:text-fg transition-colors"
+            key={t.id}
+            onClick={() => onSelectTrimestre(t)}
+            className={`flex-1 flex items-center justify-center gap-1 px-3 py-2 text-xs font-semibold transition-colors ${
+              selectedTrimestre?.id === t.id ? 'bg-brand text-brand-fg' : 'bg-surface text-fg-muted'
+            } ${t.cerrado ? 'opacity-60' : ''}`}
           >
-            <Icon name="document-list" className="h-4 w-4" /> Centralizador
+            {trimestreLabel(t.numero)}
+            {t.cerrado && <Icon name="lock" className="h-3 w-3" />}
           </button>
-        )}
+        ))}
       </div>
 
       {/* Banner trimestre cerrado — justo debajo del selector, para que no lo desplace */}
@@ -399,6 +394,18 @@ function PlanillaMobileView({
       >
         {guardando ? 'Guardando…' : <><Icon name="save" className="h-4 w-4" /> Guardar calificaciones</>}
       </button>
+
+      {/* Centralizador anual — bien visible, justo encima del registro */}
+      {!asignacion.materia.es_especial && (
+        <div className="flex justify-center">
+          <button
+            onClick={() => navigate('centralizador')}
+            className="inline-flex items-center gap-2 rounded-lg bg-red-600 px-5 py-2.5 text-sm font-bold text-white shadow-sm hover:bg-red-700 transition-colors"
+          >
+            <Icon name="document-list" className="h-4 w-4" /> Centralizador anual
+          </button>
+        </div>
+      )}
 
       {/* Selector de estudiante */}
       {estudiantes.length > 0 && (
@@ -533,6 +540,11 @@ function PlanillaMobileView({
           <div className="min-w-0">
             <p className="text-xs text-white/60 truncate">{estudiante.apellido}, {estudiante.nombre}</p>
             <span className="font-semibold text-sm">Total</span>
+            {esUltimoTrimestre && mensajeDe(estudiante.id, estudiante.total) && (
+              <p className={`text-[11px] font-semibold ${mensajeDe(estudiante.id, estudiante.total)!.aprobado ? 'text-emerald-400' : 'text-red-400'}`}>
+                {mensajeDe(estudiante.id, estudiante.total)!.texto}
+              </p>
+            )}
           </div>
           <div className="flex items-center gap-3">
             <span className="text-2xl font-bold flex items-center gap-1.5">
@@ -626,6 +638,15 @@ export default function PlanillaPage() {
   }, [data, initDone])
 
   const isMobile = useIsMobile()
+
+  // Mensaje de aprobación anual junto a la Escala — solo aplica en el último trimestre de la gestión.
+  const esUltimoTrimestre = !!selectedTrimestre && !!data &&
+    selectedTrimestre.numero === Math.max(...data.asignacion.gestion.trimestres.map(t => t.numero))
+  const { mensajeDe } = useCentralizadorAnualMensaje(
+    asignacion_id,
+    selectedTrimestre?.id,
+    esUltimoTrimestre && !data?.asignacion.materia.es_especial,
+  )
 
   if (loading || !initDone) {
     return <div className="flex justify-center py-16"><Spinner /></div>
@@ -742,6 +763,8 @@ export default function PlanillaPage() {
         onGuardar={guardarCalificaciones}
         guardando={guardando}
         onReload={reload}
+        esUltimoTrimestre={esUltimoTrimestre}
+        mensajeDe={mensajeDe}
       />
     )
   }
@@ -806,22 +829,15 @@ export default function PlanillaPage() {
         )}
 
         {/* Navegación a otras vistas de esta asignación */}
-        {(!esEspecial || asignacion.materia.es_subarea_de_id) && (
+        {asignacion.materia.es_subarea_de_id && !esEspecial && (
           <div className="flex flex-wrap items-center gap-2">
-            {!esEspecial && (
-              <Button variant="ghost" size="sm" onClick={() => navigate('centralizador')}>
-                <Icon name="document-list" className="h-4 w-4" /> Centralizador
-              </Button>
-            )}
-            {asignacion.materia.es_subarea_de_id && !esEspecial && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => navigate(`subareas?trimestre_id=${selectedTrimestre?.id ?? ''}`)}
-              >
-                <Icon name="notebook" className="h-4 w-4" /> Subáreas de {asignacion.materia.parent_materia?.nombre ?? 'esta área'}
-              </Button>
-            )}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => navigate(`subareas?trimestre_id=${selectedTrimestre?.id ?? ''}`)}
+            >
+              <Icon name="notebook" className="h-4 w-4" /> Subáreas de {asignacion.materia.parent_materia?.nombre ?? 'esta área'}
+            </Button>
           </div>
         )}
 
@@ -857,6 +873,18 @@ export default function PlanillaPage() {
             </>
           )}
         </div>
+
+        {/* Centralizador anual — bien visible, centrado, justo encima del registro */}
+        {!esEspecial && (
+          <div className="flex justify-center">
+            <button
+              onClick={() => navigate('centralizador')}
+              className="inline-flex items-center gap-2 rounded-lg bg-red-600 px-6 py-2.5 text-sm font-bold text-white shadow-sm hover:bg-red-700 transition-colors"
+            >
+              <Icon name="document-list" className="h-4 w-4" /> Centralizador anual
+            </button>
+          </div>
+        )}
 
         {/* Barra superior de la tabla: resumen + acción principal de guardar, justo encima del registro */}
         <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border bg-surface px-4 py-3 shadow-sm">
@@ -1112,6 +1140,11 @@ export default function PlanillaPage() {
                           </span>
                         ) : (
                           <span className="text-fg-muted/50">—</span>
+                        )}
+                        {esUltimoTrimestre && mensajeDe(est.id, est.total) && (
+                          <div className={`mt-1 text-[10px] font-semibold leading-tight ${mensajeDe(est.id, est.total)!.aprobado ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}`}>
+                            {mensajeDe(est.id, est.total)!.texto}
+                          </div>
                         )}
                       </td>
                     </>

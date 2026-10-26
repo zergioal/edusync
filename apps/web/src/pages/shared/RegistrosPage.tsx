@@ -4,6 +4,7 @@ import { api, apiDownload } from '../../lib/api'
 import { useToast } from '../../components/ui/Toast'
 import { useGestionActiva } from '../../hooks/useGestionActiva'
 import { usePlanilla } from '../../hooks/usePlanilla'
+import { useCentralizadorAnualMensaje } from '../../hooks/useCentralizadorAnualMensaje'
 import { getTrimestreActivo, trimestreLabel } from '../../lib/trimestre'
 import { abbreviateGrado, NIVEL_STYLES, NIVEL_FALLBACK } from '../../lib/cursoDisplay'
 import { Spinner, Badge } from '@edusync/ui'
@@ -87,6 +88,11 @@ function PlanillaLectura({ asignacionId, onBack }: { asignacionId: string; onBac
   }, [data, initDone])
 
   const trimestreActual = data?.asignacion.gestion.trimestres.find(t => t.id === trimestreId) ?? null
+
+  const esEspecialAsig = data?.asignacion.materia.es_especial ?? false
+  const esUltimoTrimestre = !!trimestreActual && !!data &&
+    trimestreActual.numero === Math.max(...data.asignacion.gestion.trimestres.map(t => t.numero))
+  const { mensajeDe } = useCentralizadorAnualMensaje(asignacionId, trimestreActual?.id, esUltimoTrimestre && !esEspecialAsig)
 
   async function descargarRegistro(tipo: 'pdf' | 'xlsx') {
     if (!data || !trimestreActual) return
@@ -184,6 +190,19 @@ function PlanillaLectura({ asignacionId, onBack }: { asignacionId: string; onBac
         <ExportarButton disabled={!trimestreActual} dlState={dlState} onExport={descargarRegistro} />
       </div>
 
+      {/* Centralizador anual — bien visible, centrado, justo encima del registro */}
+      {!esEspecial && (
+        <div className="flex justify-center">
+          <button
+            type="button"
+            onClick={() => navigate(`centralizador/${asignacionId}`)}
+            className="inline-flex items-center gap-2 rounded-lg bg-red-600 px-6 py-2.5 text-sm font-bold text-white shadow-sm hover:bg-red-700 transition-colors"
+          >
+            <Icon name="document-list" className="h-4 w-4" /> Centralizador anual
+          </button>
+        </div>
+      )}
+
       {/* Barra superior de la tabla: resumen */}
       <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border bg-surface px-4 py-3 shadow-sm">
         <p className="text-sm text-fg-muted">
@@ -230,6 +249,11 @@ function PlanillaLectura({ asignacionId, onBack }: { asignacionId: string; onBac
                   TOTAL: {est.total != null ? est.total : '—'}
                 </span>
               </div>
+            )}
+            {esUltimoTrimestre && !esEspecial && mensajeDe(est.id, est.total) && (
+              <p className={`mt-1 text-right text-[11px] font-semibold ${mensajeDe(est.id, est.total)!.aprobado ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}`}>
+                {mensajeDe(est.id, est.total)!.texto}
+              </p>
             )}
           </div>
         ))}
@@ -327,6 +351,11 @@ function PlanillaLectura({ asignacionId, onBack }: { asignacionId: string; onBac
                       {est.escala
                         ? <span className={`inline-block rounded px-2 py-0.5 text-xs font-bold ${ESCALA_COLORS[est.escala] ?? ''}`}>{est.escala}</span>
                         : <span className="text-fg-muted/50">—</span>}
+                      {esUltimoTrimestre && mensajeDe(est.id, est.total) && (
+                        <div className={`mt-1 text-[10px] font-semibold leading-tight ${mensajeDe(est.id, est.total)!.aprobado ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}`}>
+                          {mensajeDe(est.id, est.total)!.texto}
+                        </div>
+                      )}
                     </td>
                   </>
                 )}

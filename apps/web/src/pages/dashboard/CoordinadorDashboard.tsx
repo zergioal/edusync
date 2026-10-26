@@ -26,6 +26,7 @@ const NotaExtracurricularPage = lazy(() => import('../coordinador/NotaExtracurri
 const ControlDiarioBusquedaPage = lazy(() => import('../secretaria/ControlDiarioBusquedaPage'))
 const RegistrosPage        = lazy(() => import('../shared/RegistrosPage'))
 const CentralizadorSubareasStaffPage = lazy(() => import('../shared/CentralizadorSubareasStaffPage'))
+const CentralizadorAsignacionStaffPage = lazy(() => import('../shared/CentralizadorAsignacionStaffPage'))
 
 // ─── Panel principal ──────────────────────────────────────────────────────────
 
@@ -119,6 +120,7 @@ export default function CoordinadorDashboard() {
         <Route path="reportes/*"       element={<ReportesPage />} />
         <Route path="registros"        element={<RegistrosPage />} />
         <Route path="registros/subareas/:asignacion_id" element={<CentralizadorSubareasStaffPage />} />
+        <Route path="registros/centralizador/:asignacion_id" element={<CentralizadorAsignacionStaffPage />} />
         <Route path="proyectos-bth"    element={<ProyectosBTHPage />} />
         <Route path="areas-subareas"   element={<AreasSubareasPage />} />
         <Route path="nota-extracurricular" element={<NotaExtracurricularPage />} />

@@ -34,6 +34,7 @@ const NotaExtracurricularPage = lazy(() => import('../admin/NotaExtracurricularP
 const ControlDiarioBusquedaPage = lazy(() => import('../secretaria/ControlDiarioBusquedaPage'))
 const RegistrosPage        = lazy(() => import('../shared/RegistrosPage'))
 const CentralizadorSubareasStaffPage = lazy(() => import('../shared/CentralizadorSubareasStaffPage'))
+const CentralizadorAsignacionStaffPage = lazy(() => import('../shared/CentralizadorAsignacionStaffPage'))
 
 // ─── Panel principal ──────────────────────────────────────────────────────────
 
@@ -197,6 +198,7 @@ export default function AdminDashboard() {
         <Route path="paralelos"      element={<ParalelosPage />} />
         <Route path="registros"      element={<RegistrosPage />} />
         <Route path="registros/subareas/:asignacion_id" element={<CentralizadorSubareasStaffPage />} />
+        <Route path="registros/centralizador/:asignacion_id" element={<CentralizadorAsignacionStaffPage />} />
         <Route path="asistencia"    element={<SectionPlaceholder title="Asistencia" />} />
         <Route path="horarios"      element={<SectionPlaceholder title="Horarios" />} />
         <Route path="instituciones" element={<InstitucionesPage />} />
