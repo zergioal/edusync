@@ -238,7 +238,7 @@ interface PlanillaMobileViewProps {
   guardando:         boolean
   onReload:          () => void
   esUltimoTrimestre: boolean
-  mensajeDe:         (estudianteId: string, total: number | null) => MensajeAnual | null
+  mensajeDe:         (estudianteId: string) => MensajeAnual | null
 }
 
 function PlanillaMobileView({
@@ -280,6 +280,7 @@ function PlanillaMobileView({
   }
 
   const estudiante = estudiantes[selectedEstIdx]
+  const mensajeAnualEstudiante = esUltimoTrimestre && estudiante ? mensajeDe(estudiante.id) : null
   const flatIndicadores = dimensiones.flatMap(d => d.indicadores)
 
   function focusNext(indicadorId: string) {
@@ -540,9 +541,9 @@ function PlanillaMobileView({
           <div className="min-w-0">
             <p className="text-xs text-white/60 truncate">{estudiante.apellido}, {estudiante.nombre}</p>
             <span className="font-semibold text-sm">Total</span>
-            {esUltimoTrimestre && mensajeDe(estudiante.id, estudiante.total) && (
-              <p className={`mt-0.5 inline-block rounded px-1.5 py-0.5 text-[10px] font-bold ${colorDeMensaje(mensajeDe(estudiante.id, estudiante.total)!)}`}>
-                {mensajeDe(estudiante.id, estudiante.total)!.texto}
+            {mensajeAnualEstudiante && (
+              <p className={`mt-0.5 inline-block rounded px-1.5 py-0.5 text-[10px] font-bold ${colorDeMensaje(mensajeAnualEstudiante)}`}>
+                {mensajeAnualEstudiante.texto}
               </p>
             )}
           </div>
@@ -777,7 +778,7 @@ export default function PlanillaPage() {
         {/* Header */}
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
-            <BackButton label="Volver a mis materias" className="mb-2" />
+            <BackButton to="/dashboard/docente/calificaciones" label="Volver a mis materias" className="mb-2" />
             <h1 className="text-xl font-bold text-fg">
               {asignacion.materia.nombre}
             </h1>
@@ -1150,15 +1151,18 @@ export default function PlanillaPage() {
                           <span className="text-fg-muted/50">—</span>
                         )}
                       </td>
-                      {esUltimoTrimestre && (
-                        <td className={`px-3 py-2 text-center bg-surface ${ROW_HOVER} transition-colors`}>
-                          {mensajeDe(est.id, est.total) && (
-                            <span className={`inline-block rounded px-2 py-0.5 text-xs font-bold ${colorDeMensaje(mensajeDe(est.id, est.total)!)}`}>
-                              {mensajeDe(est.id, est.total)!.texto}
-                            </span>
-                          )}
-                        </td>
-                      )}
+                      {esUltimoTrimestre && (() => {
+                        const msg = mensajeDe(est.id)
+                        return (
+                          <td className={`px-3 py-2 text-center bg-surface ${ROW_HOVER} transition-colors`}>
+                            {msg && (
+                              <span className={`inline-block rounded px-2 py-0.5 text-xs font-bold ${colorDeMensaje(msg)}`}>
+                                {msg.texto}
+                              </span>
+                            )}
+                          </td>
+                        )
+                      })()}
                     </>
                   )}
                 </tr>

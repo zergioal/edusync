@@ -22,10 +22,11 @@ export function colorDeMensaje(msg: MensajeAnual): string {
 }
 
 /**
- * Para el registro del último trimestre: combina los totales ya cerrados de los trimestres
- * anteriores (vía el centralizador de la asignación, que no cambia mientras se edita el actual)
- * con el total del trimestre que se está viendo/editando ahora, para saber si la nota anual ya
- * está asegurada o cuánto falta — en vivo, mientras el docente va cargando notas.
+ * Para el registro del último trimestre: cuánto necesita el estudiante EN ese trimestre para
+ * aprobar la gestión, a partir de los totales ya cerrados de los trimestres anteriores (vía el
+ * centralizador de la asignación). Es un cálculo estático — a propósito NO suma la nota que el
+ * docente va cargando en el trimestre actual, para que sirva de referencia fija ("necesitás X en
+ * este trimestre") y no cambie bajo sus manos mientras va calificando.
  */
 export function useCentralizadorAnualMensaje(
   asignacionId:      string | undefined,
@@ -41,7 +42,7 @@ export function useCentralizadorAnualMensaje(
       .catch(() => setData(null))
   }, [asignacionId, esUltimoTrimestre])
 
-  function mensajeDe(estudianteId: string, totalTrimestreActual: number | null): MensajeAnual | null {
+  function mensajeDe(estudianteId: string): MensajeAnual | null {
     if (!data || !trimestreId) return null
     const est = data.estudiantes.find(e => e.id === estudianteId)
     if (!est) return null
@@ -49,8 +50,7 @@ export function useCentralizadorAnualMensaje(
     const otrosTrimestres = data.trimestres
       .filter(t => t.id !== trimestreId)
       .reduce((s, t) => s + (est.totales[t.id] ?? 0), 0)
-    const acumulado = otrosTrimestres + (totalTrimestreActual ?? 0)
-    const falta = data.meta - acumulado
+    const falta = data.meta - otrosTrimestres
 
     return falta <= 0
       ? { texto: 'Aprobado de año', aprobado: true, falta: 0 }

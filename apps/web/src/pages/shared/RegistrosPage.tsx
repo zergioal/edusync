@@ -222,7 +222,9 @@ function PlanillaLectura({ asignacionId, onBack }: { asignacionId: string; onBac
             No hay estudiantes matriculados en este paralelo.
           </div>
         )}
-        {estudiantes.map(est => (
+        {estudiantes.map(est => {
+          const msgAnual = esUltimoTrimestre && !esEspecial ? mensajeDe(est.id) : null
+          return (
           <div key={est.id} className="rounded-xl border border-border bg-surface p-4 shadow-sm">
             <div className="flex items-start justify-between gap-2">
               <p className="font-medium text-fg">{est.apellido}, {est.nombre}</p>
@@ -250,15 +252,16 @@ function PlanillaLectura({ asignacionId, onBack }: { asignacionId: string; onBac
                 </span>
               </div>
             )}
-            {esUltimoTrimestre && !esEspecial && mensajeDe(est.id, est.total) && (
+            {msgAnual && (
               <p className="mt-1 text-right">
-                <span className={`inline-block rounded px-2 py-0.5 text-[11px] font-bold ${colorDeMensaje(mensajeDe(est.id, est.total)!)}`}>
-                  {mensajeDe(est.id, est.total)!.texto}
+                <span className={`inline-block rounded px-2 py-0.5 text-[11px] font-bold ${colorDeMensaje(msgAnual)}`}>
+                  {msgAnual.texto}
                 </span>
               </p>
             )}
           </div>
-        ))}
+          )
+        })}
         <p className="text-xs text-fg-muted text-center pt-1">
           Vista resumida — gira el celular o usa una pantalla más grande para ver el detalle por indicador.
         </p>
@@ -357,15 +360,18 @@ function PlanillaLectura({ asignacionId, onBack }: { asignacionId: string; onBac
                         ? <span className={`inline-block rounded px-2 py-0.5 text-xs font-bold ${ESCALA_COLORS[est.escala] ?? ''}`}>{est.escala}</span>
                         : <span className="text-fg-muted/50">—</span>}
                     </td>
-                    {esUltimoTrimestre && (
-                      <td className="px-3 py-2 text-center bg-surface">
-                        {mensajeDe(est.id, est.total) && (
-                          <span className={`inline-block rounded px-2 py-0.5 text-xs font-bold ${colorDeMensaje(mensajeDe(est.id, est.total)!)}`}>
-                            {mensajeDe(est.id, est.total)!.texto}
-                          </span>
-                        )}
-                      </td>
-                    )}
+                    {esUltimoTrimestre && (() => {
+                      const msg = mensajeDe(est.id)
+                      return (
+                        <td className="px-3 py-2 text-center bg-surface">
+                          {msg && (
+                            <span className={`inline-block rounded px-2 py-0.5 text-xs font-bold ${colorDeMensaje(msg)}`}>
+                              {msg.texto}
+                            </span>
+                          )}
+                        </td>
+                      )
+                    })()}
                   </>
                 )}
               </tr>
