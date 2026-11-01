@@ -426,14 +426,103 @@ export class ReportesService {
 
   // ── Reportes de Secretaría ───────────────────────────────────────────────
 
+  /**
+   * Promedio anual de cada estudiante por ÁREA (foldeando subáreas igual que getCentralizador:
+   * un área con subáreas —ej. Técnica Tecnológica— cuenta como UNA sola área, no una por cada
+   * subárea) — a diferencia de getPromocionAnual, que trata cada asignación como una materia
+   * independiente. Se usa para las columnas "Áreas aprobadas/reprobadas" de la Nómina.
+   */
+  private async calcularResumenAcademico(
+    paralelo_id:    string,
+    gestion_id:     string,
+    institucion_id: string,
+  ): Promise<Map<string, { promedio: number; areas_aprobadas: number; areas_reprobadas: number; resultado: 'PROMOVIDO' | 'REPITE' }>> {
+    const gestion = await prisma.gestion.findUnique({
+      where: { id: gestion_id }, include: { trimestres: { orderBy: { numero: 'asc' } } },
+    })
+    if (!gestion) throw new AppError(404, 'Gestión no encontrada', 'NOT_FOUND')
+
+    // areaTotales[estudiante_id][area_id] = [t1, t2, t3]
+    const areaTotales = new Map<string, Map<string, (number | null)[]>>()
+
+    for (let i = 0; i < gestion.trimestres.length; i++) {
+      const trimestre = gestion.trimestres[i]!
+      const { asignaciones, matriculas, dimensiones, notasIndex, notaExtraIndex } =
+        await loadParaleloData(paralelo_id, trimestre.id, institucion_id)
+
+      const regularAsigs  = asignaciones.filter(a => !a.materia.es_subarea_de_id && !a.materia.tiene_subareas)
+      const subareaAsigs  = asignaciones.filter(a => !!a.materia.es_subarea_de_id && !a.materia.es_especial)
+      const especialAsigs = asignaciones.filter(a => !!a.materia.es_subarea_de_id && a.materia.es_especial)
+      const subAreasByParent = new Map<string, typeof subareaAsigs>()
+      for (const asig of subareaAsigs) {
+        const pid = asig.materia.es_subarea_de_id!
+        if (!subAreasByParent.has(pid)) subAreasByParent.set(pid, [])
+        subAreasByParent.get(pid)!.push(asig)
+      }
+
+      for (const m of matriculas) {
+        const est  = m.estudiante
+        const mapa = notasIndex.get(est.id) ?? new Map()
+        const llevaTecnica = m.lleva_tecnica ?? true
+        if (!areaTotales.has(est.id)) areaTotales.set(est.id, new Map())
+        const porArea = areaTotales.get(est.id)!
+
+        for (const asig of regularAsigs) {
+          const especialesDeEstaMateria = especialAsigs.filter(e => e.materia.es_subarea_de_id === asig.materia_id)
+          const indicadoresCombinados = [...asig.indicadores, ...especialesDeEstaMateria.flatMap(e => e.indicadores)]
+          const notaExtracurricular = notaExtraIndex.get(`${asig.id}:${est.id}`) ?? 0
+          const { total, hasAny } = calcNotasEstudiante(indicadoresCombinados, mapa, dimensiones, notaExtracurricular)
+          if (!porArea.has(asig.materia_id)) porArea.set(asig.materia_id, [null, null, null])
+          porArea.get(asig.materia_id)![i] = hasAny ? total : null
+        }
+
+        for (const [parentId, subAsigsRaw] of subAreasByParent) {
+          const subAsigs = subAsigsRaw.filter(a => !a.materia.parent_materia?.solo_si_bth || llevaTecnica)
+          const totalesConNotas: number[] = []
+          for (const asig of subAsigs) {
+            const notaExtracurricular = notaExtraIndex.get(`${asig.id}:${est.id}`) ?? 0
+            const { total, hasAny } = calcNotasEstudiante(asig.indicadores, mapa, dimensiones, notaExtracurricular)
+            if (hasAny) totalesConNotas.push(total)
+          }
+          if (totalesConNotas.length === 0) continue
+          const promedioArea = Math.round(totalesConNotas.reduce((s, t) => s + t, 0) / totalesConNotas.length)
+          if (!porArea.has(parentId)) porArea.set(parentId, [null, null, null])
+          porArea.get(parentId)![i] = promedioArea
+        }
+      }
+    }
+
+    const resumen = new Map<string, { promedio: number; areas_aprobadas: number; areas_reprobadas: number; resultado: 'PROMOVIDO' | 'REPITE' }>()
+    for (const [estudiante_id, porArea] of areaTotales) {
+      const promediosPorArea = [...porArea.values()].map(([t1, t2, t3]) => calcularPromedioAnual(t1 ?? null, t2 ?? null, t3 ?? null))
+      const areas_aprobadas  = promediosPorArea.filter(p => p > 50).length
+      const areas_reprobadas = promediosPorArea.filter(p => p <= 50).length
+      const promedio = promediosPorArea.length > 0
+        ? Math.round(promediosPorArea.reduce((s, p) => s + p, 0) / promediosPorArea.length)
+        : 0
+      resumen.set(estudiante_id, { promedio, areas_aprobadas, areas_reprobadas, resultado: determinarResultado(promediosPorArea) })
+    }
+    return resumen
+  }
+
   async getNomina(
     institucion_id: string,
     gestion_id:     string,
-    nivel_id?:      string,
-    grado_id?:      string,
-    paralelo_id?:   string,
+    opciones: {
+      nivel_id?:          string | undefined
+      grado_id?:          string | undefined
+      paralelo_id?:       string | undefined
+      /** 'TODOS' quita el filtro de estado; por defecto solo ACTIVO. */
+      estado?:            string | undefined
+      incluir_academico?: boolean | undefined
+      orden_por?:         'apellido' | 'codigo' | 'promedio' | 'areas_reprobadas' | undefined
+      orden_dir?:         'asc' | 'desc' | undefined
+      promedio_min?:      number | undefined
+      promedio_max?:      number | undefined
+    } = {},
   ) {
     const gestion = await verificarGestion(gestion_id, institucion_id)
+    const { nivel_id, grado_id, paralelo_id, incluir_academico, orden_por = 'apellido', orden_dir = 'asc' } = opciones
 
     const matriculas = await prisma.matricula.findMany({
       where: {
@@ -443,6 +532,7 @@ export class ReportesService {
           ...(grado_id ? { grado_id } : {}),
           ...(nivel_id ? { grado: { nivel_id } } : {}),
         },
+        ...(opciones.estado === 'TODOS' ? {} : { estudiante: { estado: (opciones.estado as EstadoEstudiante) ?? 'ACTIVO' } }),
       },
       include: {
         estudiante: { include: { usuario: { select: { nombre: true, apellido: true, email: true } } } },
@@ -455,9 +545,20 @@ export class ReportesService {
       ],
     })
 
-    return {
-      anno: gestion.anno,
-      estudiantes: matriculas.map(m => ({
+    // El resumen académico es por paralelo — se calcula uno por cada paralelo distinto que
+    // aparezca en el resultado (normalmente uno solo, salvo que se liste un nivel/grado completo).
+    const resumenPorEstudiante = new Map<string, { promedio: number; areas_aprobadas: number; areas_reprobadas: number; resultado: 'PROMOVIDO' | 'REPITE' }>()
+    if (incluir_academico) {
+      const paraleloIds = [...new Set(matriculas.map(m => m.paralelo_id))]
+      const resumenes = await Promise.all(
+        paraleloIds.map(pid => this.calcularResumenAcademico(pid, gestion_id, institucion_id)),
+      )
+      for (const r of resumenes) for (const [estId, v] of r) resumenPorEstudiante.set(estId, v)
+    }
+
+    let estudiantes = matriculas.map(m => {
+      const academico = resumenPorEstudiante.get(m.estudiante_id)
+      return {
         codigo:   m.estudiante.codigo,
         nombre:   m.estudiante.usuario.nombre,
         apellido: m.estudiante.usuario.apellido,
@@ -465,8 +566,32 @@ export class ReportesService {
         nivel:    m.paralelo.grado.nivel.nombre,
         grado:    m.paralelo.grado.nombre,
         paralelo: m.paralelo.letra,
+        curso:    `${m.paralelo.grado.nombre} "${m.paralelo.letra}"`,
         estado:   m.estudiante.estado,
-      })),
+        becado:   m.estudiante.becado,
+        ...(academico ?? {}),
+      }
+    })
+
+    if (opciones.promedio_min != null) estudiantes = estudiantes.filter(e => (e.promedio ?? 0) >= opciones.promedio_min!)
+    if (opciones.promedio_max != null) estudiantes = estudiantes.filter(e => (e.promedio ?? 0) <= opciones.promedio_max!)
+
+    if (orden_por !== 'apellido') {
+      const dir = orden_dir === 'desc' ? -1 : 1
+      estudiantes = [...estudiantes].sort((a, b) => {
+        if (orden_por === 'codigo') return dir * a.codigo.localeCompare(b.codigo)
+        const av = (orden_por === 'promedio' ? a.promedio : a.areas_reprobadas) ?? 0
+        const bv = (orden_por === 'promedio' ? b.promedio : b.areas_reprobadas) ?? 0
+        return dir * (av - bv)
+      })
+    } else if (orden_dir === 'desc') {
+      estudiantes = [...estudiantes].reverse()
+    }
+
+    return {
+      anno: gestion.anno,
+      puede_ver_academico: !!incluir_academico,
+      estudiantes,
     }
   }
 

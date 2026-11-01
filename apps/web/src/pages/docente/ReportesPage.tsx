@@ -6,7 +6,7 @@ import ControlDiarioPage from './reportes/ControlDiarioPage'
 import PadresTutoresPage from './reportes/PadresTutoresPage'
 
 const CARDS: { to: string; icon: IconName; title: string; desc: string }[] = [
-  { to: 'nomina',          icon: 'users',          title: 'Nómina de Estudiantes',    desc: 'Lista de estudiantes matriculados en uno de tus cursos. Exporta a PDF y Excel.' },
+  { to: 'nomina',          icon: 'users',          title: 'Nómina de Estudiantes',    desc: 'Lista de estudiantes de uno de tus cursos. Si eres el/la asesor(a), incluye promedio y áreas aprobadas/reprobadas. Exporta a PDF y Excel.' },
   { to: 'calificaciones',  icon: 'document-list',  title: 'Calificaciones por Curso', desc: 'Centralizador de notas de tu(s) materia(s), por curso.' },
   { to: 'control-diario',  icon: 'notebook',       title: 'Control Diario',           desc: 'Observaciones por estudiante o de todo el curso — filtra por mes, trimestre o gestión.' },
   { to: 'padres-tutores',  icon: 'users',          title: 'Padres / Tutores',         desc: 'Contactos de los tutores de los estudiantes de uno de tus cursos.' },

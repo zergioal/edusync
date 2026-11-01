@@ -14,6 +14,31 @@ import { DocenteAlcanceService } from '../services/docenteAlcance.service'
 
 const NIVEL_ORDEN: Record<string, number> = { INICIAL: 0, PRIMARIA: 1, SECUNDARIA: 2 }
 
+// ── Nómina: catálogo de columnas disponibles (el cliente elige cuáles pedir) ───
+const NOMINA_COLUMNAS: Record<string, ColumnaTabla> = {
+  numero:           { header: 'N°',                 key: 'numero',           align: 'center' },
+  codigo:           { header: 'Código',              key: 'codigo' },
+  apellido:         { header: 'Apellidos',           key: 'apellido' },
+  nombre:           { header: 'Nombres',              key: 'nombre' },
+  curso:            { header: 'Curso',                key: 'curso',            align: 'center' },
+  nivel:            { header: 'Nivel',                key: 'nivel' },
+  grado:            { header: 'Grado',                key: 'grado' },
+  paralelo:         { header: 'Paralelo',             key: 'paralelo',         align: 'center' },
+  email:            { header: 'Correo institucional', key: 'email' },
+  estado:           { header: 'Estado',               key: 'estado',           align: 'center' },
+  becado:           { header: 'Becado',               key: 'becado',           align: 'center' },
+  promedio:         { header: 'Promedio',             key: 'promedio',         align: 'center' },
+  areas_aprobadas:  { header: 'Áreas aprobadas',      key: 'areas_aprobadas',  align: 'center' },
+  areas_reprobadas: { header: 'Áreas reprobadas',     key: 'areas_reprobadas', align: 'center' },
+  resultado:        { header: 'Resultado',            key: 'resultado',        align: 'center' },
+}
+const NOMINA_COLUMNAS_DEFECTO = ['numero', 'apellido', 'nombre', 'curso', 'email', 'estado']
+
+function columnasNomina(columnasParam: string | undefined): ColumnaTabla[] {
+  const claves = columnasParam ? columnasParam.split(',').map(c => c.trim()) : NOMINA_COLUMNAS_DEFECTO
+  return claves.filter(c => NOMINA_COLUMNAS[c]).map(c => NOMINA_COLUMNAS[c]!)
+}
+
 function abreviarCurso(gradoNombre: string, letra: string): string {
   const m = gradoNombre.match(/^(\d+°)\s+de\s+(Inicial|Primaria|Secundaria)$/)
   if (!m) return `${gradoNombre} ${letra}`
@@ -137,35 +162,42 @@ export class ReportesController {
 
   // Nómina de estudiantes ------------------------------------------------------
 
+  private opcionesNomina(req: Request) {
+    const q = req.query as Record<string, string>
+    if (!q['gestion_id']) throw new AppError(400, 'gestion_id es requerido', 'MISSING_PARAM')
+    const opciones = {
+      nivel_id:           q['nivel_id'],
+      grado_id:           q['grado_id'],
+      paralelo_id:        q['paralelo_id'],
+      estado:             q['estado'],
+      incluir_academico:  q['incluir_academico'] === 'true',
+      orden_por:          q['orden_por'] as 'apellido' | 'codigo' | 'promedio' | 'areas_reprobadas' | undefined,
+      orden_dir:          q['orden_dir'] as 'asc' | 'desc' | undefined,
+      promedio_min:       q['promedio_min'] ? Number(q['promedio_min']) : undefined,
+      promedio_max:       q['promedio_max'] ? Number(q['promedio_max']) : undefined,
+    }
+    return { gestion_id: q['gestion_id']!, opciones }
+  }
+
   private async nominaTabla(req: Request): Promise<DatosTablaSimple> {
-    const { gestion_id, nivel_id, grado_id, paralelo_id } = req.query as Record<string, string>
-    if (!gestion_id) throw new AppError(400, 'gestion_id es requerido', 'MISSING_PARAM')
+    const { gestion_id, opciones } = this.opcionesNomina(req)
     const [data, institucion] = await Promise.all([
-      this.service.getNomina(req.auth!.institucion_id, gestion_id, nivel_id, grado_id, paralelo_id),
+      this.service.getNomina(req.auth!.institucion_id, gestion_id, opciones),
       getInstitucionInfo(req.auth!.institucion_id),
     ])
     return {
       institucion,
-      titulo:    'Nómina de Estudiantes Inscritos',
+      titulo:    'Nómina de Estudiantes',
       subtitulo: `Gestión ${data.anno} — ${data.estudiantes.length} estudiante(s)`,
-      columnas: [
-        { header: 'Código',   key: 'codigo' },
-        { header: 'Apellido', key: 'apellido' },
-        { header: 'Nombre',   key: 'nombre' },
-        { header: 'Nivel',    key: 'nivel' },
-        { header: 'Grado',    key: 'grado' },
-        { header: 'Paralelo', key: 'paralelo', align: 'center' },
-        { header: 'Estado',   key: 'estado', align: 'center' },
-      ],
-      filas: data.estudiantes,
+      columnas:  columnasNomina(req.query['columnas'] as string | undefined),
+      filas:     data.estudiantes.map((e, idx) => ({ ...e, numero: idx + 1, becado: e.becado ? 'Sí' : 'No' })),
     }
   }
 
   nomina = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const { gestion_id, nivel_id, grado_id, paralelo_id } = req.query as Record<string, string>
-      if (!gestion_id) throw new AppError(400, 'gestion_id es requerido', 'MISSING_PARAM')
-      res.json({ data: await this.service.getNomina(req.auth!.institucion_id, gestion_id, nivel_id, grado_id, paralelo_id) })
+      const { gestion_id, opciones } = this.opcionesNomina(req)
+      res.json({ data: await this.service.getNomina(req.auth!.institucion_id, gestion_id, opciones) })
     } catch (e) { next(e) }
   }
   nominaPdf = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
@@ -176,38 +208,36 @@ export class ReportesController {
   }
 
   // Nómina — versión para el propio docente, acotada a uno de sus cursos --------
+  // Las columnas académicas (áreas aprobadas/reprobadas, promedio, resultado) solo se calculan
+  // si quien pide es el/la asesor(a) de ese curso — el cliente no puede forzarlo.
+
+  private async opcionesMiNomina(req: Request) {
+    const paralelo_id = await this.validarParaleloDocente(req)
+    const { gestion_id, opciones } = this.opcionesNomina(req)
+    const docente   = await this.alcanceService.getDocente(req.auth!.usuario_id)
+    const esAsesor  = await this.alcanceService.esAsesorDelParalelo(docente.id, paralelo_id)
+    return { gestion_id, opciones: { ...opciones, nivel_id: undefined, grado_id: undefined, paralelo_id, incluir_academico: esAsesor } }
+  }
 
   private async miNominaTabla(req: Request): Promise<DatosTablaSimple> {
-    const paralelo_id = await this.validarParaleloDocente(req)
-    const gestion_id  = req.query['gestion_id'] as string
-    if (!gestion_id) throw new AppError(400, 'gestion_id es requerido', 'MISSING_PARAM')
+    const { gestion_id, opciones } = await this.opcionesMiNomina(req)
     const [data, institucion] = await Promise.all([
-      this.service.getNomina(req.auth!.institucion_id, gestion_id, undefined, undefined, paralelo_id),
+      this.service.getNomina(req.auth!.institucion_id, gestion_id, opciones),
       getInstitucionInfo(req.auth!.institucion_id),
     ])
     return {
       institucion,
-      titulo:    'Nómina de Estudiantes Inscritos',
+      titulo:    'Nómina de Estudiantes',
       subtitulo: `Gestión ${data.anno} — ${data.estudiantes.length} estudiante(s)`,
-      columnas: [
-        { header: 'Código',   key: 'codigo' },
-        { header: 'Apellido', key: 'apellido' },
-        { header: 'Nombre',   key: 'nombre' },
-        { header: 'Nivel',    key: 'nivel' },
-        { header: 'Grado',    key: 'grado' },
-        { header: 'Paralelo', key: 'paralelo', align: 'center' },
-        { header: 'Estado',   key: 'estado', align: 'center' },
-      ],
-      filas: data.estudiantes,
+      columnas:  columnasNomina(req.query['columnas'] as string | undefined),
+      filas:     data.estudiantes.map((e, idx) => ({ ...e, numero: idx + 1, becado: e.becado ? 'Sí' : 'No' })),
     }
   }
 
   miNomina = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const paralelo_id = await this.validarParaleloDocente(req)
-      const gestion_id  = req.query['gestion_id'] as string
-      if (!gestion_id) throw new AppError(400, 'gestion_id es requerido', 'MISSING_PARAM')
-      res.json({ data: await this.service.getNomina(req.auth!.institucion_id, gestion_id, undefined, undefined, paralelo_id) })
+      const { gestion_id, opciones } = await this.opcionesMiNomina(req)
+      res.json({ data: await this.service.getNomina(req.auth!.institucion_id, gestion_id, opciones) })
     } catch (e) { next(e) }
   }
   miNominaPdf = async (req: Request, res: Response, next: NextFunction): Promise<void> => {

@@ -13,7 +13,7 @@ import ReporteAsistenciaPage from '../../regente/ReporteAsistenciaPage'
 import CentralizadorSubareasStaffPage from '../../shared/CentralizadorSubareasStaffPage'
 
 const CARDS: { to: string; icon: IconName; title: string; desc: string }[] = [
-  { to: 'nomina',              icon: 'document-list', title: 'Nómina de Estudiantes',        desc: 'Lista de estudiantes inscritos, con filtros por gestión, nivel, grado y paralelo.' },
+  { to: 'nomina',              icon: 'document-list', title: 'Nómina de Estudiantes',        desc: 'Lista de estudiantes por curso, con columnas elegibles (promedio, áreas aprobadas/reprobadas, etc). Exporta a PDF y Excel.' },
   { to: 'ficha',                icon: 'id-card',       title: 'Ficha Individual',              desc: 'Datos personales, académicos y del tutor de un estudiante específico.' },
   { to: 'estado-matricula',     icon: 'user-check',    title: 'Estado del Estudiante',         desc: 'Preinscritos, activos, retirados, trasladados y egresados.' },
   { to: 'documentacion',        icon: 'folder',        title: 'Documentación Pendiente',       desc: 'Identifica expedientes incompletos por estudiante.' },

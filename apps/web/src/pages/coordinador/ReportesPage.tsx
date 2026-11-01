@@ -10,10 +10,12 @@ import ControlDiarioReportePage from './reportes/ControlDiarioReportePage'
 import ListaBTHPage       from './reportes/ListaBTHPage'
 import NotasSubareasPage  from './reportes/NotasSubareasPage'
 import CentralizadorSubareasStaffPage from '../shared/CentralizadorSubareasStaffPage'
+import NominaPage from '../secretaria/reportes/NominaPage'
 
 const CARDS: { to: string; icon: IconName; title: string; desc: string }[] = [
   { to: 'cuadro-honor',   icon: 'trophy',           title: 'Cuadro de Honor',          desc: 'Ranking de estudiantes por promedio general del trimestre.' },
   { to: 'centralizador',  icon: 'grid',             title: 'Centralizador de Notas',    desc: 'Vista matricial de todas las notas del paralelo. Exporta a PDF y Excel.' },
+  { to: 'nomina',         icon: 'document-list',    title: 'Nómina de Estudiantes',     desc: 'Lista de estudiantes por curso, con columnas elegibles (promedio, áreas aprobadas/reprobadas, etc). Exporta a PDF y Excel.' },
   { to: 'parciales',      icon: 'clipboard-check',  title: 'Estado de Parciales',       desc: 'Verifica qué docentes han entregado sus evaluaciones parciales.' },
   { to: 'carpetas',       icon: 'folder',           title: 'Carpetas Entregables',      desc: 'Lista de estudiantes habilitados para recoger su carpeta de exámenes.' },
   { to: 'promocion',      icon: 'graduation-cap',   title: 'Resultado Final / Promoción', desc: 'Cálculo de promoción anual (requiere los 3 trimestres cerrados).' },
@@ -66,6 +68,7 @@ export default function ReportesPage() {
       <Route path="cuadro-honor"  element={<CuadroHonorPage />} />
       <Route path="centralizador" element={<CentralizadorPage />} />
       <Route path="centralizador/subareas/:asignacion_id" element={<CentralizadorSubareasStaffPage />} />
+      <Route path="nomina"        element={<NominaPage />} />
       <Route path="parciales"     element={<ParcialesPage />} />
       <Route path="carpetas"      element={<CarpetasPage />} />
       <Route path="promocion"     element={<PromocionAnualPage />} />

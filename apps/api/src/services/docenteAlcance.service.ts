@@ -29,6 +29,13 @@ export class DocenteAlcanceService {
     if (!ids.includes(paralelo_id)) throw new AppError(403, 'No tienes acceso a este curso', 'FORBIDDEN')
   }
 
+  /** Solo el/la asesor(a) del curso ve el rendimiento académico completo (todas las áreas) en
+   *  la Nómina — un docente que solo dicta una materia no debe ver el resultado de las demás. */
+  async esAsesorDelParalelo(docente_id: string, paralelo_id: string): Promise<boolean> {
+    const paralelo = await prisma.paralelo.findUnique({ where: { id: paralelo_id }, select: { asesor_id: true } })
+    return paralelo?.asesor_id === docente_id
+  }
+
   /** El estudiante debe estar matriculado (en cualquier gestión) en un paralelo del docente. */
   async verificarAccesoEstudiante(docente_id: string, estudiante_id: string): Promise<void> {
     const paraleloIds = await this.misParaleloIds(docente_id)
