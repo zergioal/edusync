@@ -465,7 +465,11 @@ function PlanillaMobileView({
               const savKey  = `${ind.id}-${estudiante.id}`
               const ajeno   = ind.editable === false
               return (
-                <div key={ind.id} className="px-4 py-2.5 flex items-center gap-2">
+                // key incluye el estudiante (no solo el indicador): si no, al cambiar de
+                // estudiante React reutiliza el mismo NotaCell en vez de montar uno nuevo, y su
+                // estado interno (el valor que muestra) se queda pegado en el del estudiante
+                // anterior — se veía como "la nota del primer estudiante duplicada".
+                <div key={savKey} className="px-4 py-2.5 flex items-center gap-2">
                   {!trimestreCerrado && !ajeno && (
                     <button
                       type="button"
