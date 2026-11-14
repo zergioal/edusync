@@ -145,7 +145,8 @@ function condicionalAprobadoReprobado(ws: ExcelJS.Worksheet, rango: string) {
 /**
  * Pie con el resumen de aprobados/reprobados del trimestre (fórmulas COUNTIF/COUNT en vivo,
  * se recalculan solas si se edita una nota) + aviso si el % de reprobados supera 30 — mismo
- * criterio que la tarjeta "Resumen del trimestre" de la planilla web.
+ * criterio que la tarjeta "Resumen del trimestre" de la planilla web. Se ubica abajo a la
+ * derecha: ocupa solo las últimas 3 columnas de la hoja, no todo el ancho.
  */
 function escribirResumenAprobacion(
   ws: ExcelJS.Worksheet, numCols: number, colTotal: string, colNombre: string,
@@ -160,49 +161,91 @@ function escribirResumenAprobacion(
     ? `Aviso: más del 30% de los estudiantes está reprobando este trimestre (${pctReprobados}%).`
     : ''
 
-  ws.addRow([])
-  const filaTitulo = ws.addRow(['Resumen del trimestre'])
-  ws.mergeCells(filaTitulo.number, 1, filaTitulo.number, numCols)
-  filaTitulo.getCell(1).font = { bold: true, size: 11, color: { argb: AZUL_TEXTO } }
+  // Últimas 3 columnas de la hoja (mínimo 3 para no pisar "N°"/"Apellidos").
+  const colC = numCols
+  const colB = Math.max(2, numCols - 1)
+  const colA = Math.max(1, numCols - 2)
 
-  const filaAprob = ws.addRow(['Aprobados (> 50)'])
-  const celdaAprob = filaAprob.getCell(2)
+  ws.addRow([])
+  const filaTitulo = ws.addRow([])
+  filaTitulo.getCell(colA).value = 'Resumen del trimestre'
+  ws.mergeCells(filaTitulo.number, colA, filaTitulo.number, colC)
+  filaTitulo.getCell(colA).font = { bold: true, size: 11, color: { argb: AZUL_TEXTO } }
+  filaTitulo.getCell(colA).alignment = { horizontal: 'right' }
+
+  const filaAprob = ws.addRow([])
+  filaAprob.getCell(colA).value = 'Aprobados (> 50)'
+  filaAprob.getCell(colA).alignment = { horizontal: 'right' }
+  const celdaAprob = filaAprob.getCell(colB)
   celdaAprob.value = { formula: `COUNTIF(${rangoTotal},">50")`, result: stats.aprobados }
   celdaAprob.font = { bold: true, color: { argb: VERDE_TEXTO } }
-  const celdaPctAprob = filaAprob.getCell(3)
+  const celdaPctAprob = filaAprob.getCell(colC)
   celdaPctAprob.value = { formula: `IFERROR(ROUND(${celdaAprob.address}/COUNT(${rangoTotal})*100,0),0)`, result: pctAprobados }
   celdaPctAprob.numFmt = '0"%"'
   celdaPctAprob.font = { color: { argb: VERDE_TEXTO } }
 
-  const filaReprob = ws.addRow(['Reprobados (≤ 50)'])
-  const celdaReprob = filaReprob.getCell(2)
+  const filaReprob = ws.addRow([])
+  filaReprob.getCell(colA).value = 'Reprobados (≤ 50)'
+  filaReprob.getCell(colA).alignment = { horizontal: 'right' }
+  const celdaReprob = filaReprob.getCell(colB)
   celdaReprob.value = { formula: `COUNTIF(${rangoTotal},"<=50")`, result: stats.reprobados }
   celdaReprob.font = { bold: true, color: { argb: ROJO_TEXTO } }
-  const celdaPctReprob = filaReprob.getCell(3)
+  const celdaPctReprob = filaReprob.getCell(colC)
   celdaPctReprob.value = { formula: `IFERROR(ROUND(${celdaReprob.address}/COUNT(${rangoTotal})*100,0),0)`, result: pctReprobados }
   celdaPctReprob.numFmt = '0"%"'
   celdaPctReprob.font = { color: { argb: ROJO_TEXTO } }
 
-  const filaNota = ws.addRow([{
-    formula: `COUNT(${rangoTotal})&" de "&COUNTA(${rangoNombre})&" estudiante(s) con nota registrada en este trimestre."`,
-    result: `${stats.conNota} de ${stats.totalEstudiantes} estudiante(s) con nota registrada en este trimestre.`,
-  }])
-  ws.mergeCells(filaNota.number, 1, filaNota.number, numCols)
-  filaNota.getCell(1).font = { size: 9, italic: true, color: { argb: GRIS_TEXTO } }
+  const filaNota = ws.addRow([])
+  filaNota.getCell(colA).value = {
+    formula: `COUNT(${rangoTotal})&" de "&COUNTA(${rangoNombre})&" estudiante(s) con nota registrada."`,
+    result: `${stats.conNota} de ${stats.totalEstudiantes} estudiante(s) con nota registrada.`,
+  }
+  ws.mergeCells(filaNota.number, colA, filaNota.number, colC)
+  filaNota.getCell(colA).font = { size: 9, italic: true, color: { argb: GRIS_TEXTO } }
+  filaNota.getCell(colA).alignment = { horizontal: 'right' }
 
-  const filaAviso = ws.addRow([{
+  const filaAviso = ws.addRow([])
+  filaAviso.getCell(colA).value = {
     formula: `IF(${celdaPctReprob.address}>30,"Aviso: más del 30% de los estudiantes está reprobando este trimestre ("&${celdaPctReprob.address}&"%).","")`,
     result: aviso,
-  }])
-  ws.mergeCells(filaAviso.number, 1, filaAviso.number, numCols)
-  filaAviso.getCell(1).font = { bold: true, color: { argb: ROJO_TEXTO } }
+  }
+  ws.mergeCells(filaAviso.number, colA, filaAviso.number, colC)
+  filaAviso.getCell(colA).font = { bold: true, color: { argb: ROJO_TEXTO } }
+  filaAviso.getCell(colA).alignment = { horizontal: 'right' }
   ws.addConditionalFormatting({
-    ref: `A${filaAviso.number}`,
+    ref: `${colLetra(ws, colA)}${filaAviso.number}`,
     rules: [{
-      type: 'expression', formulae: [`A${filaAviso.number}<>""`], priority: 1,
+      type: 'expression', formulae: [`${colLetra(ws, colA)}${filaAviso.number}<>""`], priority: 1,
       style: { fill: { type: 'pattern', pattern: 'solid', bgColor: { argb: ROJO_FONDO } } },
     }],
   })
+}
+
+/**
+ * Dos líneas de firma y sello (Profesor/a + Director/a) centradas abajo, repartiendo el ancho
+ * de la hoja en dos mitades — mismo patrón que ya usan los registros impresos en papel.
+ */
+function escribirFirmas(ws: ExcelJS.Worksheet, numCols: number) {
+  const mitad = Math.max(2, Math.ceil(numCols / 2))
+  ws.addRow([])
+  ws.addRow([])
+  const filaLinea = ws.addRow([])
+  for (const [ini, fin] of [[1, mitad], [mitad + 1, numCols]] as const) {
+    if (ini > fin) continue
+    ws.mergeCells(filaLinea.number, ini, filaLinea.number, fin)
+    filaLinea.getCell(ini).border = { top: { style: 'thin', color: { argb: ARGB('374151') } } }
+  }
+  const filaTexto = ws.addRow([])
+  filaTexto.getCell(1).value = 'Firma y Sello Profesor(a)'
+  ws.mergeCells(filaTexto.number, 1, filaTexto.number, mitad)
+  filaTexto.getCell(1).alignment = { horizontal: 'center' }
+  filaTexto.getCell(1).font = { size: 9, color: { argb: GRIS_TEXTO } }
+  if (mitad + 1 <= numCols) {
+    filaTexto.getCell(mitad + 1).value = 'Firma y Sello Director(a)'
+    ws.mergeCells(filaTexto.number, mitad + 1, filaTexto.number, numCols)
+    filaTexto.getCell(mitad + 1).alignment = { horizontal: 'center' }
+    filaTexto.getCell(mitad + 1).font = { size: 9, color: { argb: GRIS_TEXTO } }
+  }
 }
 
 /** Protege las fórmulas de edición accidental — sin contraseña real, es solo un seguro
@@ -460,6 +503,7 @@ export async function generateRegistroMateriaExcel(data: RegistroMateriaExcelDat
     condicionalAprobadoReprobado(ws, `${colLetra(ws, colTotal)}${primera}:${colLetra(ws, colTotal)}${ultima}`)
     escribirResumenAprobacion(ws, numCols, colLetra(ws, colTotal), colLetra(ws, 2), primera, ultima, statsAprobacion(data.estudiantes))
   }
+  escribirFirmas(ws, numCols)
   finalizarHoja(ws, numCols, filaEnc2.number)
   await protegerFormulas(ws)
   return aBuffer(wb)
@@ -542,6 +586,7 @@ export async function generateRegistroResumenExcel(data: RegistroMateriaExcelDat
     condicionalAprobadoReprobado(ws, `${colLetra(ws, colTotal)}${primera}:${colLetra(ws, colTotal)}${ultima}`)
     escribirResumenAprobacion(ws, numCols, colLetra(ws, colTotal), colLetra(ws, 2), primera, ultima, statsAprobacion(data.estudiantes))
   }
+  escribirFirmas(ws, numCols)
   finalizarHoja(ws, numCols, filaEnc.number)
   await protegerFormulas(ws)
   return aBuffer(wb)

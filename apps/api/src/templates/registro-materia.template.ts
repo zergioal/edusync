@@ -100,6 +100,14 @@ export function generarHTMLRegistroMateria(d: DatosRegistroMateria): string {
     </tr>`
   }).join('')
 
+  // ── Resumen de aprobados/reprobados (estático — este PDF es una foto del momento) ──────────
+  const conNota = d.estudiantes.filter(e => e.total != null)
+  const aprobados = conNota.filter(e => e.total! > 50).length
+  const reprobados = conNota.length - aprobados
+  const pctAprobados = conNota.length > 0 ? Math.round((aprobados / conNota.length) * 100) : 0
+  const pctReprobados = conNota.length > 0 ? Math.round((reprobados / conNota.length) * 100) : 0
+  const avisoReprobados = pctReprobados > 30
+
   return `<!DOCTYPE html>
 <html lang="es">
 <head><meta charset="UTF-8"/>
@@ -141,6 +149,31 @@ ${encabezadoConLogo(d.institucion, `
 </table>
 <div style="margin-top:8px;font-size:8px;color:#999;text-align:center;">
   Escala: ED(0-50) | DA(51-68) | DO(69-84) | DP(85-100)
+</div>
+
+<div style="margin-top:10px;display:flex;justify-content:flex-end;">
+  <div style="width:230px;border:1px solid #ddd;border-radius:4px;padding:6px 10px;">
+    <div style="font-weight:bold;color:${AZUL};font-size:10px;margin-bottom:4px;">Resumen del trimestre</div>
+    <div style="display:flex;justify-content:space-between;font-size:9px;padding:1px 0;">
+      <span>Aprobados (&gt; 50)</span><span style="font-weight:bold;color:#15803D;">${aprobados} (${pctAprobados}%)</span>
+    </div>
+    <div style="display:flex;justify-content:space-between;font-size:9px;padding:1px 0;">
+      <span>Reprobados (&le; 50)</span><span style="font-weight:bold;color:#B91C1C;">${reprobados} (${pctReprobados}%)</span>
+    </div>
+    <div style="font-size:7px;color:#666;margin-top:2px;">${conNota.length} de ${d.estudiantes.length} estudiante(s) con nota registrada.</div>
+    ${avisoReprobados ? `<div style="margin-top:4px;background:#FDE7E7;color:#B91C1C;font-weight:bold;font-size:8px;padding:4px;border-radius:3px;">Aviso: más del 30% de los estudiantes está reprobando este trimestre (${pctReprobados}%).</div>` : ''}
+  </div>
+</div>
+
+<div style="margin-top:34px;display:flex;justify-content:center;gap:70px;">
+  <div style="width:210px;text-align:center;">
+    <div style="border-top:1px solid #333;margin-bottom:4px;">&nbsp;</div>
+    <div style="font-size:9px;color:#444;">Firma y Sello Profesor(a)</div>
+  </div>
+  <div style="width:210px;text-align:center;">
+    <div style="border-top:1px solid #333;margin-bottom:4px;">&nbsp;</div>
+    <div style="font-size:9px;color:#444;">Firma y Sello Director(a)</div>
+  </div>
 </div>
 </body>
 </html>`
