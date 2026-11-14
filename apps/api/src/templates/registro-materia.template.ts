@@ -134,9 +134,6 @@ export function generarHTMLRegistroMateria(d: DatosRegistroMateria, hoja: 'carta
   const pctReprobados = conNota.length > 0 ? Math.round((reprobados / conNota.length) * 100) : 0
 
   const piePaginaComun = `
-    <div style="margin-top:8px;font-size:8px;color:#999;text-align:center;">
-      Escala: ED(0-50) | DA(51-68) | DO(69-84) | DP(85-100)
-    </div>
     <div style="margin-top:10px;display:flex;justify-content:flex-end;">
       <div style="width:200px;border:1px solid #ddd;border-radius:4px;padding:6px 10px;">
         <div style="font-weight:bold;color:${AZUL};font-size:10px;margin-bottom:4px;">Resumen del trimestre</div>
