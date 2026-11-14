@@ -9,7 +9,7 @@ import { useIsMobile } from '../../hooks/useIsMobile'
 import { useCentralizadorAnualMensaje, colorDeMensaje, type MensajeAnual } from '../../hooks/useCentralizadorAnualMensaje'
 import { IndicadorFormModal, type IndicadorFormValues } from '../../components/planilla/IndicadorFormModal'
 import { ImportarNotasResultModal, type ImportarNotasResult } from '../../components/planilla/ImportarNotasResultModal'
-import { ExportarButton } from '../../components/ui/ExportarButton'
+import { ExportarButton, type ExportOpcion } from '../../components/ui/ExportarButton'
 import { Icon } from '../../components/ui/Icon'
 import { BackButton } from '../../components/ui/BackButton'
 
@@ -57,6 +57,13 @@ const ESCALA_COLORS: Record<string, string> = {
   DO: 'bg-blue-100 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300',
   DP: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300',
 }
+
+type TipoExportRegistro = 'pdf' | 'xlsx' | 'xlsx-resumen'
+const OPCIONES_EXPORT_REGISTRO: ExportOpcion<TipoExportRegistro>[] = [
+  { value: 'pdf',          label: 'PDF',              icon: 'file-pdf',   iconColor: 'text-red-600',   description: 'Registro completo con todos los indicadores.' },
+  { value: 'xlsx',         label: 'Excel — completo', icon: 'file-excel', iconColor: 'text-green-600', description: 'Una columna por cada indicador, igual que la planilla.' },
+  { value: 'xlsx-resumen', label: 'Excel — resumen',  icon: 'file-excel', iconColor: 'text-green-600', description: 'Solo los 4 subtotales (Ser/Decidir, Saber, Hacer, Autoevaluación) y el total.' },
+]
 
 // ─── Sub-componente: celda de nota editable ───────────────────────────────────
 
@@ -268,17 +275,18 @@ function PlanillaMobileView({
   const navigate = useNavigate()
   const [selectedEstIdx, setSelectedEstIdx] = useState(0)
   const [indicadorModal, setIndicadorModal] = useState<IndicadorModalState | null>(null)
-  const [dlState, setDlState] = useState<'idle' | 'pdf' | 'xlsx'>('idle')
+  const [dlState, setDlState] = useState<'idle' | TipoExportRegistro>('idle')
   const inputRefs = useRef<Map<string, HTMLInputElement>>(new Map())
   const importacion = useImportacionNotas(asignacion_id, selectedTrimestre, asignacion.materia.nombre, onReload)
 
-  async function descargarRegistro(tipo: 'pdf' | 'xlsx') {
+  async function descargarRegistro(tipo: TipoExportRegistro) {
     if (!selectedTrimestre) return
     setDlState(tipo)
     try {
+      const esResumen = tipo === 'xlsx-resumen'
       await apiDownload(
-        `/planilla/${asignacion_id}/registro/${tipo === 'pdf' ? 'pdf' : 'excel'}?trimestre_id=${selectedTrimestre.id}`,
-        `registro_${asignacion.materia.nombre}_T${selectedTrimestre.numero}.${tipo === 'pdf' ? 'pdf' : 'xlsx'}`,
+        `/planilla/${asignacion_id}/registro/${tipo === 'pdf' ? 'pdf' : 'excel'}?trimestre_id=${selectedTrimestre.id}${esResumen ? '&modo=resumen' : ''}`,
+        `registro_${esResumen ? 'resumen_' : ''}${asignacion.materia.nombre}_T${selectedTrimestre.numero}.${tipo === 'pdf' ? 'pdf' : 'xlsx'}`,
       )
     } finally { setDlState('idle') }
   }
@@ -364,7 +372,7 @@ function PlanillaMobileView({
       {/* Datos: exportar el registro, y cargar notas por lote desde Excel/CSV */}
       <div className="flex flex-wrap items-center gap-2 rounded-lg border border-border bg-surface-2/40 px-3 py-2">
         <span className="w-full text-xs font-semibold uppercase tracking-wide text-fg-muted">Datos</span>
-        <ExportarButton disabled={!selectedTrimestre} dlState={dlState} onExport={descargarRegistro} className="flex-1" />
+        <ExportarButton disabled={!selectedTrimestre} dlState={dlState} onExport={descargarRegistro} opciones={OPCIONES_EXPORT_REGISTRO} className="flex-1" />
         {!trimestreCerrado && !asignacion.materia.es_especial && (
           <>
             <button
@@ -610,7 +618,7 @@ export default function PlanillaPage() {
   const [selectedTrimestre, setSelectedTrimestre] = useState<TrimestrePlanilla | null>(null)
   const [initDone,          setInitDone]          = useState(false)
   const [indicadorModal,    setIndicadorModal]    = useState<IndicadorModalState | null>(null)
-  const [dlState,           setDlState]           = useState<'idle' | 'pdf' | 'xlsx'>('idle')
+  const [dlState,           setDlState]           = useState<'idle' | TipoExportRegistro>('idle')
   const [guardando,         setGuardando]         = useState(false)
   const cellRefs = useRef<Map<string, HTMLInputElement>>(new Map())
 
@@ -741,13 +749,14 @@ export default function PlanillaPage() {
     }
   }
 
-  async function descargarRegistro(tipo: 'pdf' | 'xlsx') {
+  async function descargarRegistro(tipo: TipoExportRegistro) {
     if (!selectedTrimestre) return
     setDlState(tipo)
     try {
+      const esResumen = tipo === 'xlsx-resumen'
       await apiDownload(
-        `/planilla/${asignacion_id}/registro/${tipo === 'pdf' ? 'pdf' : 'excel'}?trimestre_id=${selectedTrimestre.id}`,
-        `registro_${asignacion.materia.nombre}_T${selectedTrimestre.numero}.${tipo === 'pdf' ? 'pdf' : 'xlsx'}`,
+        `/planilla/${asignacion_id}/registro/${tipo === 'pdf' ? 'pdf' : 'excel'}?trimestre_id=${selectedTrimestre.id}${esResumen ? '&modo=resumen' : ''}`,
+        `registro_${esResumen ? 'resumen_' : ''}${asignacion.materia.nombre}_T${selectedTrimestre.numero}.${tipo === 'pdf' ? 'pdf' : 'xlsx'}`,
       )
     } finally { setDlState('idle') }
   }
@@ -853,7 +862,7 @@ export default function PlanillaPage() {
         {/* Datos: exportar el registro, y cargar notas por lote desde Excel/CSV */}
         <div className="flex flex-wrap items-center gap-2 rounded-lg border border-border bg-surface-2/40 px-3 py-2">
           <span className="text-xs font-semibold uppercase tracking-wide text-fg-muted mr-1">Datos</span>
-          <ExportarButton disabled={!selectedTrimestre} dlState={dlState} onExport={descargarRegistro} />
+          <ExportarButton disabled={!selectedTrimestre} dlState={dlState} onExport={descargarRegistro} opciones={OPCIONES_EXPORT_REGISTRO} />
           {!trimestreCerrado && !esEspecial && (
             <>
               <button
