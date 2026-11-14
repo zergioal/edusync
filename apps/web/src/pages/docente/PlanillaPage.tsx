@@ -127,6 +127,10 @@ function NotaCell({
       value={local}
       onChange={e => setLocal(e.target.value)}
       onBlur={handleBlur}
+      // Un input[type=number] enfocado sube/baja de 1 en 1 con la rueda del mouse — eso es lo
+      // que estaba cambiando notas por accidente al desplazarse por la planilla. Quitar el foco
+      // en wheel desactiva ese "spinner" sin afectar el scroll normal de la página.
+      onWheel={e => e.currentTarget.blur()}
       onKeyDown={e => {
         const dir: ArrowDir | undefined =
           e.key === 'ArrowUp' ? 'up' : e.key === 'ArrowDown' || e.key === 'Enter' ? 'down' :
