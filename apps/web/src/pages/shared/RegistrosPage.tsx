@@ -11,6 +11,7 @@ import { Spinner, Badge } from '@edusync/ui'
 import { Icon } from '../../components/ui/Icon'
 import { BackButton } from '../../components/ui/BackButton'
 import { ExportarButton, type ExportOpcion } from '../../components/ui/ExportarButton'
+import { ResumenAprobacion } from '../../components/planilla/ResumenAprobacion'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -273,6 +274,7 @@ function PlanillaLectura({ asignacionId, onBack }: { asignacionId: string; onBac
         <p className="text-xs text-fg-muted text-center pt-1">
           Vista resumida — gira el celular o usa una pantalla más grande para ver el detalle por indicador.
         </p>
+        {!esEspecial && <ResumenAprobacion estudiantes={estudiantes} />}
       </div>
 
       {/* ── TABLA — desde sm hacia arriba, con el detalle completo por indicador ── */}
@@ -387,6 +389,8 @@ function PlanillaLectura({ asignacionId, onBack }: { asignacionId: string; onBac
           </tbody>
         </table>
       </div>
+
+      {!esEspecial && <ResumenAprobacion estudiantes={estudiantes} />}
 
       <p className="text-xs text-fg-muted text-center">
         Vista de solo lectura — el registro y la edición de notas los hace el/la docente desde su panel.

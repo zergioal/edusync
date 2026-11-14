@@ -10,6 +10,7 @@ import { useCentralizadorAnualMensaje, colorDeMensaje, type MensajeAnual } from 
 import { IndicadorFormModal, type IndicadorFormValues } from '../../components/planilla/IndicadorFormModal'
 import { ImportarNotasResultModal, type ImportarNotasResult } from '../../components/planilla/ImportarNotasResultModal'
 import { ExportarButton, type ExportOpcion } from '../../components/ui/ExportarButton'
+import { ResumenAprobacion } from '../../components/planilla/ResumenAprobacion'
 import { Icon } from '../../components/ui/Icon'
 import { BackButton } from '../../components/ui/BackButton'
 
@@ -550,6 +551,9 @@ function PlanillaMobileView({
           </span>
         </div>
       )}
+
+      {/* Resumen de aprobados/reprobados del trimestre — abajo de todo, sobre la barra fija */}
+      {!asignacion.materia.es_especial && <ResumenAprobacion estudiantes={estudiantes} className="pb-20" />}
 
       {/* Barra inferior fija: Total + Escala del estudiante actual (no aplica a una subárea especial) */}
       {estudiante && !asignacion.materia.es_especial && (
@@ -1202,6 +1206,9 @@ export default function PlanillaPage() {
             </span>
           ))}
         </div>
+
+        {/* Resumen de aprobados/reprobados del trimestre */}
+        {!esEspecial && <ResumenAprobacion estudiantes={estudiantes} />}
       </div>
 
       {indicadorModal && (
