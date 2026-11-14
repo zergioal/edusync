@@ -1,5 +1,33 @@
 import ExcelJS from 'exceljs'
 
+export type TipoHoja = 'carta' | 'oficio'
+
+/** Cuántas filas de estudiante entran en una hoja antes de pasar a la siguiente (registro). */
+const FILAS_POR_HOJA = 40
+
+/**
+ * Tamaño de papel + orientación + encabezado repetido en cada hoja impresa. "Oficio" no es un
+ * tamaño con nombre propio en Excel — se usa Legal (el código de papel más cercano disponible).
+ */
+function configurarPagina(ws: ExcelJS.Worksheet, hoja: TipoHoja, filaEncabezadoIni: number, filaEncabezadoFin: number) {
+  ws.pageSetup = {
+    ...ws.pageSetup,
+    ...(hoja === 'oficio' ? { paperSize: 5 } : {}),
+    orientation: 'landscape',
+    fitToPage: false,
+    margins: { left: 0.3, right: 0.3, top: 0.4, bottom: 0.4, header: 0, footer: 0 },
+    printTitlesRow: `${filaEncabezadoIni}:${filaEncabezadoFin}`,
+  }
+}
+
+/** Corta la hoja impresa cada FILAS_POR_HOJA filas de estudiante, para que ninguna hoja
+ *  impresa quede con una fila de datos pisada a la mitad. */
+function paginarCada40(ws: ExcelJS.Worksheet, primeraFilaDatos: number, totalEstudiantes: number) {
+  for (let i = FILAS_POR_HOJA; i < totalEstudiantes; i += FILAS_POR_HOJA) {
+    ws.getRow(primeraFilaDatos - 1 + i).addPageBreak()
+  }
+}
+
 // ── Estilo institucional compartido por todos los reportes ────────────────────
 // (mismo azul que ya usan los encabezados de los PDF — ver AZUL en los templates)
 
@@ -112,7 +140,7 @@ async function aBuffer(wb: ExcelJS.Workbook): Promise<Buffer> {
 function statsAprobacion(estudiantes: Array<{ total: number | null }>) {
   const conNotaArr = estudiantes.filter(e => e.total != null)
   const aprobados  = conNotaArr.filter(e => e.total! > 50).length
-  return { aprobados, reprobados: conNotaArr.length - aprobados, conNota: conNotaArr.length, totalEstudiantes: estudiantes.length }
+  return { aprobados, reprobados: conNotaArr.length - aprobados, conNota: conNotaArr.length }
 }
 
 /** Letra de columna de Excel (1 → A, 27 → AA, …) a partir del índice 1-based. */
@@ -144,29 +172,24 @@ function condicionalAprobadoReprobado(ws: ExcelJS.Worksheet, rango: string) {
 
 /**
  * Pie con el resumen de aprobados/reprobados del trimestre (fórmulas COUNTIF/COUNT en vivo,
- * se recalculan solas si se edita una nota) + aviso si el % de reprobados supera 30 — mismo
- * criterio que la tarjeta "Resumen del trimestre" de la planilla web. Se ubica abajo a la
- * derecha: ocupa solo las últimas 3 columnas de la hoja, no todo el ancho.
+ * se recalculan solas si se edita una nota). Se ubica abajo a la derecha: ocupa solo las
+ * últimas 3 columnas de la hoja, no todo el ancho.
  */
 function escribirResumenAprobacion(
-  ws: ExcelJS.Worksheet, numCols: number, colTotal: string, colNombre: string,
+  ws: ExcelJS.Worksheet, colTotal: string,
   primeraFila: number, ultimaFila: number,
-  stats: { aprobados: number; reprobados: number; conNota: number; totalEstudiantes: number },
+  stats: { aprobados: number; reprobados: number; conNota: number },
 ) {
-  const rangoTotal  = `${colTotal}${primeraFila}:${colTotal}${ultimaFila}`
-  const rangoNombre = `${colNombre}${primeraFila}:${colNombre}${ultimaFila}`
+  const rangoTotal = `${colTotal}${primeraFila}:${colTotal}${ultimaFila}`
   const pctAprobados  = stats.conNota > 0 ? Math.round((stats.aprobados / stats.conNota) * 100) : 0
   const pctReprobados = stats.conNota > 0 ? Math.round((stats.reprobados / stats.conNota) * 100) : 0
-  const aviso = pctReprobados > 30
-    ? `Aviso: más del 30% de los estudiantes está reprobando este trimestre (${pctReprobados}%).`
-    : ''
 
   // Últimas 3 columnas de la hoja (mínimo 3 para no pisar "N°"/"Apellidos").
+  const numCols = ws.columnCount
   const colC = numCols
   const colB = Math.max(2, numCols - 1)
   const colA = Math.max(1, numCols - 2)
 
-  ws.addRow([])
   const filaTitulo = ws.addRow([])
   filaTitulo.getCell(colA).value = 'Resumen del trimestre'
   ws.mergeCells(filaTitulo.number, colA, filaTitulo.number, colC)
@@ -174,7 +197,7 @@ function escribirResumenAprobacion(
   filaTitulo.getCell(colA).alignment = { horizontal: 'right' }
 
   const filaAprob = ws.addRow([])
-  filaAprob.getCell(colA).value = 'Aprobados (> 50)'
+  filaAprob.getCell(colA).value = 'Aprobados'
   filaAprob.getCell(colA).alignment = { horizontal: 'right' }
   const celdaAprob = filaAprob.getCell(colB)
   celdaAprob.value = { formula: `COUNTIF(${rangoTotal},">50")`, result: stats.aprobados }
@@ -185,7 +208,7 @@ function escribirResumenAprobacion(
   celdaPctAprob.font = { color: { argb: VERDE_TEXTO } }
 
   const filaReprob = ws.addRow([])
-  filaReprob.getCell(colA).value = 'Reprobados (≤ 50)'
+  filaReprob.getCell(colA).value = 'Reprobados'
   filaReprob.getCell(colA).alignment = { horizontal: 'right' }
   const celdaReprob = filaReprob.getCell(colB)
   celdaReprob.value = { formula: `COUNTIF(${rangoTotal},"<=50")`, result: stats.reprobados }
@@ -194,31 +217,6 @@ function escribirResumenAprobacion(
   celdaPctReprob.value = { formula: `IFERROR(ROUND(${celdaReprob.address}/COUNT(${rangoTotal})*100,0),0)`, result: pctReprobados }
   celdaPctReprob.numFmt = '0"%"'
   celdaPctReprob.font = { color: { argb: ROJO_TEXTO } }
-
-  const filaNota = ws.addRow([])
-  filaNota.getCell(colA).value = {
-    formula: `COUNT(${rangoTotal})&" de "&COUNTA(${rangoNombre})&" estudiante(s) con nota registrada."`,
-    result: `${stats.conNota} de ${stats.totalEstudiantes} estudiante(s) con nota registrada.`,
-  }
-  ws.mergeCells(filaNota.number, colA, filaNota.number, colC)
-  filaNota.getCell(colA).font = { size: 9, italic: true, color: { argb: GRIS_TEXTO } }
-  filaNota.getCell(colA).alignment = { horizontal: 'right' }
-
-  const filaAviso = ws.addRow([])
-  filaAviso.getCell(colA).value = {
-    formula: `IF(${celdaPctReprob.address}>30,"Aviso: más del 30% de los estudiantes está reprobando este trimestre ("&${celdaPctReprob.address}&"%).","")`,
-    result: aviso,
-  }
-  ws.mergeCells(filaAviso.number, colA, filaAviso.number, colC)
-  filaAviso.getCell(colA).font = { bold: true, color: { argb: ROJO_TEXTO } }
-  filaAviso.getCell(colA).alignment = { horizontal: 'right' }
-  ws.addConditionalFormatting({
-    ref: `${colLetra(ws, colA)}${filaAviso.number}`,
-    rules: [{
-      type: 'expression', formulae: [`${colLetra(ws, colA)}${filaAviso.number}<>""`], priority: 1,
-      style: { fill: { type: 'pattern', pattern: 'solid', bgColor: { argb: ROJO_FONDO } } },
-    }],
-  })
 }
 
 /**
@@ -383,7 +381,7 @@ export interface RegistroMateriaExcelData {
  * dimensión, acá cada indicador es el que el/la docente realmente cargó — las fórmulas se arman
  * dinámicamente según cuántos indicadores tenga cada dimensión en esta asignación/trimestre.
  */
-export async function generateRegistroMateriaExcel(data: RegistroMateriaExcelData): Promise<Buffer> {
+export async function generateRegistroMateriaExcel(data: RegistroMateriaExcelData, hoja: TipoHoja = 'carta'): Promise<Buffer> {
   const wb = nuevoLibro()
   const ws = wb.addWorksheet('Registro')
 
@@ -501,9 +499,11 @@ export async function generateRegistroMateriaExcel(data: RegistroMateriaExcelDat
     const primera = filaEnc2.number + 1
     const ultima  = filaEnc2.number + data.estudiantes.length
     condicionalAprobadoReprobado(ws, `${colLetra(ws, colTotal)}${primera}:${colLetra(ws, colTotal)}${ultima}`)
-    escribirResumenAprobacion(ws, numCols, colLetra(ws, colTotal), colLetra(ws, 2), primera, ultima, statsAprobacion(data.estudiantes))
+    paginarCada40(ws, primera, data.estudiantes.length)
+    escribirResumenAprobacion(ws, colLetra(ws, colTotal), primera, ultima, statsAprobacion(data.estudiantes))
   }
   escribirFirmas(ws, numCols)
+  configurarPagina(ws, hoja, filaEnc1.number, filaEnc2.number)
   finalizarHoja(ws, numCols, filaEnc2.number)
   await protegerFormulas(ws)
   return aBuffer(wb)
@@ -513,7 +513,7 @@ export async function generateRegistroMateriaExcel(data: RegistroMateriaExcelDat
  * Igual que generateRegistroMateriaExcel pero solo con los 4 subtotales por dimensión
  * (sin el detalle de cada indicador) y el total — para repartir una planilla más compacta.
  */
-export async function generateRegistroResumenExcel(data: RegistroMateriaExcelData): Promise<Buffer> {
+export async function generateRegistroResumenExcel(data: RegistroMateriaExcelData, hoja: TipoHoja = 'carta'): Promise<Buffer> {
   const wb = nuevoLibro()
   const ws = wb.addWorksheet('Registro (resumen)')
 
@@ -584,9 +584,11 @@ export async function generateRegistroResumenExcel(data: RegistroMateriaExcelDat
     const primera = filaEnc.number + 1
     const ultima  = filaEnc.number + data.estudiantes.length
     condicionalAprobadoReprobado(ws, `${colLetra(ws, colTotal)}${primera}:${colLetra(ws, colTotal)}${ultima}`)
-    escribirResumenAprobacion(ws, numCols, colLetra(ws, colTotal), colLetra(ws, 2), primera, ultima, statsAprobacion(data.estudiantes))
+    paginarCada40(ws, primera, data.estudiantes.length)
+    escribirResumenAprobacion(ws, colLetra(ws, colTotal), primera, ultima, statsAprobacion(data.estudiantes))
   }
   escribirFirmas(ws, numCols)
+  configurarPagina(ws, hoja, filaEnc.number, filaEnc.number)
   finalizarHoja(ws, numCols, filaEnc.number)
   await protegerFormulas(ws)
   return aBuffer(wb)

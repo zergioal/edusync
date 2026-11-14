@@ -48,7 +48,10 @@ const DIM_COLORS = [
 ]
 const colorDimension = (i: number) => DIM_COLORS[i % DIM_COLORS.length]!
 
-export function generarHTMLRegistroMateria(d: DatosRegistroMateria): string {
+/** Cuántas filas de estudiante entran en una hoja antes de pasar a la siguiente. */
+const FILAS_POR_HOJA = 40
+
+export function generarHTMLRegistroMateria(d: DatosRegistroMateria, hoja: 'carta' | 'oficio' = 'carta'): string {
   const totalIndicCols = d.dimensiones.reduce((s, dim) => s + dim.indicadores.length, 0)
   // Columnas de datos = una por indicador + una "PROM." por dimensión.
   const totalDataCols = totalIndicCols + d.dimensiones.length
@@ -80,8 +83,8 @@ export function generarHTMLRegistroMateria(d: DatosRegistroMateria): string {
     return `${cols}<th style="background:${oscuro};color:#fff;padding:3px;font-size:8px;font-weight:bold;">PROM.</th>`
   }).join('')
 
-  const filas = d.estudiantes.map((est, idx) => {
-    const bg = idx % 2 === 0 ? '#FFFFFF' : '#F5F5F5'
+  const filaHTML = (est: DatosRegistroMateria['estudiantes'][number], nro: number) => {
+    const bg = nro % 2 === 1 ? '#FFFFFF' : '#F5F5F5'
     const dimCells = d.dimensiones.map((dim, i) => {
       const notaCells = dim.indicadores.map(ind =>
         `<td style="text-align:center;font-size:8px;padding:2px;">${est.notas[ind.id] ?? '—'}</td>`
@@ -91,14 +94,37 @@ export function generarHTMLRegistroMateria(d: DatosRegistroMateria): string {
     }).join('')
     const escalaColor = est.escala ? ESCALA_COLOR[est.escala] : '#999'
     return `<tr style="background:${bg};">
-      <td style="text-align:center;font-size:8px;padding:2px;">${idx + 1}</td>
+      <td style="text-align:center;font-size:8px;padding:2px;">${nro}</td>
       <td style="font-size:8px;padding:2px 4px;">${est.apellido} ${est.nombre}</td>
       ${dimCells}
       <td style="text-align:center;font-size:8px;padding:2px;color:#444;">${est.notaExtracurricular ?? '—'}</td>
       <td style="text-align:center;font-size:9px;padding:2px;font-weight:bold;background:${colorTotal(est.total)};">${est.total ?? '—'}</td>
       <td style="text-align:center;font-size:9px;padding:2px;font-weight:bold;color:${escalaColor};">${est.escala ?? '—'}</td>
     </tr>`
-  }).join('')
+  }
+
+  const cabeceraTabla = `
+    ${colgroup}
+    <thead>
+      <tr>
+        <th rowspan="2" style="background:${AZUL};color:#fff;padding:4px;font-size:9px;">N°</th>
+        <th rowspan="2" style="background:${AZUL};color:#fff;padding:4px;font-size:9px;text-align:left;">Apellidos y Nombres</th>
+        ${groupHeader}
+        <th rowspan="2" style="background:#4338CA;color:#fff;padding:4px;font-size:8px;">Nota<br/>Extra</th>
+        <th rowspan="2" style="background:#111827;color:#fff;padding:4px;font-size:9px;">Total</th>
+        <th rowspan="2" style="background:#111827;color:#fff;padding:4px;font-size:9px;">Escala</th>
+      </tr>
+      <tr>
+        ${indicHeader}
+      </tr>
+    </thead>`
+
+  // ── Si hay más de FILAS_POR_HOJA estudiantes, se reparten en varias hojas — cada una con su
+  // propio encabezado de tabla (para poder leerla sin tener a mano la hoja anterior). El resumen
+  // y las firmas van solo al final, en la última hoja. ──────────────────────────────────────────
+  const paginas: DatosRegistroMateria['estudiantes'][] = []
+  for (let i = 0; i < d.estudiantes.length; i += FILAS_POR_HOJA) paginas.push(d.estudiantes.slice(i, i + FILAS_POR_HOJA))
+  if (paginas.length === 0) paginas.push([])
 
   // ── Resumen de aprobados/reprobados (estático — este PDF es una foto del momento) ──────────
   const conNota = d.estudiantes.filter(e => e.total != null)
@@ -106,7 +132,56 @@ export function generarHTMLRegistroMateria(d: DatosRegistroMateria): string {
   const reprobados = conNota.length - aprobados
   const pctAprobados = conNota.length > 0 ? Math.round((aprobados / conNota.length) * 100) : 0
   const pctReprobados = conNota.length > 0 ? Math.round((reprobados / conNota.length) * 100) : 0
-  const avisoReprobados = pctReprobados > 30
+
+  const piePaginaComun = `
+    <div style="margin-top:8px;font-size:8px;color:#999;text-align:center;">
+      Escala: ED(0-50) | DA(51-68) | DO(69-84) | DP(85-100)
+    </div>
+    <div style="margin-top:10px;display:flex;justify-content:flex-end;">
+      <div style="width:200px;border:1px solid #ddd;border-radius:4px;padding:6px 10px;">
+        <div style="font-weight:bold;color:${AZUL};font-size:10px;margin-bottom:4px;">Resumen del trimestre</div>
+        <div style="display:flex;justify-content:space-between;font-size:9px;padding:1px 0;">
+          <span>Aprobados</span><span style="font-weight:bold;color:#15803D;">${aprobados} (${pctAprobados}%)</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:9px;padding:1px 0;">
+          <span>Reprobados</span><span style="font-weight:bold;color:#B91C1C;">${reprobados} (${pctReprobados}%)</span>
+        </div>
+      </div>
+    </div>
+    <div style="margin-top:34px;display:flex;justify-content:center;gap:70px;">
+      <div style="width:210px;text-align:center;">
+        <div style="border-top:1px solid #333;margin-bottom:4px;">&nbsp;</div>
+        <div style="font-size:9px;color:#444;">Firma y Sello Profesor(a)</div>
+      </div>
+      <div style="width:210px;text-align:center;">
+        <div style="border-top:1px solid #333;margin-bottom:4px;">&nbsp;</div>
+        <div style="font-size:9px;color:#444;">Firma y Sello Director(a)</div>
+      </div>
+    </div>`
+
+  const bloquesPaginas = paginas.map((pagina, pIdx) => {
+    const esUltima = pIdx === paginas.length - 1
+    const inicioNro = pIdx * FILAS_POR_HOJA
+    const filasTabla = pagina.map((est, i) => filaHTML(est, inicioNro + i + 1)).join('')
+    // La primera hoja ya trae el logo/encabezado institucional completo (abajo) — las
+    // siguientes, al no repetirlo, llevan una línea compacta para no perder el contexto.
+    const contextoCompacto = pIdx > 0
+      ? `<div style="margin-bottom:4px;font-size:9px;color:#444;">
+          <strong>${d.materia}</strong> (${d.campo}) — ${d.nivel} ${d.grado} "${d.paralelo}" — Trimestre ${d.trimestre}° — Gestión ${d.anno} — Hoja ${pIdx + 1}
+        </div>`
+      : ''
+    return `<div style="${pIdx > 0 ? 'page-break-before:always;' : ''}">
+      ${contextoCompacto}
+      <table>
+        ${cabeceraTabla}
+        <tbody>
+          ${filasTabla}
+          ${pagina.length === 0 ? `<tr><td colspan="${5 + totalIndicCols + d.dimensiones.length}" style="text-align:center;padding:10px;font-size:9px;color:#999;">Sin estudiantes matriculados</td></tr>` : ''}
+        </tbody>
+      </table>
+      ${esUltima ? piePaginaComun : ''}
+    </div>`
+  }).join('')
 
   return `<!DOCTYPE html>
 <html lang="es">
@@ -116,7 +191,7 @@ export function generarHTMLRegistroMateria(d: DatosRegistroMateria): string {
   body { font-family: Arial, sans-serif; font-size: 10px; }
   table { border-collapse: collapse; width: 100%; table-layout: fixed; }
   th, td { border: 1px solid #ddd; word-wrap: break-word; overflow-wrap: break-word; }
-  @page { size: Letter landscape; margin: 0.7cm; }
+  @page { size: ${hoja === 'oficio' ? '33cm 21.59cm' : 'Letter landscape'}; margin: 0.7cm; }
 </style>
 </head>
 <body>
@@ -127,54 +202,7 @@ ${encabezadoConLogo(d.institucion, `
   </div>
   <div style="font-size:9px;color:#666;">Prof. ${d.docente}</div>
 `)}
-<table>
-  ${colgroup}
-  <thead>
-    <tr>
-      <th rowspan="2" style="background:${AZUL};color:#fff;padding:4px;font-size:9px;">N°</th>
-      <th rowspan="2" style="background:${AZUL};color:#fff;padding:4px;font-size:9px;text-align:left;">Apellidos y Nombres</th>
-      ${groupHeader}
-      <th rowspan="2" style="background:#4338CA;color:#fff;padding:4px;font-size:8px;">Nota<br/>Extra</th>
-      <th rowspan="2" style="background:#111827;color:#fff;padding:4px;font-size:9px;">Total</th>
-      <th rowspan="2" style="background:#111827;color:#fff;padding:4px;font-size:9px;">Escala</th>
-    </tr>
-    <tr>
-      ${indicHeader}
-    </tr>
-  </thead>
-  <tbody>
-    ${filas}
-    ${d.estudiantes.length === 0 ? `<tr><td colspan="${5 + totalIndicCols + d.dimensiones.length}" style="text-align:center;padding:10px;font-size:9px;color:#999;">Sin estudiantes matriculados</td></tr>` : ''}
-  </tbody>
-</table>
-<div style="margin-top:8px;font-size:8px;color:#999;text-align:center;">
-  Escala: ED(0-50) | DA(51-68) | DO(69-84) | DP(85-100)
-</div>
-
-<div style="margin-top:10px;display:flex;justify-content:flex-end;">
-  <div style="width:230px;border:1px solid #ddd;border-radius:4px;padding:6px 10px;">
-    <div style="font-weight:bold;color:${AZUL};font-size:10px;margin-bottom:4px;">Resumen del trimestre</div>
-    <div style="display:flex;justify-content:space-between;font-size:9px;padding:1px 0;">
-      <span>Aprobados (&gt; 50)</span><span style="font-weight:bold;color:#15803D;">${aprobados} (${pctAprobados}%)</span>
-    </div>
-    <div style="display:flex;justify-content:space-between;font-size:9px;padding:1px 0;">
-      <span>Reprobados (&le; 50)</span><span style="font-weight:bold;color:#B91C1C;">${reprobados} (${pctReprobados}%)</span>
-    </div>
-    <div style="font-size:7px;color:#666;margin-top:2px;">${conNota.length} de ${d.estudiantes.length} estudiante(s) con nota registrada.</div>
-    ${avisoReprobados ? `<div style="margin-top:4px;background:#FDE7E7;color:#B91C1C;font-weight:bold;font-size:8px;padding:4px;border-radius:3px;">Aviso: más del 30% de los estudiantes está reprobando este trimestre (${pctReprobados}%).</div>` : ''}
-  </div>
-</div>
-
-<div style="margin-top:34px;display:flex;justify-content:center;gap:70px;">
-  <div style="width:210px;text-align:center;">
-    <div style="border-top:1px solid #333;margin-bottom:4px;">&nbsp;</div>
-    <div style="font-size:9px;color:#444;">Firma y Sello Profesor(a)</div>
-  </div>
-  <div style="width:210px;text-align:center;">
-    <div style="border-top:1px solid #333;margin-bottom:4px;">&nbsp;</div>
-    <div style="font-size:9px;color:#444;">Firma y Sello Director(a)</div>
-  </div>
-</div>
+${bloquesPaginas}
 </body>
 </html>`
 }

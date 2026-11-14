@@ -6,7 +6,7 @@ import { AppError } from '../middlewares/errorHandler'
 import { generarHTMLRegistroMateria, type DatosRegistroMateria } from '../templates/registro-materia.template'
 import { generarHTMLCentralizadorAsignacion, type DatosCentralizadorAsignacion } from '../templates/centralizador-asignacion.template'
 import { generarHTMLCentralizadorSubareas, type DatosCentralizadorSubareas } from '../templates/centralizador-subareas.template'
-import { generatePDFLandscape } from '../utils/pdf.generator'
+import { generatePDFLandscape, type TipoHoja } from '../utils/pdf.generator'
 import { generateRegistroMateriaExcel, generateRegistroResumenExcel, generateCentralizadorAsignacionExcel, generateCentralizadorSubareasExcel } from '../utils/excel.generator'
 import { getInstitucionInfo } from '../utils/institucion.util'
 
@@ -46,12 +46,16 @@ export class PlanillaController {
     }
   }
 
+  private hojaDe(req: Request): TipoHoja {
+    return req.query['hoja'] === 'oficio' ? 'oficio' : 'carta'
+  }
+
   getRegistroPdf = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const { trimestre_id } = req.query as Record<string, string>
       if (!trimestre_id) throw new AppError(400, 'trimestre_id es requerido', 'MISSING_PARAM')
       const payload = await this.buildRegistroData(req.params['asignacion_id']!, trimestre_id, req.auth!.institucion_id)
-      const pdf = await generatePDFLandscape(generarHTMLRegistroMateria(payload))
+      const pdf = await generatePDFLandscape(generarHTMLRegistroMateria(payload, this.hojaDe(req)), this.hojaDe(req))
       res.setHeader('Content-Type', 'application/pdf')
       res.setHeader('Content-Disposition', `attachment; filename="registro_${payload.materia}_T${payload.trimestre}.pdf"`)
       res.send(pdf)
@@ -64,7 +68,8 @@ export class PlanillaController {
       if (!trimestre_id) throw new AppError(400, 'trimestre_id es requerido', 'MISSING_PARAM')
       const payload = await this.buildRegistroData(req.params['asignacion_id']!, trimestre_id, req.auth!.institucion_id)
       const esResumen = modo === 'resumen'
-      const buf = esResumen ? await generateRegistroResumenExcel(payload) : await generateRegistroMateriaExcel(payload)
+      const hoja = this.hojaDe(req)
+      const buf = esResumen ? await generateRegistroResumenExcel(payload, hoja) : await generateRegistroMateriaExcel(payload, hoja)
       res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
       res.setHeader('Content-Disposition', `attachment; filename="registro_${esResumen ? 'resumen_' : ''}${payload.materia}_T${payload.trimestre}.xlsx"`)
       res.send(buf)
