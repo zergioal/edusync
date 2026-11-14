@@ -26,6 +26,7 @@ export interface DatosRegistroMateria {
     codigo:    string
     notas:     Record<string, number | null>
     promedios: Record<string, number | null>
+    notaExtracurricular: number | null
     total:     number | null
     escala:    Escala | null
   }>
@@ -34,6 +35,8 @@ export interface DatosRegistroMateria {
 const ESCALA_COLOR: Record<Escala, string> = {
   ED: '#dc2626', DA: '#d97706', DO: '#2563eb', DP: '#16a34a',
 }
+/** Mismo criterio de aprobación que el resto del sistema: > 50 aprueba. */
+const colorTotal = (total: number | null) => total == null ? '#fff' : total > 50 ? '#e2f5e9' : '#fde7e7'
 
 export function generarHTMLRegistroMateria(d: DatosRegistroMateria): string {
   const totalIndicCols = d.dimensiones.reduce((s, dim) => s + dim.indicadores.length, 0)
@@ -44,12 +47,13 @@ export function generarHTMLRegistroMateria(d: DatosRegistroMateria): string {
   // el resto se reparte en partes iguales entre las columnas de datos — así, con
   // muchos indicadores, cada columna se angosta de forma pareja en vez de que
   // "Apellidos y Nombres" les quite espacio (antes competían por ancho libre).
-  const PCT_NRO = 3, PCT_NOMBRE = 15, PCT_TOTAL = 5, PCT_ESCALA = 5
-  const pctDatos = totalDataCols > 0 ? (100 - PCT_NRO - PCT_NOMBRE - PCT_TOTAL - PCT_ESCALA) / totalDataCols : 0
+  const PCT_NRO = 3, PCT_NOMBRE = 15, PCT_EXTRA = 5, PCT_TOTAL = 5, PCT_ESCALA = 5
+  const pctDatos = totalDataCols > 0 ? (100 - PCT_NRO - PCT_NOMBRE - PCT_EXTRA - PCT_TOTAL - PCT_ESCALA) / totalDataCols : 0
   const colgroup = `<colgroup>
     <col style="width:${PCT_NRO}%">
     <col style="width:${PCT_NOMBRE}%">
     ${Array(totalDataCols).fill(0).map(() => `<col style="width:${pctDatos.toFixed(3)}%">`).join('')}
+    <col style="width:${PCT_EXTRA}%">
     <col style="width:${PCT_TOTAL}%">
     <col style="width:${PCT_ESCALA}%">
   </colgroup>`
@@ -79,7 +83,8 @@ export function generarHTMLRegistroMateria(d: DatosRegistroMateria): string {
       <td style="text-align:center;font-size:8px;padding:2px;">${idx + 1}</td>
       <td style="font-size:8px;padding:2px 4px;">${est.apellido} ${est.nombre}</td>
       ${dimCells}
-      <td style="text-align:center;font-size:9px;padding:2px;font-weight:bold;">${est.total ?? '—'}</td>
+      <td style="text-align:center;font-size:8px;padding:2px;color:#444;">${est.notaExtracurricular ?? '—'}</td>
+      <td style="text-align:center;font-size:9px;padding:2px;font-weight:bold;background:${colorTotal(est.total)};">${est.total ?? '—'}</td>
       <td style="text-align:center;font-size:9px;padding:2px;font-weight:bold;color:${escalaColor};">${est.escala ?? '—'}</td>
     </tr>`
   }).join('')
@@ -110,6 +115,7 @@ ${encabezadoConLogo(d.institucion, `
       <th rowspan="2" style="background:${AZUL};color:#fff;padding:4px;font-size:9px;">N°</th>
       <th rowspan="2" style="background:${AZUL};color:#fff;padding:4px;font-size:9px;text-align:left;">Apellidos y Nombres</th>
       ${groupHeader}
+      <th rowspan="2" style="background:#4338CA;color:#fff;padding:4px;font-size:8px;">Nota<br/>Extra</th>
       <th rowspan="2" style="background:#111827;color:#fff;padding:4px;font-size:9px;">Total</th>
       <th rowspan="2" style="background:#111827;color:#fff;padding:4px;font-size:9px;">Escala</th>
     </tr>
@@ -119,7 +125,7 @@ ${encabezadoConLogo(d.institucion, `
   </thead>
   <tbody>
     ${filas}
-    ${d.estudiantes.length === 0 ? `<tr><td colspan="${4 + totalIndicCols + d.dimensiones.length}" style="text-align:center;padding:10px;font-size:9px;color:#999;">Sin estudiantes matriculados</td></tr>` : ''}
+    ${d.estudiantes.length === 0 ? `<tr><td colspan="${5 + totalIndicCols + d.dimensiones.length}" style="text-align:center;padding:10px;font-size:9px;color:#999;">Sin estudiantes matriculados</td></tr>` : ''}
   </tbody>
 </table>
 <div style="margin-top:8px;font-size:8px;color:#999;text-align:center;">

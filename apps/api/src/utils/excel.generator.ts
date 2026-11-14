@@ -12,6 +12,8 @@ const GRIS_BORDE  = ARGB('D9D9D9')
 const GRIS_TEXTO  = ARGB('6B7280')
 const ROJO_FONDO  = ARGB('FDE7E7')
 const ROJO_TEXTO  = ARGB('B91C1C')
+const VERDE_FONDO = ARGB('E2F5E9')
+const VERDE_TEXTO = ARGB('15803D')
 
 const BORDE_FINO: Partial<ExcelJS.Borders> = {
   top:    { style: 'thin', color: { argb: GRIS_BORDE } },
@@ -88,6 +90,33 @@ function finalizarHoja(ws: ExcelJS.Worksheet, numCols: number, filaEncabezado: n
 
 async function aBuffer(wb: ExcelJS.Workbook): Promise<Buffer> {
   return Buffer.from(await wb.xlsx.writeBuffer())
+}
+
+/** Letra de columna de Excel (1 → A, 27 → AA, …) a partir del índice 1-based. */
+function colLetra(ws: ExcelJS.Worksheet, indice: number): string {
+  return ws.getColumn(indice).letter
+}
+
+/**
+ * Pinta en vivo (recalcula solo si cambia el valor) la columna de un total cuantitativo:
+ * verde si aprueba (>50), rojo si reprueba (≤50) — mismo criterio que el resto del sistema.
+ * `rango` son las filas de datos, ej. "F5:F32".
+ */
+function condicionalAprobadoReprobado(ws: ExcelJS.Worksheet, rango: string) {
+  ws.addConditionalFormatting({
+    ref: rango,
+    rules: [
+      {
+        type: 'cellIs', operator: 'greaterThan', formulae: ['50'], priority: 1,
+        style: { fill: { type: 'pattern', pattern: 'solid', bgColor: { argb: VERDE_FONDO } }, font: { bold: true, color: { argb: VERDE_TEXTO } } },
+      },
+      {
+        // Las notas son enteras — "< 51" equivale a "≤ 50" (exceljs no define lessThanOrEqual).
+        type: 'cellIs', operator: 'lessThan', formulae: ['51'], priority: 2,
+        style: { fill: { type: 'pattern', pattern: 'solid', bgColor: { argb: ROJO_FONDO } }, font: { bold: true, color: { argb: ROJO_TEXTO } } },
+      },
+    ],
+  })
 }
 
 // ── Tabla simple genérica (nómina, estadísticas, listados, etc.) ──────────────
@@ -190,24 +219,42 @@ export interface RegistroMateriaExcelData {
     codigo:    string
     notas:     Record<string, number | null>
     promedios: Record<string, number | null>
+    notaExtracurricular: number | null
     total:     number | null
     escala:    string | null
   }>
 }
 
+/**
+ * Registro completo CON fórmulas en vivo (no valores fijos): los subtotales por dimensión
+ * promedian su rango de indicadores, el total suma los subtotales + nota extra, y la escala
+ * se calcula del total — así, si alguien corrige una nota acá mismo, todo se recalcula solo.
+ * Nota: a diferencia de una plantilla manual con un tope fijo de 52 filas/3 parciales por
+ * dimensión, acá cada indicador es el que el/la docente realmente cargó — las fórmulas se arman
+ * dinámicamente según cuántos indicadores tenga cada dimensión en esta asignación/trimestre.
+ */
 export async function generateRegistroMateriaExcel(data: RegistroMateriaExcelData): Promise<Buffer> {
   const wb = nuevoLibro()
   const ws = wb.addWorksheet('Registro')
 
+  // ── Arma los encabezados y, de paso, recuerda en qué columna cae cada cosa ──
   const headerRow1: (string | number)[] = ['N°', 'Apellidos y Nombres']
   const headerRow2: (string | number)[] = ['', '']
+  const rangosDimension: Array<{ inicio: number; fin: number; prom: number; tieneIndicadores: boolean }> = []
+  let col = 3
   for (const dim of data.dimensiones) {
-    for (const ind of dim.indicadores) { headerRow1.push(labelDimension(dim.nombre)); headerRow2.push(ind.nombre) }
+    const inicio = col
+    for (const ind of dim.indicadores) { headerRow1.push(labelDimension(dim.nombre)); headerRow2.push(ind.nombre); col++ }
+    const tieneIndicadores = col > inicio
+    const fin = col - 1
     headerRow1.push(labelDimension(dim.nombre)); headerRow2.push('PROM.')
+    rangosDimension.push({ inicio, fin, prom: col, tieneIndicadores })
+    col++
   }
-  headerRow1.push('Total', 'Escala')
-  headerRow2.push('', '')
-  const numCols = headerRow1.length
+  const colExtra  = col; headerRow1.push('Nota Extra'); headerRow2.push(''); col++
+  const colTotal  = col; headerRow1.push('Total');      headerRow2.push(''); col++
+  const colEscala = col; headerRow1.push('Escala');     headerRow2.push(''); col++
+  const numCols = col
 
   escribirEncabezadoReporte(
     ws, `Registro – ${data.materia} (${data.campo})`,
@@ -220,25 +267,58 @@ export async function generateRegistroMateriaExcel(data: RegistroMateriaExcelDat
   estilizarFilaEncabezado(filaEnc2, numCols)
   ws.mergeCells(filaEnc1.number, 1, filaEnc2.number, 1)
   ws.mergeCells(filaEnc1.number, 2, filaEnc2.number, 2)
-  ws.mergeCells(filaEnc1.number, numCols - 1, filaEnc2.number, numCols - 1)
-  ws.mergeCells(filaEnc1.number, numCols, filaEnc2.number, numCols)
+  ws.mergeCells(filaEnc1.number, colExtra, filaEnc2.number, colExtra)
+  ws.mergeCells(filaEnc1.number, colTotal, filaEnc2.number, colTotal)
+  ws.mergeCells(filaEnc1.number, colEscala, filaEnc2.number, colEscala)
 
+  // ── Filas de datos: los indicadores quedan como valores editables; PROM./Total/Escala
+  // llevan fórmula (con el resultado ya calculado como caché, para que se vea bien incluso
+  // antes de que la hoja recalcule) ──────────────────────────────────────────────────────
   data.estudiantes.forEach((est, idx) => {
     const row: (string | number | null)[] = [idx + 1, `${est.apellido} ${est.nombre}`]
     for (const dim of data.dimensiones) {
-      for (const ind of dim.indicadores) row.push(est.notas[ind.id] ?? '')
-      row.push(est.promedios[dim.id] ?? '')
+      for (const ind of dim.indicadores) row.push(est.notas[ind.id] ?? null)
+      row.push(null) // PROM. — se completa abajo con la fórmula
     }
-    row.push(est.total ?? '', est.escala ?? '')
+    row.push(est.notaExtracurricular ?? null, null, null) // Nota Extra (valor) + Total/Escala (fórmula)
     const excelRow = ws.addRow(row)
-    const zebra = idx % 2 === 1
-    const reprobado = est.total != null && est.total <= 50
-    for (let c = 1; c <= numCols; c++) {
-      estilizarCeldaDato(excelRow.getCell(c), { centrar: c > 2, zebra, negativo: c >= numCols - 1 && reprobado })
+    const r = excelRow.number
+
+    data.dimensiones.forEach((dim, i) => {
+      const rango = rangosDimension[i]!
+      const promCell = excelRow.getCell(rango.prom)
+      if (rango.tieneIndicadores) {
+        const refIni = `${colLetra(ws, rango.inicio)}${r}`
+        const refFin = `${colLetra(ws, rango.fin)}${r}`
+        promCell.value = { formula: `IFERROR(ROUND(AVERAGE(${refIni}:${refFin}),0),"")`, result: est.promedios[dim.id] ?? '' }
+      } else {
+        promCell.value = est.promedios[dim.id] ?? ''
+      }
+    })
+
+    const refsSuma = [...rangosDimension.map(rg => `${colLetra(ws, rg.prom)}${r}`), `${colLetra(ws, colExtra)}${r}`]
+    const condVacio = refsSuma.map(ref => `${ref}=""`).join(',')
+    excelRow.getCell(colTotal).value = {
+      formula: `IFERROR(IF(AND(${condVacio}),"",SUM(${refsSuma.join(',')})),"")`,
+      result: est.total ?? '',
     }
+
+    const refTotal = `${colLetra(ws, colTotal)}${r}`
+    excelRow.getCell(colEscala).value = {
+      formula: `IF(${refTotal}="","",IF(${refTotal}>=85,"DP",IF(${refTotal}>=69,"DO",IF(${refTotal}>=51,"DA","ED"))))`,
+      result: est.escala ?? '',
+    }
+
+    const zebra = idx % 2 === 1
+    for (let c = 1; c <= numCols; c++) estilizarCeldaDato(excelRow.getCell(c), { centrar: c > 2, zebra })
   })
 
   ws.columns = [{ width: 5 }, { width: 28 }, ...Array(numCols - 2).fill({ width: 10 })]
+  if (data.estudiantes.length > 0) {
+    const primera = filaEnc2.number + 1
+    const ultima  = filaEnc2.number + data.estudiantes.length
+    condicionalAprobadoReprobado(ws, `${colLetra(ws, colTotal)}${primera}:${colLetra(ws, colTotal)}${ultima}`)
+  }
   finalizarHoja(ws, numCols, filaEnc2.number)
   return aBuffer(wb)
 }
@@ -251,8 +331,11 @@ export async function generateRegistroResumenExcel(data: RegistroMateriaExcelDat
   const wb = nuevoLibro()
   const ws = wb.addWorksheet('Registro (resumen)')
 
-  const headerRow: (string | number)[] = ['N°', 'Apellidos y Nombres', ...data.dimensiones.map(d => labelDimension(d.nombre)), 'Total /100', 'Escala']
-  const numCols = headerRow.length
+  const headerRow: (string | number)[] = ['N°', 'Apellidos y Nombres', ...data.dimensiones.map(d => labelDimension(d.nombre)), 'Nota Extra', 'Total /100', 'Escala']
+  const numCols   = headerRow.length
+  const colExtra  = 3 + data.dimensiones.length
+  const colTotal  = colExtra + 1
+  const colEscala = colTotal + 1
 
   escribirEncabezadoReporte(
     ws, `Registro (resumen) – ${data.materia} (${data.campo})`,
@@ -262,23 +345,44 @@ export async function generateRegistroResumenExcel(data: RegistroMateriaExcelDat
   const filaEnc = ws.addRow(headerRow)
   estilizarFilaEncabezado(filaEnc, numCols)
 
+  // Las 4 dimensiones ya vienen como promedio final (no hay detalle de indicadores en esta
+  // hoja) — solo Total y Escala llevan fórmula, sumando esas 4 celdas + la nota extra.
   data.estudiantes.forEach((est, idx) => {
     const row: (string | number | null)[] = [
       idx + 1,
       `${est.apellido} ${est.nombre}`,
       ...data.dimensiones.map(d => est.promedios[d.id] ?? ''),
-      est.total ?? '',
-      est.escala ?? '',
+      est.notaExtracurricular ?? null,
+      null, null,
     ]
     const excelRow = ws.addRow(row)
-    const zebra = idx % 2 === 1
-    const reprobado = est.total != null && est.total <= 50
-    for (let c = 1; c <= numCols; c++) {
-      estilizarCeldaDato(excelRow.getCell(c), { centrar: c > 2, zebra, negativo: c >= numCols - 1 && reprobado })
+    const r = excelRow.number
+
+    const refsSuma = [
+      ...data.dimensiones.map((_d, i) => `${colLetra(ws, 3 + i)}${r}`),
+      `${colLetra(ws, colExtra)}${r}`,
+    ]
+    const condVacio = refsSuma.map(ref => `${ref}=""`).join(',')
+    excelRow.getCell(colTotal).value = {
+      formula: `IFERROR(IF(AND(${condVacio}),"",SUM(${refsSuma.join(',')})),"")`,
+      result: est.total ?? '',
     }
+    const refTotal = `${colLetra(ws, colTotal)}${r}`
+    excelRow.getCell(colEscala).value = {
+      formula: `IF(${refTotal}="","",IF(${refTotal}>=85,"DP",IF(${refTotal}>=69,"DO",IF(${refTotal}>=51,"DA","ED"))))`,
+      result: est.escala ?? '',
+    }
+
+    const zebra = idx % 2 === 1
+    for (let c = 1; c <= numCols; c++) estilizarCeldaDato(excelRow.getCell(c), { centrar: c > 2, zebra })
   })
 
-  ws.columns = [{ width: 5 }, { width: 28 }, ...data.dimensiones.map(() => ({ width: 14 })), { width: 10 }, { width: 10 }]
+  ws.columns = [{ width: 5 }, { width: 28 }, ...data.dimensiones.map(() => ({ width: 14 })), { width: 10 }, { width: 10 }, { width: 10 }]
+  if (data.estudiantes.length > 0) {
+    const primera = filaEnc.number + 1
+    const ultima  = filaEnc.number + data.estudiantes.length
+    condicionalAprobadoReprobado(ws, `${colLetra(ws, colTotal)}${primera}:${colLetra(ws, colTotal)}${ultima}`)
+  }
   finalizarHoja(ws, numCols, filaEnc.number)
   return aBuffer(wb)
 }
