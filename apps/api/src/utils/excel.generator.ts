@@ -66,17 +66,12 @@ function estilizarFilaEncabezado(fila: ExcelJS.Row, numCols: number) {
   fila.height = 28
 }
 
-interface OpcionesCeldaDato { centrar?: boolean; zebra?: boolean; negativo?: boolean }
+interface OpcionesCeldaDato { centrar?: boolean; zebra?: boolean }
 
-function estilizarCeldaDato(cell: ExcelJS.Cell, { centrar, zebra, negativo }: OpcionesCeldaDato) {
+function estilizarCeldaDato(cell: ExcelJS.Cell, { centrar, zebra }: OpcionesCeldaDato) {
   cell.border = BORDE_FINO
   cell.alignment = { horizontal: centrar ? 'center' : 'left', vertical: 'middle' }
-  if (negativo) {
-    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: ROJO_FONDO } }
-    cell.font = { ...(cell.font ?? {}), bold: true, color: { argb: ROJO_TEXTO } }
-  } else if (zebra) {
-    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: GRIS_ZEBRA } }
-  }
+  if (zebra) cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: GRIS_ZEBRA } }
 }
 
 /** Fila de filtro automático + congelar paneles sobre la última fila de encabezado + pie de página. */
@@ -90,6 +85,13 @@ function finalizarHoja(ws: ExcelJS.Worksheet, numCols: number, filaEncabezado: n
 
 async function aBuffer(wb: ExcelJS.Workbook): Promise<Buffer> {
   return Buffer.from(await wb.xlsx.writeBuffer())
+}
+
+/** Cuenta aprobados/reprobados (nota > 50 = aprobado) sobre quienes ya tienen un total. */
+function statsAprobacion(estudiantes: Array<{ total: number | null }>) {
+  const conNotaArr = estudiantes.filter(e => e.total != null)
+  const aprobados  = conNotaArr.filter(e => e.total! > 50).length
+  return { aprobados, reprobados: conNotaArr.length - aprobados, conNota: conNotaArr.length, totalEstudiantes: estudiantes.length }
 }
 
 /** Letra de columna de Excel (1 → A, 27 → AA, …) a partir del índice 1-based. */
@@ -116,6 +118,87 @@ function condicionalAprobadoReprobado(ws: ExcelJS.Worksheet, rango: string) {
         style: { fill: { type: 'pattern', pattern: 'solid', bgColor: { argb: ROJO_FONDO } }, font: { bold: true, color: { argb: ROJO_TEXTO } } },
       },
     ],
+  })
+}
+
+/**
+ * Pie con el resumen de aprobados/reprobados del trimestre (fórmulas COUNTIF/COUNT en vivo,
+ * se recalculan solas si se edita una nota) + aviso si el % de reprobados supera 30 — mismo
+ * criterio que la tarjeta "Resumen del trimestre" de la planilla web.
+ */
+function escribirResumenAprobacion(
+  ws: ExcelJS.Worksheet, numCols: number, colTotal: string, colNombre: string,
+  primeraFila: number, ultimaFila: number,
+  stats: { aprobados: number; reprobados: number; conNota: number; totalEstudiantes: number },
+) {
+  const rangoTotal  = `${colTotal}${primeraFila}:${colTotal}${ultimaFila}`
+  const rangoNombre = `${colNombre}${primeraFila}:${colNombre}${ultimaFila}`
+  const pctAprobados  = stats.conNota > 0 ? Math.round((stats.aprobados / stats.conNota) * 100) : 0
+  const pctReprobados = stats.conNota > 0 ? Math.round((stats.reprobados / stats.conNota) * 100) : 0
+  const aviso = pctReprobados > 30
+    ? `Aviso: más del 30% de los estudiantes está reprobando este trimestre (${pctReprobados}%).`
+    : ''
+
+  ws.addRow([])
+  const filaTitulo = ws.addRow(['Resumen del trimestre'])
+  ws.mergeCells(filaTitulo.number, 1, filaTitulo.number, numCols)
+  filaTitulo.getCell(1).font = { bold: true, size: 11, color: { argb: AZUL_TEXTO } }
+
+  const filaAprob = ws.addRow(['Aprobados (> 50)'])
+  const celdaAprob = filaAprob.getCell(2)
+  celdaAprob.value = { formula: `COUNTIF(${rangoTotal},">50")`, result: stats.aprobados }
+  celdaAprob.font = { bold: true, color: { argb: VERDE_TEXTO } }
+  const celdaPctAprob = filaAprob.getCell(3)
+  celdaPctAprob.value = { formula: `IFERROR(ROUND(${celdaAprob.address}/COUNT(${rangoTotal})*100,0),0)`, result: pctAprobados }
+  celdaPctAprob.numFmt = '0"%"'
+  celdaPctAprob.font = { color: { argb: VERDE_TEXTO } }
+
+  const filaReprob = ws.addRow(['Reprobados (≤ 50)'])
+  const celdaReprob = filaReprob.getCell(2)
+  celdaReprob.value = { formula: `COUNTIF(${rangoTotal},"<=50")`, result: stats.reprobados }
+  celdaReprob.font = { bold: true, color: { argb: ROJO_TEXTO } }
+  const celdaPctReprob = filaReprob.getCell(3)
+  celdaPctReprob.value = { formula: `IFERROR(ROUND(${celdaReprob.address}/COUNT(${rangoTotal})*100,0),0)`, result: pctReprobados }
+  celdaPctReprob.numFmt = '0"%"'
+  celdaPctReprob.font = { color: { argb: ROJO_TEXTO } }
+
+  const filaNota = ws.addRow([{
+    formula: `COUNT(${rangoTotal})&" de "&COUNTA(${rangoNombre})&" estudiante(s) con nota registrada en este trimestre."`,
+    result: `${stats.conNota} de ${stats.totalEstudiantes} estudiante(s) con nota registrada en este trimestre.`,
+  }])
+  ws.mergeCells(filaNota.number, 1, filaNota.number, numCols)
+  filaNota.getCell(1).font = { size: 9, italic: true, color: { argb: GRIS_TEXTO } }
+
+  const filaAviso = ws.addRow([{
+    formula: `IF(${celdaPctReprob.address}>30,"Aviso: más del 30% de los estudiantes está reprobando este trimestre ("&${celdaPctReprob.address}&"%).","")`,
+    result: aviso,
+  }])
+  ws.mergeCells(filaAviso.number, 1, filaAviso.number, numCols)
+  filaAviso.getCell(1).font = { bold: true, color: { argb: ROJO_TEXTO } }
+  ws.addConditionalFormatting({
+    ref: `A${filaAviso.number}`,
+    rules: [{
+      type: 'expression', formulae: [`A${filaAviso.number}<>""`], priority: 1,
+      style: { fill: { type: 'pattern', pattern: 'solid', bgColor: { argb: ROJO_FONDO } } },
+    }],
+  })
+}
+
+/** Protege las fórmulas de edición accidental — sin contraseña real, es solo un seguro
+ *  contra un "oops": cualquiera puede desproteger desde Excel sin pedir nada. */
+async function protegerFormulas(ws: ExcelJS.Worksheet) {
+  await ws.protect('', {
+    selectLockedCells:   true,
+    selectUnlockedCells: true,
+    formatCells:         true,
+    formatColumns:       true,
+    formatRows:          true,
+    sort:                true,
+    autoFilter:          true,
+    insertRows:          false,
+    deleteRows:          false,
+    insertColumns:       false,
+    deleteColumns:       false,
   })
 }
 
@@ -184,14 +267,17 @@ export async function generateCentralizadorExcel(data: CentralizadorExcelData): 
     const row = ws.addRow([idx + 1, `${est.apellido} ${est.nombre}`, ...data.materias.map(m => est.notas[m.id]?.total ?? ''), est.promedio ?? ''])
     estilizarCeldaDato(row.getCell(1), { centrar: true, zebra: idx % 2 === 1 })
     estilizarCeldaDato(row.getCell(2), { zebra: idx % 2 === 1 })
-    data.materias.forEach((m, i) => {
-      const total = est.notas[m.id]?.total ?? null
-      estilizarCeldaDato(row.getCell(3 + i), { centrar: true, zebra: idx % 2 === 1, negativo: total != null && total <= 50 })
-    })
-    estilizarCeldaDato(row.getCell(numCols), { centrar: true, zebra: idx % 2 === 1, negativo: (est.promedio ?? 100) <= 50 })
+    data.materias.forEach((_m, i) => estilizarCeldaDato(row.getCell(3 + i), { centrar: true, zebra: idx % 2 === 1 }))
+    estilizarCeldaDato(row.getCell(numCols), { centrar: true, zebra: idx % 2 === 1 })
   })
 
   ws.columns = [{ width: 5 }, { width: 28 }, ...data.materias.map(() => ({ width: 10 })), { width: 10 }]
+  if (data.estudiantes.length > 0) {
+    const primera = filaEnc2.number + 1
+    const ultima  = filaEnc2.number + data.estudiantes.length
+    // Una sola regla cubre de un tirón todas las materias + el promedio final.
+    condicionalAprobadoReprobado(ws, `${colLetra(ws, 3)}${primera}:${colLetra(ws, numCols)}${ultima}`)
+  }
   finalizarHoja(ws, numCols, filaEnc2.number)
   return aBuffer(wb)
 }
@@ -286,6 +372,17 @@ export async function generateRegistroMateriaExcel(data: RegistroMateriaExcelDat
 
     data.dimensiones.forEach((dim, i) => {
       const rango = rangosDimension[i]!
+      // Las celdas de nota quedan destrabadas (para editar) y con validación 1..puntaje_max —
+      // mismo rango que ya exige el input de la planilla web.
+      for (let c = rango.inicio; c <= rango.fin; c++) {
+        const cell = excelRow.getCell(c)
+        cell.protection = { locked: false }
+        cell.dataValidation = {
+          type: 'whole', operator: 'between', formulae: [1, dim.puntaje_max], allowBlank: true,
+          showErrorMessage: true, errorTitle: 'Nota fuera de rango',
+          error: `La nota debe ser un número entero entre 1 y ${dim.puntaje_max}.`,
+        }
+      }
       const promCell = excelRow.getCell(rango.prom)
       if (rango.tieneIndicadores) {
         const refIni = `${colLetra(ws, rango.inicio)}${r}`
@@ -295,6 +392,7 @@ export async function generateRegistroMateriaExcel(data: RegistroMateriaExcelDat
         promCell.value = est.promedios[dim.id] ?? ''
       }
     })
+    excelRow.getCell(colExtra).protection = { locked: false }
 
     const refsSuma = [...rangosDimension.map(rg => `${colLetra(ws, rg.prom)}${r}`), `${colLetra(ws, colExtra)}${r}`]
     const condVacio = refsSuma.map(ref => `${ref}=""`).join(',')
@@ -318,8 +416,10 @@ export async function generateRegistroMateriaExcel(data: RegistroMateriaExcelDat
     const primera = filaEnc2.number + 1
     const ultima  = filaEnc2.number + data.estudiantes.length
     condicionalAprobadoReprobado(ws, `${colLetra(ws, colTotal)}${primera}:${colLetra(ws, colTotal)}${ultima}`)
+    escribirResumenAprobacion(ws, numCols, colLetra(ws, colTotal), colLetra(ws, 2), primera, ultima, statsAprobacion(data.estudiantes))
   }
   finalizarHoja(ws, numCols, filaEnc2.number)
+  await protegerFormulas(ws)
   return aBuffer(wb)
 }
 
@@ -358,6 +458,17 @@ export async function generateRegistroResumenExcel(data: RegistroMateriaExcelDat
     const excelRow = ws.addRow(row)
     const r = excelRow.number
 
+    data.dimensiones.forEach((dim, i) => {
+      const cell = excelRow.getCell(3 + i)
+      cell.protection = { locked: false }
+      cell.dataValidation = {
+        type: 'whole', operator: 'between', formulae: [0, dim.puntaje_max], allowBlank: true,
+        showErrorMessage: true, errorTitle: 'Promedio fuera de rango',
+        error: `El promedio de esta dimensión debe ser un número entero entre 0 y ${dim.puntaje_max}.`,
+      }
+    })
+    excelRow.getCell(colExtra).protection = { locked: false }
+
     const refsSuma = [
       ...data.dimensiones.map((_d, i) => `${colLetra(ws, 3 + i)}${r}`),
       `${colLetra(ws, colExtra)}${r}`,
@@ -382,8 +493,10 @@ export async function generateRegistroResumenExcel(data: RegistroMateriaExcelDat
     const primera = filaEnc.number + 1
     const ultima  = filaEnc.number + data.estudiantes.length
     condicionalAprobadoReprobado(ws, `${colLetra(ws, colTotal)}${primera}:${colLetra(ws, colTotal)}${ultima}`)
+    escribirResumenAprobacion(ws, numCols, colLetra(ws, colTotal), colLetra(ws, 2), primera, ultima, statsAprobacion(data.estudiantes))
   }
   finalizarHoja(ws, numCols, filaEnc.number)
+  await protegerFormulas(ws)
   return aBuffer(wb)
 }
 
@@ -423,15 +536,18 @@ export async function generateCentralizadorAsignacionExcel(data: CentralizadorAs
     const zebra = idx % 2 === 1
     estilizarCeldaDato(row.getCell(1), { centrar: true, zebra })
     estilizarCeldaDato(row.getCell(2), { zebra })
-    data.trimestres.forEach((t, i) => {
-      const total = est.totales[t.id] ?? null
-      estilizarCeldaDato(row.getCell(3 + i), { centrar: true, zebra, negativo: total != null && total <= 50 })
-    })
-    estilizarCeldaDato(row.getCell(numCols - 1), { centrar: true, zebra, negativo: est.promedio <= 50 })
+    data.trimestres.forEach((_t, i) => estilizarCeldaDato(row.getCell(3 + i), { centrar: true, zebra }))
+    estilizarCeldaDato(row.getCell(numCols - 1), { centrar: true, zebra })
     estilizarCeldaDato(row.getCell(numCols), { zebra })
   })
 
   ws.columns = [{ width: 5 }, { width: 28 }, ...data.trimestres.map(() => ({ width: 10 })), { width: 10 }, { width: 42 }]
+  if (data.estudiantes.length > 0) {
+    const primera = filaEnc.number + 1
+    const ultima  = filaEnc.number + data.estudiantes.length
+    // Cubre los trimestres y el promedio final — no la columna de observaciones (texto).
+    condicionalAprobadoReprobado(ws, `${colLetra(ws, 3)}${primera}:${colLetra(ws, numCols - 1)}${ultima}`)
+  }
   finalizarHoja(ws, numCols, filaEnc.number)
   return aBuffer(wb)
 }
@@ -480,14 +596,16 @@ export async function generateCentralizadorSubareasExcel(data: CentralizadorSuba
     const zebra = idx % 2 === 1
     estilizarCeldaDato(row.getCell(1), { centrar: true, zebra })
     estilizarCeldaDato(row.getCell(2), { zebra })
-    data.subareas.forEach((s, i) => {
-      const total = est.notasSubareas.find(n => n.asignacion_id === s.asignacion_id)?.total ?? null
-      estilizarCeldaDato(row.getCell(3 + i), { centrar: true, zebra, negativo: total != null && total <= 50 })
-    })
-    estilizarCeldaDato(row.getCell(numCols), { centrar: true, zebra, negativo: est.promedio != null && est.promedio <= 50 })
+    data.subareas.forEach((_s, i) => estilizarCeldaDato(row.getCell(3 + i), { centrar: true, zebra }))
+    estilizarCeldaDato(row.getCell(numCols), { centrar: true, zebra })
   })
 
   ws.columns = [{ width: 5 }, { width: 28 }, ...data.subareas.map(() => ({ width: 16 })), { width: 14 }]
+  if (data.estudiantes.length > 0) {
+    const primera = filaEnc2.number + 1
+    const ultima  = filaEnc2.number + data.estudiantes.length
+    condicionalAprobadoReprobado(ws, `${colLetra(ws, 3)}${primera}:${colLetra(ws, numCols)}${ultima}`)
+  }
   finalizarHoja(ws, numCols, filaEnc2.number)
   return aBuffer(wb)
 }
