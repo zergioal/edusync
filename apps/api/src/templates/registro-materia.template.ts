@@ -38,6 +38,16 @@ const ESCALA_COLOR: Record<Escala, string> = {
 /** Mismo criterio de aprobación que el resto del sistema: > 50 aprueba. */
 const colorTotal = (total: number | null) => total == null ? '#fff' : total > 50 ? '#e2f5e9' : '#fde7e7'
 
+/** Un color por dimensión — mismo azul/verde/ámbar/morado que ya usa la planilla del docente en
+ *  la web y el Excel exportado, para que todo el registro (web, PDF, Excel) se vea como un todo. */
+const DIM_COLORS = [
+  { oscuro: '#2563EB', claro: '#DBEAFE' }, // azul   (Ser/Decidir)
+  { oscuro: '#059669', claro: '#D1FAE5' }, // verde  (Saber)
+  { oscuro: '#D97706', claro: '#FEF3C7' }, // ámbar  (Hacer)
+  { oscuro: '#9333EA', claro: '#F3E8FF' }, // morado (Autoevaluación)
+]
+const colorDimension = (i: number) => DIM_COLORS[i % DIM_COLORS.length]!
+
 export function generarHTMLRegistroMateria(d: DatosRegistroMateria): string {
   const totalIndicCols = d.dimensiones.reduce((s, dim) => s + dim.indicadores.length, 0)
   // Columnas de datos = una por indicador + una "PROM." por dimensión.
@@ -58,25 +68,26 @@ export function generarHTMLRegistroMateria(d: DatosRegistroMateria): string {
     <col style="width:${PCT_ESCALA}%">
   </colgroup>`
 
-  const groupHeader = d.dimensiones.map(dim =>
-    `<th colspan="${dim.indicadores.length + 1}" style="background:${AZUL};color:#fff;padding:4px 2px;font-size:9px;text-align:center;">${dim.nombre} <span style="font-weight:normal;">/ ${dim.puntaje_max}pts</span></th>`
+  const groupHeader = d.dimensiones.map((dim, i) =>
+    `<th colspan="${dim.indicadores.length + 1}" style="background:${colorDimension(i).oscuro};color:#fff;padding:4px 2px;font-size:9px;text-align:center;">${dim.nombre} <span style="font-weight:normal;">/ ${dim.puntaje_max}pts</span></th>`
   ).join('')
 
-  const indicHeader = d.dimensiones.map(dim => {
+  const indicHeader = d.dimensiones.map((dim, i) => {
+    const { oscuro, claro } = colorDimension(i)
     const cols = dim.indicadores.map(ind =>
-      `<th style="background:#E8EBF0;padding:3px 1px;font-size:7px;overflow:hidden;word-break:break-word;writing-mode:vertical-rl;transform:rotate(180deg);height:70px;">${ind.nombre}</th>`
+      `<th style="background:${claro};color:#374151;padding:3px 1px;font-size:7px;overflow:hidden;word-break:break-word;writing-mode:vertical-rl;transform:rotate(180deg);height:70px;">${ind.nombre}</th>`
     ).join('')
-    return `${cols}<th style="background:#D6DCE5;color:${AZUL};padding:3px;font-size:8px;font-weight:bold;">PROM.</th>`
+    return `${cols}<th style="background:${oscuro};color:#fff;padding:3px;font-size:8px;font-weight:bold;">PROM.</th>`
   }).join('')
 
   const filas = d.estudiantes.map((est, idx) => {
     const bg = idx % 2 === 0 ? '#FFFFFF' : '#F5F5F5'
-    const dimCells = d.dimensiones.map(dim => {
+    const dimCells = d.dimensiones.map((dim, i) => {
       const notaCells = dim.indicadores.map(ind =>
         `<td style="text-align:center;font-size:8px;padding:2px;">${est.notas[ind.id] ?? '—'}</td>`
       ).join('')
       const prom = est.promedios[dim.id]
-      return `${notaCells}<td style="text-align:center;font-size:8px;padding:2px;font-weight:bold;background:#F0F2F5;">${prom ?? '—'}</td>`
+      return `${notaCells}<td style="text-align:center;font-size:8px;padding:2px;font-weight:bold;background:${colorDimension(i).claro};">${prom ?? '—'}</td>`
     }).join('')
     const escalaColor = est.escala ? ESCALA_COLOR[est.escala] : '#999'
     return `<tr style="background:${bg};">

@@ -31,6 +31,17 @@ const DIMENSION_LABELS: Record<string, string> = {
 }
 const labelDimension = (nombre: string) => DIMENSION_LABELS[nombre] ?? nombre
 
+/** Un color por dimensión — mismo azul/verde/ámbar/morado que ya usa la planilla del docente
+ *  en la web (DIM_HEADER_BG: bg-blue-600/emerald-600/amber-600/purple-600), para que el registro
+ *  en Excel y PDF se vean como parte de la misma planilla. */
+const DIM_COLORS = [
+  { oscuro: ARGB('2563EB'), claro: ARGB('DBEAFE') }, // azul   (Ser/Decidir)
+  { oscuro: ARGB('059669'), claro: ARGB('D1FAE5') }, // verde  (Saber)
+  { oscuro: ARGB('D97706'), claro: ARGB('FEF3C7') }, // ámbar  (Hacer)
+  { oscuro: ARGB('9333EA'), claro: ARGB('F3E8FF') }, // morado (Autoevaluación)
+]
+const colorDimension = (i: number) => DIM_COLORS[i % DIM_COLORS.length]!
+
 function nuevoLibro(): ExcelJS.Workbook {
   const wb = new ExcelJS.Workbook()
   wb.creator = 'EduSync'
@@ -54,16 +65,26 @@ function escribirEncabezadoReporte(ws: ExcelJS.Worksheet, titulo: string, subtit
   ws.addRow([])
 }
 
-/** Aplica el estilo de encabezado (fondo azul, texto blanco) a una fila ya agregada. */
-function estilizarFilaEncabezado(fila: ExcelJS.Row, numCols: number) {
+/** Aplica el estilo de encabezado (fondo azul, texto blanco) a una fila ya agregada — o, para
+ *  alguna columna puntual (ej. el grupo de una dimensión), el color que indique `coloresCol`. */
+function estilizarFilaEncabezado(fila: ExcelJS.Row, numCols: number, coloresCol?: Map<number, string>) {
   for (let c = 1; c <= numCols; c++) {
     const cell = fila.getCell(c)
     cell.font = { bold: true, size: 10, color: { argb: BLANCO } }
-    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: AZUL } }
+    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: coloresCol?.get(c) ?? AZUL } }
     cell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true }
     cell.border = BORDE_FINO
   }
   fila.height = 28
+}
+
+/** Encabezado de un indicador escrito en vertical (igual que la planilla web y el PDF), con un
+ *  fondo claro del color de su dimensión. */
+function estilizarCeldaIndicadorVertical(cell: ExcelJS.Cell, colorClaro: string) {
+  cell.font = { size: 9, color: { argb: ARGB('374151') } }
+  cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: colorClaro } }
+  cell.alignment = { horizontal: 'center', vertical: 'middle', textRotation: 90, wrapText: true }
+  cell.border = BORDE_FINO
 }
 
 interface OpcionesCeldaDato { centrar?: boolean; zebra?: boolean }
@@ -347,10 +368,26 @@ export async function generateRegistroMateriaExcel(data: RegistroMateriaExcelDat
     `${data.nivel} ${data.grado} "${data.paralelo}" – Trimestre ${data.trimestre} – Gestión ${data.anno} – Prof. ${data.docente}`,
     numCols,
   )
+  // Un color por dimensión en su fila de grupo (fila 1) — el PROM. de esa dimensión lleva el
+  // mismo color, así se nota de un vistazo a qué dimensión pertenece cada bloque de columnas.
+  const coloresGrupo = new Map<number, string>()
+  rangosDimension.forEach((rg, i) => {
+    const color = colorDimension(i).oscuro
+    for (let c = rg.inicio; c <= rg.prom; c++) coloresGrupo.set(c, color)
+  })
   const filaEnc1 = ws.addRow(headerRow1)
   const filaEnc2 = ws.addRow(headerRow2)
-  estilizarFilaEncabezado(filaEnc1, numCols)
+  estilizarFilaEncabezado(filaEnc1, numCols, coloresGrupo)
   estilizarFilaEncabezado(filaEnc2, numCols)
+  // Los nombres de indicador van en vertical (igual que la planilla web y el PDF) con un fondo
+  // clarito del color de su dimensión — si no, con muchos indicadores la fila queda carísima.
+  rangosDimension.forEach((rg, i) => {
+    const colorClaro = colorDimension(i).claro
+    for (let c = rg.inicio; c <= rg.fin; c++) estilizarCeldaIndicadorVertical(filaEnc2.getCell(c), colorClaro)
+    const celdaProm = filaEnc2.getCell(rg.prom)
+    celdaProm.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: colorDimension(i).oscuro } }
+  })
+  filaEnc2.height = 90
   ws.mergeCells(filaEnc1.number, 1, filaEnc2.number, 1)
   ws.mergeCells(filaEnc1.number, 2, filaEnc2.number, 2)
   ws.mergeCells(filaEnc1.number, colExtra, filaEnc2.number, colExtra)
@@ -409,6 +446,11 @@ export async function generateRegistroMateriaExcel(data: RegistroMateriaExcelDat
 
     const zebra = idx % 2 === 1
     for (let c = 1; c <= numCols; c++) estilizarCeldaDato(excelRow.getCell(c), { centrar: c > 2, zebra })
+    // El PROM. de cada dimensión lleva un tinte clarito de su color — así se distingue del
+    // resto de la fila de un vistazo, igual que en el encabezado.
+    rangosDimension.forEach((rg, i) => {
+      excelRow.getCell(rg.prom).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: colorDimension(i).claro } }
+    })
   })
 
   ws.columns = [{ width: 5 }, { width: 28 }, ...Array(numCols - 2).fill({ width: 10 })]
@@ -442,8 +484,10 @@ export async function generateRegistroResumenExcel(data: RegistroMateriaExcelDat
     `${data.nivel} ${data.grado} "${data.paralelo}" – Trimestre ${data.trimestre} – Gestión ${data.anno} – Prof. ${data.docente}`,
     numCols,
   )
+  const coloresGrupo = new Map<number, string>()
+  data.dimensiones.forEach((_d, i) => coloresGrupo.set(3 + i, colorDimension(i).oscuro))
   const filaEnc = ws.addRow(headerRow)
-  estilizarFilaEncabezado(filaEnc, numCols)
+  estilizarFilaEncabezado(filaEnc, numCols, coloresGrupo)
 
   // Las 4 dimensiones ya vienen como promedio final (no hay detalle de indicadores en esta
   // hoja) — solo Total y Escala llevan fórmula, sumando esas 4 celdas + la nota extra.
@@ -486,6 +530,9 @@ export async function generateRegistroResumenExcel(data: RegistroMateriaExcelDat
 
     const zebra = idx % 2 === 1
     for (let c = 1; c <= numCols; c++) estilizarCeldaDato(excelRow.getCell(c), { centrar: c > 2, zebra })
+    data.dimensiones.forEach((_d, i) => {
+      excelRow.getCell(3 + i).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: colorDimension(i).claro } }
+    })
   })
 
   ws.columns = [{ width: 5 }, { width: 28 }, ...data.dimensiones.map(() => ({ width: 14 })), { width: 10 }, { width: 10 }, { width: 10 }]
