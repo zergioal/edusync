@@ -17,8 +17,8 @@ export function ResumenAprobacion({ estudiantes, className = '' }: Props) {
   const alerta = pctReprobados > 30
 
   return (
-    <div className={`space-y-2 ${className}`}>
-      <div className="grid grid-cols-2 gap-3 sm:max-w-md">
+    <div className={`flex flex-col items-end gap-2 ${className}`}>
+      <div className="grid w-full grid-cols-2 gap-3 sm:w-auto sm:min-w-[22rem]">
         <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 dark:border-emerald-900 dark:bg-emerald-950/30">
           <p className="text-xs font-semibold uppercase tracking-wide text-emerald-700 dark:text-emerald-400">Aprobados</p>
           <p className="text-2xl font-bold text-emerald-800 dark:text-emerald-300">
@@ -32,9 +32,9 @@ export function ResumenAprobacion({ estudiantes, className = '' }: Props) {
           </p>
         </div>
       </div>
-      <p className="text-xs text-fg-muted">{conNota.length} de {estudiantes.length} estudiante{estudiantes.length !== 1 ? 's' : ''} con nota registrada en este trimestre.</p>
+      <p className="text-right text-xs text-fg-muted">{conNota.length} de {estudiantes.length} estudiante{estudiantes.length !== 1 ? 's' : ''} con nota registrada en este trimestre.</p>
       {alerta && (
-        <div className="flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 px-4 py-2.5 text-sm text-red-800 dark:border-red-900 dark:bg-red-950/40 dark:text-red-400">
+        <div className="flex w-full items-center gap-2 rounded-lg border border-red-200 bg-red-50 px-4 py-2.5 text-sm text-red-800 dark:border-red-900 dark:bg-red-950/40 dark:text-red-400 sm:w-auto sm:min-w-[22rem]">
           <Icon name="alert-triangle" className="h-4 w-4 flex-shrink-0" />
           Más del 30% de los estudiantes está reprobando este trimestre ({pctReprobados}%).
         </div>
