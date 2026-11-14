@@ -66,6 +66,29 @@ const OPCIONES_EXPORT_REGISTRO: ExportOpcion<TipoExportRegistro>[] = [
   { value: 'xlsx-resumen', label: 'Excel — resumen',  icon: 'file-excel', iconColor: 'text-green-600', description: 'Solo los 4 subtotales (Ser/Decidir, Saber, Hacer, Autoevaluación) y el total.' },
 ]
 
+type TipoHoja = 'carta' | 'oficio'
+
+/** Selector compacto de tamaño de hoja para el registro exportado — mismo estilo de pestañas que el de trimestre. */
+function SelectorHoja({ value, onChange }: { value: TipoHoja; onChange: (h: TipoHoja) => void }) {
+  return (
+    <div className="flex rounded-lg border border-border overflow-hidden flex-shrink-0">
+      {(['carta', 'oficio'] as const).map(h => (
+        <button
+          key={h}
+          type="button"
+          onClick={() => onChange(h)}
+          title="Tamaño de hoja para el registro exportado"
+          className={`px-2.5 py-1.5 text-xs font-semibold capitalize transition-colors ${
+            value === h ? 'bg-brand text-brand-fg' : 'bg-surface text-fg-muted hover:bg-surface-2'
+          }`}
+        >
+          {h}
+        </button>
+      ))}
+    </div>
+  )
+}
+
 // ─── Sub-componente: celda de nota editable ───────────────────────────────────
 
 type ArrowDir = 'up' | 'down' | 'left' | 'right'
@@ -277,6 +300,7 @@ function PlanillaMobileView({
   const [selectedEstIdx, setSelectedEstIdx] = useState(0)
   const [indicadorModal, setIndicadorModal] = useState<IndicadorModalState | null>(null)
   const [dlState, setDlState] = useState<'idle' | TipoExportRegistro>('idle')
+  const [hoja, setHoja] = useState<TipoHoja>('carta')
   const inputRefs = useRef<Map<string, HTMLInputElement>>(new Map())
   const importacion = useImportacionNotas(asignacion_id, selectedTrimestre, asignacion.materia.nombre, onReload)
 
@@ -286,7 +310,7 @@ function PlanillaMobileView({
     try {
       const esResumen = tipo === 'xlsx-resumen'
       await apiDownload(
-        `/planilla/${asignacion_id}/registro/${tipo === 'pdf' ? 'pdf' : 'excel'}?trimestre_id=${selectedTrimestre.id}${esResumen ? '&modo=resumen' : ''}`,
+        `/planilla/${asignacion_id}/registro/${tipo === 'pdf' ? 'pdf' : 'excel'}?trimestre_id=${selectedTrimestre.id}&hoja=${hoja}${esResumen ? '&modo=resumen' : ''}`,
         `registro_${esResumen ? 'resumen_' : ''}${asignacion.materia.nombre}_T${selectedTrimestre.numero}.${tipo === 'pdf' ? 'pdf' : 'xlsx'}`,
       )
     } finally { setDlState('idle') }
@@ -373,6 +397,7 @@ function PlanillaMobileView({
       {/* Datos: exportar el registro, y cargar notas por lote desde Excel/CSV */}
       <div className="flex flex-wrap items-center gap-2 rounded-lg border border-border bg-surface-2/40 px-3 py-2">
         <span className="w-full text-xs font-semibold uppercase tracking-wide text-fg-muted">Datos</span>
+        <SelectorHoja value={hoja} onChange={setHoja} />
         <ExportarButton disabled={!selectedTrimestre} dlState={dlState} onExport={descargarRegistro} opciones={OPCIONES_EXPORT_REGISTRO} className="flex-1" />
         {!trimestreCerrado && !asignacion.materia.es_especial && (
           <>
@@ -623,6 +648,7 @@ export default function PlanillaPage() {
   const [initDone,          setInitDone]          = useState(false)
   const [indicadorModal,    setIndicadorModal]    = useState<IndicadorModalState | null>(null)
   const [dlState,           setDlState]           = useState<'idle' | TipoExportRegistro>('idle')
+  const [hoja,              setHoja]              = useState<TipoHoja>('carta')
   const [guardando,         setGuardando]         = useState(false)
   const cellRefs = useRef<Map<string, HTMLInputElement>>(new Map())
 
@@ -759,7 +785,7 @@ export default function PlanillaPage() {
     try {
       const esResumen = tipo === 'xlsx-resumen'
       await apiDownload(
-        `/planilla/${asignacion_id}/registro/${tipo === 'pdf' ? 'pdf' : 'excel'}?trimestre_id=${selectedTrimestre.id}${esResumen ? '&modo=resumen' : ''}`,
+        `/planilla/${asignacion_id}/registro/${tipo === 'pdf' ? 'pdf' : 'excel'}?trimestre_id=${selectedTrimestre.id}&hoja=${hoja}${esResumen ? '&modo=resumen' : ''}`,
         `registro_${esResumen ? 'resumen_' : ''}${asignacion.materia.nombre}_T${selectedTrimestre.numero}.${tipo === 'pdf' ? 'pdf' : 'xlsx'}`,
       )
     } finally { setDlState('idle') }
@@ -866,6 +892,7 @@ export default function PlanillaPage() {
         {/* Datos: exportar el registro, y cargar notas por lote desde Excel/CSV */}
         <div className="flex flex-wrap items-center gap-2 rounded-lg border border-border bg-surface-2/40 px-3 py-2">
           <span className="text-xs font-semibold uppercase tracking-wide text-fg-muted mr-1">Datos</span>
+          <SelectorHoja value={hoja} onChange={setHoja} />
           <ExportarButton disabled={!selectedTrimestre} dlState={dlState} onExport={descargarRegistro} opciones={OPCIONES_EXPORT_REGISTRO} />
           {!trimestreCerrado && !esEspecial && (
             <>

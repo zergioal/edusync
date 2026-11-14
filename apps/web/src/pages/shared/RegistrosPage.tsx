@@ -71,6 +71,29 @@ const OPCIONES_EXPORT_REGISTRO: ExportOpcion<TipoExportRegistro>[] = [
   { value: 'xlsx-resumen', label: 'Excel — resumen',  icon: 'file-excel', iconColor: 'text-green-600', description: 'Solo los 4 subtotales (Ser/Decidir, Saber, Hacer, Autoevaluación) y el total.' },
 ]
 
+type TipoHoja = 'carta' | 'oficio'
+
+/** Selector compacto de tamaño de hoja para el registro exportado — mismo estilo de pestañas que el de trimestre. */
+function SelectorHoja({ value, onChange }: { value: TipoHoja; onChange: (h: TipoHoja) => void }) {
+  return (
+    <div className="flex rounded-lg border border-border overflow-hidden flex-shrink-0">
+      {(['carta', 'oficio'] as const).map(h => (
+        <button
+          key={h}
+          type="button"
+          onClick={() => onChange(h)}
+          title="Tamaño de hoja para el registro exportado"
+          className={`px-2.5 py-1.5 text-xs font-semibold capitalize transition-colors ${
+            value === h ? 'bg-brand text-brand-fg' : 'bg-surface text-fg-muted hover:bg-surface-2'
+          }`}
+        >
+          {h}
+        </button>
+      ))}
+    </div>
+  )
+}
+
 // ─── Planilla de solo lectura ───────────────────────────────────────────────
 
 function PlanillaLectura({ asignacionId, onBack }: { asignacionId: string; onBack: () => void }) {
@@ -82,6 +105,7 @@ function PlanillaLectura({ asignacionId, onBack }: { asignacionId: string; onBac
   const [trimestreId, setTrimestreId] = useState('')
   const [initDone,    setInitDone]    = useState(false)
   const [dlState,     setDlState]     = useState<'idle' | TipoExportRegistro>('idle')
+  const [hoja,        setHoja]        = useState<TipoHoja>('carta')
   const { data, loading, error } = usePlanilla(asignacionId, trimestreId || undefined)
 
   // Al primer cargar (sin trimestre_id, para conocer la lista de trimestres de
@@ -108,7 +132,7 @@ function PlanillaLectura({ asignacionId, onBack }: { asignacionId: string; onBac
     try {
       const esResumen = tipo === 'xlsx-resumen'
       await apiDownload(
-        `/planilla/${asignacionId}/registro/${tipo === 'pdf' ? 'pdf' : 'excel'}?trimestre_id=${trimestreActual.id}${esResumen ? '&modo=resumen' : ''}`,
+        `/planilla/${asignacionId}/registro/${tipo === 'pdf' ? 'pdf' : 'excel'}?trimestre_id=${trimestreActual.id}&hoja=${hoja}${esResumen ? '&modo=resumen' : ''}`,
         `registro_${esResumen ? 'resumen_' : ''}${data.asignacion.materia.nombre}_T${trimestreActual.numero}.${tipo === 'pdf' ? 'pdf' : 'xlsx'}`,
       )
     } catch {
@@ -196,6 +220,7 @@ function PlanillaLectura({ asignacionId, onBack }: { asignacionId: string; onBac
       {/* Datos: exportar el registro */}
       <div className="flex flex-wrap items-center gap-2 rounded-lg border border-border bg-surface-2/40 px-3 py-2">
         <span className="text-xs font-semibold uppercase tracking-wide text-fg-muted mr-1">Datos</span>
+        <SelectorHoja value={hoja} onChange={setHoja} />
         <ExportarButton disabled={!trimestreActual} dlState={dlState} onExport={descargarRegistro} opciones={OPCIONES_EXPORT_REGISTRO} />
       </div>
 
