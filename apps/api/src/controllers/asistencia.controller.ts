@@ -109,7 +109,7 @@ export class AsistenciaController {
       const { asignacion_id, mes } = req.query as { asignacion_id: string; mes: string }
       if (!asignacion_id || !mes) throw new AppError(400, 'asignacion_id y mes requeridos', 'MISSING_PARAM')
       const tabla = await this.service.getClaseMensualTabla(asignacion_id, mes, req.auth!.institucion_id)
-      const buf = generateTablaSimpleExcel({
+      const buf = await generateTablaSimpleExcel({
         titulo:    `Asistencia — ${tabla.materia}`,
         subtitulo: `${tabla.curso} · ${mes} · Gestión ${tabla.anno} · ${LEYENDA_ASISTENCIA}`,
         columnas:  tabla.columnas,

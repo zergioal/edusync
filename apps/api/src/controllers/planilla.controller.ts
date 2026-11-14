@@ -7,7 +7,7 @@ import { generarHTMLRegistroMateria, type DatosRegistroMateria } from '../templa
 import { generarHTMLCentralizadorAsignacion, type DatosCentralizadorAsignacion } from '../templates/centralizador-asignacion.template'
 import { generarHTMLCentralizadorSubareas, type DatosCentralizadorSubareas } from '../templates/centralizador-subareas.template'
 import { generatePDFLandscape } from '../utils/pdf.generator'
-import { generateRegistroMateriaExcel, generateCentralizadorAsignacionExcel, generateCentralizadorSubareasExcel } from '../utils/excel.generator'
+import { generateRegistroMateriaExcel, generateRegistroResumenExcel, generateCentralizadorAsignacionExcel, generateCentralizadorSubareasExcel } from '../utils/excel.generator'
 import { getInstitucionInfo } from '../utils/institucion.util'
 
 export class PlanillaController {
@@ -60,12 +60,13 @@ export class PlanillaController {
 
   getRegistroExcel = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const { trimestre_id } = req.query as Record<string, string>
+      const { trimestre_id, modo } = req.query as Record<string, string>
       if (!trimestre_id) throw new AppError(400, 'trimestre_id es requerido', 'MISSING_PARAM')
       const payload = await this.buildRegistroData(req.params['asignacion_id']!, trimestre_id, req.auth!.institucion_id)
-      const buf = generateRegistroMateriaExcel(payload)
+      const esResumen = modo === 'resumen'
+      const buf = esResumen ? await generateRegistroResumenExcel(payload) : await generateRegistroMateriaExcel(payload)
       res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
-      res.setHeader('Content-Disposition', `attachment; filename="registro_${payload.materia}_T${payload.trimestre}.xlsx"`)
+      res.setHeader('Content-Disposition', `attachment; filename="registro_${esResumen ? 'resumen_' : ''}${payload.materia}_T${payload.trimestre}.xlsx"`)
       res.send(buf)
     } catch (e) { next(e) }
   }
@@ -101,7 +102,7 @@ export class PlanillaController {
   getCentralizadorAsignacionExcel = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const payload = await this.buildCentralizadorAsignacionData(req.params['asignacion_id']!, req.auth!.institucion_id)
-      const buf = generateCentralizadorAsignacionExcel(payload)
+      const buf = await generateCentralizadorAsignacionExcel(payload)
       res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
       res.setHeader('Content-Disposition', `attachment; filename="centralizador_${payload.materia}.xlsx"`)
       res.send(buf)
@@ -166,7 +167,7 @@ export class PlanillaController {
       const { trimestre_id } = req.query as Record<string, string>
       if (!trimestre_id) throw new AppError(400, 'trimestre_id es requerido', 'MISSING_PARAM')
       const data = await this.service.getCentralizadorSubareas(req.params['asignacion_id']!, trimestre_id)
-      const buf = generateCentralizadorSubareasExcel(data)
+      const buf = await generateCentralizadorSubareasExcel(data)
       res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
       res.setHeader('Content-Disposition', `attachment; filename="centralizador_subareas_${data.area_padre}.xlsx"`)
       res.send(buf)

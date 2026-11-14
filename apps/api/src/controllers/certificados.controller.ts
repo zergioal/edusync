@@ -104,7 +104,7 @@ export class CertificadosController {
   listGlobalExcel = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const tabla = await this.listGlobalTabla(req)
-      const buf = generateTablaSimpleExcel(tabla)
+      const buf = await generateTablaSimpleExcel(tabla)
       res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
       res.setHeader('Content-Disposition', 'attachment; filename="certificados_emitidos.xlsx"')
       res.send(buf)

@@ -59,7 +59,7 @@ export class HorariosController {
   getMioExcel = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const tabla = await this.service.getMiTabla(req.auth!.usuario_id, req.auth!.institucion_id)
-      const buf = generateTablaSimpleExcel({
+      const buf = await generateTablaSimpleExcel({
         titulo:    `Horario — ${tabla.docente}`,
         subtitulo: `Gestión ${tabla.gestion}`,
         columnas:  tabla.columnas,

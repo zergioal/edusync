@@ -109,7 +109,7 @@ export class ReportesController {
       const { paralelo_id, trimestre_id } = req.query as Record<string, string>
       if (!paralelo_id || !trimestre_id) throw new AppError(400, 'paralelo_id y trimestre_id son requeridos', 'MISSING_PARAM')
       const data = await this.service.getCentralizador(paralelo_id, trimestre_id, req.auth!.institucion_id)
-      const buf  = generateCentralizadorExcel(data)
+      const buf  = await generateCentralizadorExcel(data)
       res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
       res.setHeader('Content-Disposition', `attachment; filename="centralizador_${data.grado}_${data.paralelo}_T${data.trimestre}.xlsx"`)
       res.send(buf)
@@ -153,8 +153,8 @@ export class ReportesController {
     })
   }
 
-  private sendExcel(res: Response, tabla: DatosTablaSimple, filename: string) {
-    const buf = generateTablaSimpleExcel(tabla)
+  private async sendExcel(res: Response, tabla: DatosTablaSimple, filename: string) {
+    const buf = await generateTablaSimpleExcel(tabla)
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
     res.setHeader('Content-Disposition', `attachment; filename="${filename}.xlsx"`)
     res.send(buf)
@@ -204,7 +204,7 @@ export class ReportesController {
     try { await this.sendPdf(res, await this.nominaTabla(req), 'nomina_estudiantes') } catch (e) { next(e) }
   }
   nominaExcel = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-    try { this.sendExcel(res, await this.nominaTabla(req), 'nomina_estudiantes') } catch (e) { next(e) }
+    try { await this.sendExcel(res, await this.nominaTabla(req), 'nomina_estudiantes') } catch (e) { next(e) }
   }
 
   // Nómina — versión para el propio docente, acotada a uno de sus cursos --------
@@ -244,7 +244,7 @@ export class ReportesController {
     try { await this.sendPdf(res, await this.miNominaTabla(req), 'nomina_estudiantes') } catch (e) { next(e) }
   }
   miNominaExcel = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-    try { this.sendExcel(res, await this.miNominaTabla(req), 'nomina_estudiantes') } catch (e) { next(e) }
+    try { await this.sendExcel(res, await this.miNominaTabla(req), 'nomina_estudiantes') } catch (e) { next(e) }
   }
 
   // Listado de docentes ---------------------------------------------------------
@@ -315,7 +315,7 @@ export class ReportesController {
     try { await this.sendPdf(res, await this.docentesListaTabla(req), 'listado_docentes') } catch (e) { next(e) }
   }
   docentesListaExcel = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-    try { this.sendExcel(res, await this.docentesListaTabla(req), 'listado_docentes') } catch (e) { next(e) }
+    try { await this.sendExcel(res, await this.docentesListaTabla(req), 'listado_docentes') } catch (e) { next(e) }
   }
 
   // ── Reportes de BTH ──────────────────────────────────────────────────────────
@@ -332,7 +332,7 @@ export class ReportesController {
     try { await this.sendPdf(res, await this.listaTecnicaTabla(req), 'lista_tecnica_bth') } catch (e) { next(e) }
   }
   listaTecnicaExcel = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-    try { this.sendExcel(res, await this.listaTecnicaTabla(req), 'lista_tecnica_bth') } catch (e) { next(e) }
+    try { await this.sendExcel(res, await this.listaTecnicaTabla(req), 'lista_tecnica_bth') } catch (e) { next(e) }
   }
 
   private async listaTecnicaTabla(req: Request): Promise<DatosTablaSimple> {
@@ -371,7 +371,7 @@ export class ReportesController {
     try { await this.sendPdf(res, await this.notasSubareasTabla(req), 'notas_subareas_bth') } catch (e) { next(e) }
   }
   notasSubareasExcel = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-    try { this.sendExcel(res, await this.notasSubareasTabla(req), 'notas_subareas_bth') } catch (e) { next(e) }
+    try { await this.sendExcel(res, await this.notasSubareasTabla(req), 'notas_subareas_bth') } catch (e) { next(e) }
   }
 
   private async notasSubareasTabla(req: Request): Promise<DatosTablaSimple> {
@@ -457,7 +457,7 @@ export class ReportesController {
     try { await this.sendPdf(res, await this.estadoMatriculaTabla(req), 'estado_matricula') } catch (e) { next(e) }
   }
   estadoMatriculaExcel = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-    try { this.sendExcel(res, await this.estadoMatriculaTabla(req), 'estado_matricula') } catch (e) { next(e) }
+    try { await this.sendExcel(res, await this.estadoMatriculaTabla(req), 'estado_matricula') } catch (e) { next(e) }
   }
 
   // Estadística de matrícula -----------------------------------------------------
@@ -494,7 +494,7 @@ export class ReportesController {
     try { await this.sendPdf(res, await this.estadisticaMatriculaTabla(req), 'estadistica_matricula') } catch (e) { next(e) }
   }
   estadisticaMatriculaExcel = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-    try { this.sendExcel(res, await this.estadisticaMatriculaTabla(req), 'estadistica_matricula') } catch (e) { next(e) }
+    try { await this.sendExcel(res, await this.estadisticaMatriculaTabla(req), 'estadistica_matricula') } catch (e) { next(e) }
   }
 
   // Padres / tutores --------------------------------------------------------------
@@ -535,7 +535,7 @@ export class ReportesController {
     try { await this.sendPdf(res, await this.padresTutoresTabla(req), 'padres_tutores') } catch (e) { next(e) }
   }
   padresTutoresExcel = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-    try { this.sendExcel(res, await this.padresTutoresTabla(req), 'padres_tutores') } catch (e) { next(e) }
+    try { await this.sendExcel(res, await this.padresTutoresTabla(req), 'padres_tutores') } catch (e) { next(e) }
   }
 
   // Padres / tutores — versión para el propio docente, acotada a uno de sus cursos -
@@ -578,6 +578,6 @@ export class ReportesController {
     try { await this.sendPdf(res, await this.miPadresTutoresTabla(req), 'padres_tutores') } catch (e) { next(e) }
   }
   miPadresTutoresExcel = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-    try { this.sendExcel(res, await this.miPadresTutoresTabla(req), 'padres_tutores') } catch (e) { next(e) }
+    try { await this.sendExcel(res, await this.miPadresTutoresTabla(req), 'padres_tutores') } catch (e) { next(e) }
   }
 }

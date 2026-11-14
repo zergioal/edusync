@@ -82,7 +82,7 @@ export class DocumentosController {
   reportePendientesExcel = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const tabla = await this.reportePendientesTabla(req)
-      const buf = generateTablaSimpleExcel(tabla)
+      const buf = await generateTablaSimpleExcel(tabla)
       res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
       res.setHeader('Content-Disposition', 'attachment; filename="documentacion_pendiente.xlsx"')
       res.send(buf)
